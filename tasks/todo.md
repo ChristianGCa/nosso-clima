@@ -10,7 +10,7 @@ Plan: `tasks/plan.md`
 - [x] T2 — Create a testable Fastify application harness
 - [x] T3 — Validate immutable environment configuration
 - [x] Checkpoint A — Foundation
-- [ ] T4 — Add health, request identity and safe completion logs
+- [x] T4 — Add health, request identity and safe completion logs
 - [ ] T5 — Enforce the stable public error envelope
 - [ ] T6 — Apply CORS and HTTP hardening
 - [ ] T7 — Implement global and route-group rate limits
@@ -122,15 +122,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] `GET /health` returns exactly the approved `{ "status": "ok" }` contract with no external I/O.
-- [ ] Every response includes `x-request-id`, and logs correlate method, route template, status and duration.
-- [ ] Captured logs omit raw IP, query values, coordinates, bodies and cache keys.
+- [x] `GET /health` returns exactly the approved `{ "status": "ok" }` contract with no external I/O.
+- [x] Every response includes `x-request-id`, and logs correlate method, route template, status and duration.
+- [x] Captured logs omit raw IP, query values, coordinates, bodies and cache keys.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- health.test.ts`
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] Inspect captured test logs for both required and forbidden fields.
+- [x] `npm test --workspace @nosso-clima/api -- health.test.ts`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] Inspect captured test logs for both required and forbidden fields.
 
 **Dependencies:** Task 3
 
