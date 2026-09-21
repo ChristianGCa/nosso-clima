@@ -9,7 +9,7 @@ Plan: `tasks/plan.md`
 - [x] T1 — Establish the npm workspace and pinned toolchain
 - [x] T2 — Create a testable Fastify application harness
 - [x] T3 — Validate immutable environment configuration
-- [ ] Checkpoint A — Foundation
+- [x] Checkpoint A — Foundation
 - [ ] T4 — Add health, request identity and safe completion logs
 - [ ] T5 — Enforce the stable public error envelope
 - [ ] T6 — Apply CORS and HTTP hardening
@@ -109,10 +109,10 @@ Plan: `tasks/plan.md`
 
 ## Checkpoint A: Foundation
 
-- [ ] `npm run check --workspace @nosso-clima/api`
-- [ ] `npm audit --audit-level=high`
-- [ ] Clean installation and check complete within the approved budgets.
-- [ ] Human reviews the foundation before HTTP platform work continues.
+- [x] `npm run check --workspace @nosso-clima/api`
+- [x] `npm audit --audit-level=high`
+- [x] Clean installation and check complete within the approved budgets.
+- [x] Human reviews the foundation before HTTP platform work continues.
 
 ## Phase 2: Stable HTTP platform
 
