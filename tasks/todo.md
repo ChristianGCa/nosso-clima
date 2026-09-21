@@ -8,7 +8,7 @@ Plan: `tasks/plan.md`
 
 - [x] T1 — Establish the npm workspace and pinned toolchain
 - [x] T2 — Create a testable Fastify application harness
-- [ ] T3 — Validate immutable environment configuration
+- [x] T3 — Validate immutable environment configuration
 - [ ] Checkpoint A — Foundation
 - [ ] T4 — Add health, request identity and safe completion logs
 - [ ] T5 — Enforce the stable public error envelope
@@ -87,15 +87,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] Every variable and production-only rule in the spec is validated and typed.
-- [ ] Configuration is immutable and no application module reads `process.env` directly after startup.
-- [ ] `.env.example` contains safe names and placeholders without secrets.
+- [x] Every variable and production-only rule in the spec is validated and typed.
+- [x] Configuration is immutable and no application module reads `process.env` directly after startup.
+- [x] `.env.example` contains safe names and placeholders without secrets.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- env.test.ts`
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] `npm run lint --workspace @nosso-clima/api`
+- [x] `npm test --workspace @nosso-clima/api -- env.test.ts`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] `npm run lint --workspace @nosso-clima/api`
 
 **Dependencies:** Task 2
 
