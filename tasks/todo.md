@@ -7,7 +7,7 @@ Plan: `tasks/plan.md`
 ## Progress
 
 - [x] T1 — Establish the npm workspace and pinned toolchain
-- [ ] T2 — Create a testable Fastify application harness
+- [x] T2 — Create a testable Fastify application harness
 - [ ] T3 — Validate immutable environment configuration
 - [ ] Checkpoint A — Foundation
 - [ ] T4 — Add health, request identity and safe completion logs
@@ -59,15 +59,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] `buildApp` returns a typed Fastify instance and never calls `listen`.
-- [ ] The API builds as ESM under strict TypeScript 7 settings.
-- [ ] A baseline integration test creates, readies and closes the app without leaked handles.
+- [x] `buildApp` returns a typed Fastify instance and never calls `listen`.
+- [x] The API builds as ESM under strict TypeScript 7 settings.
+- [x] A baseline integration test creates, readies and closes the app without leaked handles.
 
 **Verification:**
 
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] `npm test --workspace @nosso-clima/api -- app.test.ts`
-- [ ] `npm run build --workspace @nosso-clima/api`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] `npm test --workspace @nosso-clima/api -- app.test.ts`
+- [x] `npm run build --workspace @nosso-clima/api`
 
 **Dependencies:** Task 1
 
