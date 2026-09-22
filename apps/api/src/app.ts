@@ -3,6 +3,7 @@ import fastify, { type FastifyInstance, type FastifyServerOptions, LogController
 import { type AppConfig, parseEnvironment } from './config/env.js';
 import { registerErrorHandlers } from './errors/error-handler.js';
 import { registerCors } from './plugins/cors.js';
+import { registerRateLimit } from './plugins/rate-limit.js';
 import { registerRequestContext } from './plugins/request-context.js';
 import { registerSecurity, REQUEST_BODY_LIMIT_BYTES } from './plugins/security.js';
 import { registerHealthRoute } from './routes/health.js';
@@ -29,6 +30,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   registerRequestContext(app);
   registerErrorHandlers(app);
+  registerRateLimit(app, config);
   registerSecurity(app);
   registerCors(app, config.corsAllowedOrigins);
   registerHealthRoute(app);
