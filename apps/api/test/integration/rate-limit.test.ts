@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { buildApp } from '../../src/app.js';
 import { parseEnvironment } from '../../src/config/env.js';
+import { RATE_LIMIT_GROUP } from '../../src/plugins/rate-limit.js';
 
 let app: FastifyInstance | undefined;
 
@@ -76,7 +77,149 @@ describe('inbound rate limiting', () => {
     expect(resetResponse.statusCode).toBe(200);
     expect(resetResponse.headers['x-ratelimit-remaining']).toBe('1');
   });
+
+  it('enforces independent limits for location and weather route groups', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 8, 22, 12));
+    const config = parseEnvironment({ API_RATE_LIMIT_MAX: '100' });
+    const testApp = buildApp({ config, registerRoutes: registerRateLimitedRoutes });
+    app = testApp;
+
+    const acceptedLocationResponses = await Promise.all(
+      Array.from({ length: 30 }, () => testApp.inject({ method: 'GET', url: '/test/locations' })),
+    );
+    const rejectedLocationResponse = await testApp.inject({
+      method: 'GET',
+      url: '/test/locations',
+    });
+    const acceptedWeatherResponses = await Promise.all(
+      Array.from({ length: 15 }, () => testApp.inject({ method: 'GET', url: '/test/weather' })),
+    );
+    const rejectedWeatherResponse = await testApp.inject({
+      method: 'GET',
+      url: '/test/weather',
+    });
+
+    expect(acceptedLocationResponses.every((response) => response.statusCode === 200)).toBe(true);
+    expect(rejectedLocationResponse.statusCode).toBe(429);
+    expect(rejectedLocationResponse.headers['x-ratelimit-limit']).toBe('30');
+    expect(rejectedLocationResponse.json().error.code).toBe('RATE_LIMITED');
+    expect(acceptedWeatherResponses.every((response) => response.statusCode === 200)).toBe(true);
+    expect(rejectedWeatherResponse.statusCode).toBe(429);
+    expect(rejectedWeatherResponse.headers['x-ratelimit-limit']).toBe('15');
+    expect(rejectedWeatherResponse.json().error.code).toBe('RATE_LIMITED');
+  });
+
+  it('does not let alternating route groups bypass the aggregate limit', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 8, 22, 12));
+    const config = parseEnvironment({ API_RATE_LIMIT_MAX: '4' });
+    app = buildApp({ config, registerRoutes: registerRateLimitedRoutes });
+
+    const acceptedResponses = await Promise.all([
+      app.inject({ method: 'GET', url: '/test/locations' }),
+      app.inject({ method: 'GET', url: '/test/weather' }),
+      app.inject({ method: 'GET', url: '/test/locations' }),
+      app.inject({ method: 'GET', url: '/test/weather' }),
+    ]);
+    const rejectedResponse = await app.inject({ method: 'GET', url: '/test/locations' });
+
+    expect(acceptedResponses.every((response) => response.statusCode === 200)).toBe(true);
+    expect(rejectedResponse.statusCode).toBe(429);
+    expect(rejectedResponse.headers['x-ratelimit-limit']).toBe('4');
+    expect(rejectedResponse.json().error.code).toBe('RATE_LIMITED');
+  });
+
+  it('counts unknown and malformed requests without trusting forwarded addresses', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 8, 22, 12));
+    const logCapture = createLogCapture();
+    const config = parseEnvironment({ API_RATE_LIMIT_MAX: '2' });
+    app = buildApp({
+      config,
+      logger: {
+        level: 'info',
+        stream: logCapture.stream,
+      },
+      registerRoutes(testApp) {
+        testApp.post('/test/json', () => ({ ok: true }));
+      },
+    });
+
+    const unknownResponse = await app.inject({
+      method: 'GET',
+      url: '/missing?search=private-city',
+      headers: { 'x-forwarded-for': '203.0.113.10' },
+    });
+    const malformedResponse = await app.inject({
+      method: 'POST',
+      url: '/test/json',
+      headers: {
+        'content-type': 'application/json',
+        'x-forwarded-for': '198.51.100.20',
+      },
+      payload: '{"invalid":',
+    });
+    const rejectedResponse = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { forwarded: 'for=192.0.2.30' },
+    });
+    const repeatedRejection = await app.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { 'x-forwarded-for': '192.0.2.40' },
+    });
+
+    expect(unknownResponse.statusCode).toBe(404);
+    expect(malformedResponse.statusCode).toBe(400);
+    expect(rejectedResponse.statusCode).toBe(429);
+    expect(repeatedRejection.statusCode).toBe(429);
+
+    const logText = logCapture.readText();
+    expect(logText).not.toContain('private-city');
+    expect(logText).not.toContain('203.0.113.10');
+    expect(logText).not.toContain('198.51.100.20');
+    expect(logText).not.toContain('192.0.2.30');
+    expect(logText).not.toContain('192.0.2.40');
+  });
+
+  it('normalizes IPv6 clients to prevent address rotation inside one subnet', async () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 8, 22, 12));
+    const config = parseEnvironment({ API_RATE_LIMIT_MAX: '2' });
+    app = buildApp({ config });
+
+    const firstResponse = await app.inject({
+      method: 'GET',
+      url: '/health',
+      remoteAddress: '2001:db8:abcd:1234::1',
+    });
+    const secondResponse = await app.inject({
+      method: 'GET',
+      url: '/health',
+      remoteAddress: '2001:db8:abcd:1234::2',
+    });
+    const rejectedResponse = await app.inject({
+      method: 'GET',
+      url: '/health',
+      remoteAddress: '2001:db8:abcd:1234::3',
+    });
+
+    expect(firstResponse.statusCode).toBe(200);
+    expect(secondResponse.statusCode).toBe(200);
+    expect(rejectedResponse.statusCode).toBe(429);
+  });
 });
+
+function registerRateLimitedRoutes(testApp: FastifyInstance): void {
+  testApp.get(
+    '/test/locations',
+    { config: { rateLimitGroup: RATE_LIMIT_GROUP.LOCATION_SEARCH } },
+    () => ({ ok: true }),
+  );
+  testApp.get(
+    '/test/weather',
+    { config: { rateLimitGroup: RATE_LIMIT_GROUP.WEATHER_FORECAST } },
+    () => ({ ok: true }),
+  );
+}
 
 type LogCapture = Readonly<{
   stream: Writable;
