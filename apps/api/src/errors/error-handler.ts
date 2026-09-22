@@ -17,6 +17,10 @@ export function registerErrorHandlers(app: FastifyInstance): void {
       return sendPublicError(reply, request, 'VALIDATION_ERROR', SAFE_VALIDATION_DETAILS);
     }
 
+    if (isBodyTooLarge(error)) {
+      return sendPublicError(reply, request, 'VALIDATION_ERROR', SAFE_VALIDATION_DETAILS, 413);
+    }
+
     request.log.error(
       {
         event: 'unexpected_error',
@@ -35,6 +39,7 @@ function sendPublicError(
   request: FastifyRequest,
   code: ApiErrorCode,
   details?: ApiErrorResponse['error']['details'],
+  statusCode?: number,
 ): FastifyReply {
   const definition = ERROR_DEFINITIONS[code];
   const response: ApiErrorResponse = {
@@ -46,7 +51,7 @@ function sendPublicError(
     },
   };
 
-  return reply.code(definition.statusCode).send(response);
+  return reply.code(statusCode ?? definition.statusCode).send(response);
 }
 
 function isValidationFailure(error: unknown): boolean {
@@ -62,4 +67,12 @@ function isValidationFailure(error: unknown): boolean {
   return (
     possibleValidationError.validation !== undefined || possibleValidationError.statusCode === 400
   );
+}
+
+function isBodyTooLarge(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+
+  return 'code' in error && error.code === 'FST_ERR_CTP_BODY_TOO_LARGE';
 }

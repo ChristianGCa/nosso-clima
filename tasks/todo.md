@@ -12,7 +12,7 @@ Plan: `tasks/plan.md`
 - [x] Checkpoint A — Foundation
 - [x] T4 — Add health, request identity and safe completion logs
 - [x] T5 — Enforce the stable public error envelope
-- [ ] T6 — Apply CORS and HTTP hardening
+- [x] T6 — Apply CORS and HTTP hardening
 - [ ] T7 — Implement global and route-group rate limits
 - [ ] Checkpoint B — HTTP platform
 - [ ] T8 — Implement the bounded TTL/LRU cache adapter
@@ -177,15 +177,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] Allowed origins receive correct CORS headers and unlisted origins do not.
-- [ ] Security headers and body-size rejection are observable through `app.inject`.
-- [ ] Forwarded headers do not affect the client address while proxy trust is disabled.
+- [x] Allowed origins receive correct CORS headers and unlisted origins do not.
+- [x] Security headers and body-size rejection are observable through `app.inject`.
+- [x] Forwarded headers do not affect the client address while proxy trust is disabled.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- security.test.ts`
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] `npm audit --audit-level=high`
+- [x] `npm test --workspace @nosso-clima/api -- security.test.ts`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] `npm audit --audit-level=high`
 
 **Dependencies:** Task 4
 
