@@ -15,7 +15,7 @@ Plan: `tasks/plan.md`
 - [x] T6 — Apply CORS and HTTP hardening
 - [x] T7 — Implement global and route-group rate limits
 - [x] Checkpoint B — HTTP platform
-- [ ] T8 — Implement the bounded TTL/LRU cache adapter
+- [x] T8 — Implement the bounded TTL/LRU cache adapter
 - [ ] T9 — Consolidate identical in-flight operations
 - [ ] T10 — Bound concurrent and queued external work
 - [ ] T11 — Add production startup and graceful shutdown
@@ -240,15 +240,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] Get, set, delete, clear and size follow the approved contract.
-- [ ] Expired values disappear and least-recently-used values are evicted at the configured bound.
-- [ ] Tests use fake/injected time and never sleep.
+- [x] Get, set, delete, clear and size follow the approved contract.
+- [x] Expired values disappear and least-recently-used values are evicted at the configured bound.
+- [x] Tests use fake/injected time and never sleep.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- cache.test.ts`
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] `npm run lint --workspace @nosso-clima/api`
+- [x] `npm test --workspace @nosso-clima/api -- cache.test.ts`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] `npm run lint --workspace @nosso-clima/api`
 
 **Dependencies:** Task 2
 
