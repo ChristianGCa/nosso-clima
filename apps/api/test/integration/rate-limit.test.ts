@@ -19,25 +19,32 @@ describe('inbound rate limiting', () => {
   it('accepts sixty global requests and rejects the next with stable error and retry headers', async () => {
     vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 8, 22, 12));
     const logCapture = createLogCapture();
-    app = buildApp({
+    const testApp = buildApp({
       logger: {
         level: 'info',
         stream: logCapture.stream,
       },
     });
+    app = testApp;
 
     const acceptedResponses = await Promise.all(
-      Array.from({ length: 60 }, () => app?.inject({ method: 'GET', url: '/health' })),
+      Array.from({ length: 60 }, () => testApp.inject({ method: 'GET', url: '/health' })),
     );
-    const rejectedResponse = await app.inject({ method: 'GET', url: '/health' });
+    const rejectedResponse = await testApp.inject({
+      method: 'GET',
+      url: '/health',
+      headers: { origin: 'http://localhost:5173' },
+    });
 
     expect(acceptedResponses).toHaveLength(60);
-    expect(acceptedResponses.every((response) => response?.statusCode === 200)).toBe(true);
+    expect(acceptedResponses.every((response) => response.statusCode === 200)).toBe(true);
     expect(rejectedResponse.statusCode).toBe(429);
     expect(rejectedResponse.headers['x-ratelimit-limit']).toBe('60');
     expect(rejectedResponse.headers['x-ratelimit-remaining']).toBe('0');
     expect(rejectedResponse.headers['x-ratelimit-reset']).toBe('60');
     expect(rejectedResponse.headers['retry-after']).toBe('60');
+    expect(rejectedResponse.headers['access-control-allow-origin']).toBe('http://localhost:5173');
+    expect(rejectedResponse.headers['content-security-policy']).toEqual(expect.any(String));
     expect(rejectedResponse.json()).toEqual({
       error: {
         code: 'RATE_LIMITED',
@@ -79,7 +86,8 @@ describe('inbound rate limiting', () => {
   });
 
   it('enforces independent limits for location and weather route groups', async () => {
-    vi.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 8, 22, 12));
+    let now = Date.UTC(2026, 8, 22, 12);
+    vi.spyOn(Date, 'now').mockImplementation(() => now);
     const config = parseEnvironment({ API_RATE_LIMIT_MAX: '100' });
     const testApp = buildApp({ config, registerRoutes: registerRateLimitedRoutes });
     app = testApp;
@@ -99,6 +107,9 @@ describe('inbound rate limiting', () => {
       url: '/test/weather',
     });
 
+    now += 60_000;
+    const resetWeatherResponse = await testApp.inject({ method: 'GET', url: '/test/weather' });
+
     expect(acceptedLocationResponses.every((response) => response.statusCode === 200)).toBe(true);
     expect(rejectedLocationResponse.statusCode).toBe(429);
     expect(rejectedLocationResponse.headers['x-ratelimit-limit']).toBe('30');
@@ -107,6 +118,8 @@ describe('inbound rate limiting', () => {
     expect(rejectedWeatherResponse.statusCode).toBe(429);
     expect(rejectedWeatherResponse.headers['x-ratelimit-limit']).toBe('15');
     expect(rejectedWeatherResponse.json().error.code).toBe('RATE_LIMITED');
+    expect(resetWeatherResponse.statusCode).toBe(200);
+    expect(resetWeatherResponse.headers['x-ratelimit-remaining']).toBe('14');
   });
 
   it('does not let alternating route groups bypass the aggregate limit', async () => {

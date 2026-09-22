@@ -13,7 +13,7 @@ Plan: `tasks/plan.md`
 - [x] T4 — Add health, request identity and safe completion logs
 - [x] T5 — Enforce the stable public error envelope
 - [x] T6 — Apply CORS and HTTP hardening
-- [ ] T7 — Implement global and route-group rate limits
+- [x] T7 — Implement global and route-group rate limits
 - [ ] Checkpoint B — HTTP platform
 - [ ] T8 — Implement the bounded TTL/LRU cache adapter
 - [ ] T9 — Consolidate identical in-flight operations
@@ -204,15 +204,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] The 61st aggregate request in a minute receives `429`, `RATE_LIMITED` and retry headers.
-- [ ] Independent 30/minute and 15/minute group buckets are both enforced in addition to the global bucket.
-- [ ] Alternating route groups, malformed requests and forwarded-address spoofing cannot bypass the aggregate ceiling.
+- [x] The 61st aggregate request in a minute receives `429`, `RATE_LIMITED` and retry headers.
+- [x] Independent 30/minute and 15/minute group buckets are both enforced in addition to the global bucket.
+- [x] Alternating route groups, malformed requests and forwarded-address spoofing cannot bypass the aggregate ceiling.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- rate-limit.test.ts`
-- [ ] Assert `@fastify/rate-limit` resolves to 11.2.0 or a reviewed newer release in major 11.
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
+- [x] `npm test --workspace @nosso-clima/api -- rate-limit.test.ts`
+- [x] Assert `@fastify/rate-limit` resolves to 11.2.0 or a reviewed newer release in major 11.
+- [x] `npm run typecheck --workspace @nosso-clima/api`
 
 **Dependencies:** Tasks 5 and 6
 

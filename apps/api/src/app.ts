@@ -30,9 +30,9 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   registerRequestContext(app);
   registerErrorHandlers(app);
-  registerRateLimit(app, config);
   registerSecurity(app);
   registerCors(app, config.corsAllowedOrigins);
+  registerRateLimit(app, config);
   registerHealthRoute(app);
   registerRoutes?.(app);
 
