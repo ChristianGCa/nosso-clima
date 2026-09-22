@@ -11,7 +11,7 @@ Plan: `tasks/plan.md`
 - [x] T3 — Validate immutable environment configuration
 - [x] Checkpoint A — Foundation
 - [x] T4 — Add health, request identity and safe completion logs
-- [ ] T5 — Enforce the stable public error envelope
+- [x] T5 — Enforce the stable public error envelope
 - [ ] T6 — Apply CORS and HTTP hardening
 - [ ] T7 — Implement global and route-group rate limits
 - [ ] Checkpoint B — HTTP platform
@@ -149,15 +149,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] Every specified error class maps to its status, stable code and current request ID.
-- [ ] Unknown routes and malformed inputs use the same envelope.
-- [ ] Unexpected errors expose neither stack nor original internal message.
+- [x] Every specified error class maps to its status, stable code and current request ID.
+- [x] Unknown routes and malformed inputs use the same envelope.
+- [x] Unexpected errors expose neither stack nor original internal message.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- errors.test.ts`
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] Review snapshots or structural assertions for forbidden internal fields.
+- [x] `npm test --workspace @nosso-clima/api -- errors.test.ts`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] Review snapshots or structural assertions for forbidden internal fields.
 
 **Dependencies:** Task 4
 
