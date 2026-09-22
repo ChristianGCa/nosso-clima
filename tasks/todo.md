@@ -16,7 +16,7 @@ Plan: `tasks/plan.md`
 - [x] T7 — Implement global and route-group rate limits
 - [x] Checkpoint B — HTTP platform
 - [x] T8 — Implement the bounded TTL/LRU cache adapter
-- [ ] T9 — Consolidate identical in-flight operations
+- [x] T9 — Consolidate identical in-flight operations
 - [ ] T10 — Bound concurrent and queued external work
 - [ ] T11 — Add production startup and graceful shutdown
 - [ ] Checkpoint C — Module complete
@@ -265,15 +265,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] Concurrent equal keys execute the operation once and receive the same settlement.
-- [ ] Different keys remain independent.
-- [ ] Success and rejection both remove registry entries so a later call can execute again.
+- [x] Concurrent equal keys execute the operation once and receive the same settlement.
+- [x] Different keys remain independent.
+- [x] Success and rejection both remove registry entries so a later call can execute again.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- single-flight.test.ts`
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] Test rejected promises without unhandled-rejection output.
+- [x] `npm test --workspace @nosso-clima/api -- single-flight.test.ts`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] Test rejected promises without unhandled-rejection output.
 
 **Dependencies:** Task 2
 
