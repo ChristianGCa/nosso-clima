@@ -14,7 +14,7 @@ Plan: `tasks/plan.md`
 - [x] T5 — Enforce the stable public error envelope
 - [x] T6 — Apply CORS and HTTP hardening
 - [x] T7 — Implement global and route-group rate limits
-- [ ] Checkpoint B — HTTP platform
+- [x] Checkpoint B — HTTP platform
 - [ ] T8 — Implement the bounded TTL/LRU cache adapter
 - [ ] T9 — Consolidate identical in-flight operations
 - [ ] T10 — Bound concurrent and queued external work
@@ -227,10 +227,10 @@ Plan: `tasks/plan.md`
 
 ## Checkpoint B: HTTP platform
 
-- [ ] `npm run check --workspace @nosso-clima/api`
-- [ ] Health, error, security and rate-limit integration suites pass without wall-clock sleeps.
-- [ ] Captured responses and logs contain no prohibited information.
-- [ ] Human reviews the public HTTP contract before resilience primitives continue.
+- [x] `npm run check --workspace @nosso-clima/api`
+- [x] Health, error, security and rate-limit integration suites pass without wall-clock sleeps.
+- [x] Captured responses and logs contain no prohibited information.
+- [x] Human reviews the public HTTP contract before resilience primitives continue.
 
 ## Phase 3: Bounded resilience primitives
 
