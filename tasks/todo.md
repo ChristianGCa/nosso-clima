@@ -17,7 +17,7 @@ Plan: `tasks/plan.md`
 - [x] Checkpoint B — HTTP platform
 - [x] T8 — Implement the bounded TTL/LRU cache adapter
 - [x] T9 — Consolidate identical in-flight operations
-- [ ] T10 — Bound concurrent and queued external work
+- [x] T10 — Bound concurrent and queued external work
 - [ ] T11 — Add production startup and graceful shutdown
 - [ ] Checkpoint C — Module complete
 
@@ -290,15 +290,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] Running operations never exceed the configured concurrency ceiling.
-- [ ] Waiting operations never exceed the configured queue bound; excess work fails immediately as unavailable.
-- [ ] Resolve and reject paths both release capacity and start the next queued operation.
+- [x] Running operations never exceed the configured concurrency ceiling.
+- [x] Waiting operations never exceed the configured queue bound; excess work fails immediately as unavailable.
+- [x] Resolve and reject paths both release capacity and start the next queued operation.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- concurrency.test.ts`
-- [ ] `npm run typecheck --workspace @nosso-clima/api`
-- [ ] Deterministic deferred-promise test proves the maximum observed concurrency.
+- [x] `npm test --workspace @nosso-clima/api -- concurrency.test.ts`
+- [x] `npm run typecheck --workspace @nosso-clima/api`
+- [x] Deterministic deferred-promise test proves the maximum observed concurrency.
 
 **Dependencies:** Task 2
 
