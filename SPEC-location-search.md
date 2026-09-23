@@ -1,6 +1,6 @@
 # Spec: Location Search
 
-- **Status:** Approved by owner on 2026-09-23; implementation plan pending review
+- **Status:** Approved by owner on 2026-09-23; implementation in progress
 - **Module id:** `location-search`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`

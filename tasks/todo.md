@@ -360,14 +360,14 @@ Plan: `tasks/plan.md`
 
 # Tasks: Location Search
 
-Status: Proposed for owner review on 2026-09-23
+Status: Approved by owner on 2026-09-23; implementation in progress
 Module id: `location-search`
 Source spec: `SPEC-location-search.md` (approved 2026-09-23)
 Plan: `tasks/plan.md`, Location Search section
 
 ## Progress
 
-- [ ] L1 — Define the public response contract and canonical query
+- [x] L1 — Define the public response contract and canonical query
 - [ ] L2 — Enforce fixed-origin, bounded geocoding transport
 - [ ] L3 — Validate and normalize upstream places
 - [ ] Checkpoint L-A — Contract and adapter boundary
@@ -382,9 +382,9 @@ Plan: `tasks/plan.md`, Location Search section
 
 **Acceptance criteria:**
 
-- [ ] The public schema matches the approved zero-to-five-location response and attribution exactly.
-- [ ] NFKC, whitespace collapse, two-to-100-code-point bounds and optional single qualifier are deterministic; controls, empty qualifiers and multiple commas fail.
-- [ ] `URLSearchParams`-based raw-query tests prove repeated or unknown keys fail; the helper requires exactly one `query` and never relies on Fastify's post-validation `request.query`.
+- [x] The public schema matches the approved zero-to-five-location response and attribution exactly.
+- [x] NFKC, whitespace collapse, two-to-100-code-point bounds and optional single qualifier are deterministic; controls, empty qualifiers and multiple commas fail.
+- [x] `URLSearchParams`-based raw-query tests prove repeated or unknown keys fail; the helper requires exactly one `query` and never relies on Fastify's post-validation `request.query`.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- location-query`; API typecheck, lint and format check.
 
