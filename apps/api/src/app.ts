@@ -9,6 +9,9 @@ import fastify, {
 import { type AppConfig, parseEnvironment } from './config/env.js';
 import { ApiError } from './errors/api-error.js';
 import { registerErrorHandlers, sendPublicError } from './errors/error-handler.js';
+import { type Cache, createCache } from './infrastructure/cache.js';
+import { type BoundedExecutor, createBoundedExecutor } from './infrastructure/concurrency.js';
+import { createSingleFlight, type SingleFlight } from './infrastructure/single-flight.js';
 import { registerCors } from './plugins/cors.js';
 import { registerRateLimit } from './plugins/rate-limit.js';
 import { registerRequestContext } from './plugins/request-context.js';
@@ -18,9 +21,16 @@ import { registerHealthRoute } from './routes/health.js';
 export type BuildAppOptions = Readonly<
   Pick<FastifyServerOptions, 'logger' | 'loggerInstance'> & {
     config?: AppConfig;
-    registerRoutes?: (app: FastifyInstance) => void;
+    registerRoutes?: (app: FastifyInstance, platform: BackendPlatformContext) => void;
   }
 >;
+
+export type BackendPlatformContext = Readonly<{
+  config: AppConfig;
+  createCache<Value>(namespace: 'location-search' | 'weather-forecast'): Cache<string, Value>;
+  singleFlight: SingleFlight;
+  executor: BoundedExecutor;
+}>;
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   const { config = parseEnvironment({}), registerRoutes, ...serverOptions } = options;
@@ -67,7 +77,20 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   });
   registerCors(app, config.corsAllowedOrigins);
   registerHealthRoute(app);
-  registerRoutes?.(app);
+  const createdCacheNamespaces = new Set<string>();
+  const platform: BackendPlatformContext = Object.freeze({
+    config,
+    createCache: <Value>(namespace: 'location-search' | 'weather-forecast') => {
+      if (createdCacheNamespaces.has(namespace)) {
+        throw new Error(`Cache namespace already initialized: ${namespace}`);
+      }
+      createdCacheNamespaces.add(namespace);
+      return createCache<string, Value>({ maxEntries: config.cacheMaxEntries });
+    },
+    singleFlight: createSingleFlight(),
+    executor: createBoundedExecutor({ maxConcurrency: config.upstreamMaxConcurrency }),
+  });
+  registerRoutes?.(app, platform);
 
   return app;
 }

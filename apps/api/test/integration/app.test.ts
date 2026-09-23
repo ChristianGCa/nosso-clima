@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app.js';
+import { parseEnvironment } from '../../src/config/env.js';
 
 describe('buildApp', () => {
   it('readies and closes an injectable app without opening a network port', async () => {
@@ -16,6 +17,41 @@ describe('buildApp', () => {
 
       expect(response.statusCode).toBe(404);
       expect(app.server.listening).toBe(false);
+    } finally {
+      await app.close();
+    }
+  });
+
+  it('passes configured bounded primitives to provider route registration', async () => {
+    const config = parseEnvironment({ CACHE_MAX_ENTRIES: '1', UPSTREAM_MAX_CONCURRENCY: '1' });
+    let context:
+      | Parameters<NonNullable<Parameters<typeof buildApp>[0]['registerRoutes']>>[1]
+      | undefined;
+    const app = buildApp({
+      config,
+      registerRoutes(_app, resources) {
+        context = resources;
+      },
+    });
+    try {
+      await app.ready();
+      expect(context?.config).toBe(config);
+      const cache = context?.createCache<number>('location-search');
+      cache?.set('first', 1, { ttlMs: 1000 });
+      cache?.set('second', 2, { ttlMs: 1000 });
+      expect(cache?.get('first')).toBeUndefined();
+      expect(cache?.get('second')).toBe(2);
+      expect(() => context?.createCache<number>('location-search')).toThrow(/already initialized/);
+      expect(context?.singleFlight).toBeDefined();
+      expect(context?.executor).toBeDefined();
+      const first = Promise.withResolvers<void>();
+      const running = context?.executor.run(() => first.promise);
+      const queued = context?.executor.run(async () => 'queued');
+      const saturation = context?.executor.run(async () => 'excess');
+      await expect(saturation).rejects.toMatchObject({ code: 'SERVICE_UNAVAILABLE' });
+      first.resolve();
+      await running;
+      await expect(queued).resolves.toBe('queued');
     } finally {
       await app.close();
     }

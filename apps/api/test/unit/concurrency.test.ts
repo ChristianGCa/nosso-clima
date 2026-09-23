@@ -92,6 +92,27 @@ describe('createBoundedExecutor', () => {
     expect(queuedStarted).toBe(true);
   });
 
+  it('rejects queued work that waits beyond its bound without starting it later', async () => {
+    vi.useFakeTimers();
+    try {
+      const executor = createBoundedExecutor({ maxConcurrency: 1, maxQueueWaitMs: 50 });
+      const running = Promise.withResolvers<void>();
+      const first = executor.run(() => running.promise);
+      const queuedOperation = vi.fn(async () => 'late');
+      const second = executor.run(queuedOperation);
+      const rejection = expect(second).rejects.toEqual(new ApiError('SERVICE_UNAVAILABLE'));
+
+      await vi.advanceTimersByTimeAsync(50);
+      await rejection;
+      running.resolve();
+      await first;
+
+      expect(queuedOperation).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it.each([0, -1, 1.5, Number.POSITIVE_INFINITY, Number.NaN])(
     'rejects an invalid concurrency limit: %s',
     (maxConcurrency) => {

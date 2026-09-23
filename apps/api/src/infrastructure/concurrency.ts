@@ -10,18 +10,23 @@ type ConcurrencyLogger = Readonly<{
 
 export type BoundedExecutorOptions = Readonly<{
   maxConcurrency: number;
+  maxQueueWaitMs?: number;
   logger?: ConcurrencyLogger;
 }>;
 
 export interface BoundedExecutor {
-  run<Value>(operation: () => Promise<Value>): Promise<Value>;
+  run<Value>(operation: () => Promise<Value>, logger?: ConcurrencyLogger): Promise<Value>;
 }
 
 export function createBoundedExecutor(options: BoundedExecutorOptions): BoundedExecutor {
   assertPositiveInteger(options.maxConcurrency, 'maxConcurrency');
+  const maxQueueWaitMs = options.maxQueueWaitMs ?? 5_000;
+  assertPositiveInteger(maxQueueWaitMs, 'maxQueueWaitMs');
 
   let runningOperations = 0;
-  const waitingOperations: Array<() => void> = [];
+  const waitingOperations: Array<
+    Readonly<{ start: () => void; timer: ReturnType<typeof setTimeout> }>
+  > = [];
 
   function start<Value>(
     operation: () => Promise<Value>,
@@ -35,20 +40,35 @@ export function createBoundedExecutor(options: BoundedExecutorOptions): BoundedE
       .then(resolve, reject)
       .finally(() => {
         runningOperations -= 1;
-        waitingOperations.shift()?.();
+        const waiting = waitingOperations.shift();
+        if (waiting) {
+          clearTimeout(waiting.timer);
+          waiting.start();
+        }
       });
   }
 
   return {
-    run<Value>(operation: () => Promise<Value>): Promise<Value> {
+    run<Value>(operation: () => Promise<Value>, logger = options.logger): Promise<Value> {
       if (runningOperations >= options.maxConcurrency) {
         if (waitingOperations.length >= options.maxConcurrency) {
-          options.logger?.warn({ event: 'upstream_saturation' }, 'upstream concurrency saturated');
+          logger?.warn({ event: 'upstream_saturation' }, 'upstream concurrency saturated');
           return Promise.reject(new ApiError('SERVICE_UNAVAILABLE'));
         }
 
         return new Promise<Value>((resolve, reject) => {
-          waitingOperations.push(() => start(operation, resolve, reject));
+          const startWaiting = (): void => start(operation, resolve, reject);
+          const timer = setTimeout(() => {
+            const position = waitingOperations.findIndex(
+              (waiting) => waiting.start === startWaiting,
+            );
+            if (position !== -1) {
+              waitingOperations.splice(position, 1);
+              logger?.warn({ event: 'upstream_saturation' }, 'upstream queue wait expired');
+              reject(new ApiError('SERVICE_UNAVAILABLE'));
+            }
+          }, maxQueueWaitMs);
+          waitingOperations.push({ start: startWaiting, timer });
         });
       }
 
