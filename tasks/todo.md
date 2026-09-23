@@ -369,7 +369,7 @@ Plan: `tasks/plan.md`, Location Search section
 
 - [x] L1 — Define the public response contract and canonical query
 - [x] L2 — Enforce fixed-origin, bounded geocoding transport
-- [ ] L3 — Validate and normalize upstream places
+- [x] L3 — Validate and normalize upstream places
 - [ ] Checkpoint L-A — Contract and adapter boundary
 - [ ] L4 — Compose cache, single-flight and shared executor
 - [ ] L5 — Register the HTTP route and verify errors, limits and privacy
@@ -418,9 +418,9 @@ Plan: `tasks/plan.md`, Location Search section
 
 **Acceptance criteria:**
 
-- [ ] Missing results become an empty list; more than ten candidates or malformed consumed fields fail closed.
-- [ ] Accepted feature codes map to at most five valid normalized locations; unsupported and historical codes are filtered.
-- [ ] Optional `admin1`, localized names, coordinates, timezone, text limits and duplicate IDs follow the spec.
+- [x] Missing results become an empty list; more than ten candidates or malformed consumed fields fail closed.
+- [x] Accepted feature codes map to at most five valid normalized locations; unsupported and historical codes are filtered.
+- [x] Optional `admin1`, localized names, coordinates, timezone, text limits and duplicate IDs follow the spec.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-geocoding`; `npm run check --workspace @nosso-clima/api`.
 
@@ -432,8 +432,8 @@ Plan: `tasks/plan.md`, Location Search section
 
 ## Checkpoint L-A: Contract and adapter boundary
 
-- [ ] L1–L3 focused tests and the complete API check pass.
-- [ ] Every provider failure and malformed consumed field has a deterministic offline test.
+- [x] L1–L3 focused tests and the complete API check pass.
+- [x] Every provider failure and malformed consumed field has a deterministic offline test.
 - [ ] A human reviews the external-data and privacy boundary before orchestration continues.
 
 ## Task L4: Compose cache, single-flight and shared executor

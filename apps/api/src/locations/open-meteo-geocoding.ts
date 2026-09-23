@@ -1,3 +1,5 @@
+import type { Location } from './location-contract.js';
+
 export type GeocodingFailureKind =
   | 'timeout'
   | 'network'
@@ -21,6 +23,116 @@ export class GeocodingFailure extends Error {
 
 const GEOCODING_URL = 'https://geocoding-api.open-meteo.com/v1/search';
 const MAX_BODY_BYTES = 65_536;
+const PUBLIC_TEXT_LIMIT = 256;
+const COUNTRY_CODE = /^[A-Z]{2}$/u;
+const POPULATED_PLACE_CODES = new Set([
+  'PPL',
+  'PPLA',
+  'PPLA2',
+  'PPLA3',
+  'PPLA4',
+  'PPLA5',
+  'PPLC',
+  'PPLF',
+  'PPLG',
+  'PPLL',
+  'PPLR',
+  'PPLS',
+  'STLMT',
+]);
+
+export type GeocodingClient = Readonly<{
+  search(query: string): Promise<readonly Location[]>;
+}>;
+
+export function createOpenMeteoGeocodingClient(fetchImpl: typeof fetch = fetch): GeocodingClient {
+  return {
+    async search(query) {
+      return normalizeGeocodingResponse(await fetchGeocodingJson(query, fetchImpl));
+    },
+  };
+}
+
+export function normalizeGeocodingResponse(payload: unknown): readonly Location[] {
+  if (!isObject(payload)) throw new GeocodingFailure('invalid_response');
+  if (!Object.hasOwn(payload, 'results')) return [];
+  if (!Array.isArray(payload.results) || payload.results.length > 10) {
+    throw new GeocodingFailure('invalid_response');
+  }
+
+  const locations: Location[] = [];
+  const seenIds = new Set<number>();
+  for (const candidate of payload.results) {
+    if (!isObject(candidate)) throw new GeocodingFailure('invalid_response');
+    const featureCode = readText(candidate.feature_code);
+    if (!POPULATED_PLACE_CODES.has(featureCode)) continue;
+
+    const id = candidate.id;
+    if (typeof id !== 'number' || !Number.isSafeInteger(id) || id <= 0) {
+      throw new GeocodingFailure('invalid_response');
+    }
+    const name = readText(candidate.name);
+    const country = readText(candidate.country);
+    const countryCode = readText(candidate.country_code);
+    const timezone = readText(candidate.timezone);
+    if (!COUNTRY_CODE.test(countryCode) || !isRuntimeTimeZone(timezone)) {
+      throw new GeocodingFailure('invalid_response');
+    }
+    const latitude = readCoordinate(candidate.latitude, -90, 90);
+    const longitude = readCoordinate(candidate.longitude, -180, 180);
+    const region =
+      candidate.admin1 === undefined || candidate.admin1 === ''
+        ? null
+        : readText(candidate.admin1, true) || null;
+
+    if (!seenIds.has(id)) {
+      seenIds.add(id);
+      if (locations.length < 5) {
+        locations.push({ id, name, region, country, countryCode, latitude, longitude, timezone });
+      }
+    }
+  }
+  return locations;
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function readText(value: unknown, allowEmpty = false): string {
+  if (
+    typeof value !== 'string' ||
+    [...value].some((character) => {
+      const codePoint = character.codePointAt(0);
+      return codePoint !== undefined && (codePoint <= 31 || codePoint === 127);
+    })
+  ) {
+    throw new GeocodingFailure('invalid_response');
+  }
+  const text = value.trim();
+  if ((!allowEmpty && text.length === 0) || [...text].length > PUBLIC_TEXT_LIMIT) {
+    throw new GeocodingFailure('invalid_response');
+  }
+  return text;
+}
+
+function readCoordinate(value: unknown, min: number, max: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < min || value > max) {
+    throw new GeocodingFailure('invalid_response');
+  }
+  return value;
+}
+
+function isRuntimeTimeZone(value: string): boolean {
+  // Intl also accepts numeric UTC offsets; this API contract requires an IANA identifier.
+  if (value.startsWith('+') || value.startsWith('-')) return false;
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: value });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export async function fetchGeocodingJson(
   canonicalQuery: string,

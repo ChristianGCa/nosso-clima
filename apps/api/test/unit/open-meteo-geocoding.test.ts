@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { fetchGeocodingJson } from '../../src/locations/open-meteo-geocoding.js';
+import {
+  createOpenMeteoGeocodingClient,
+  fetchGeocodingJson,
+  normalizeGeocodingResponse,
+} from '../../src/locations/open-meteo-geocoding.js';
 
 const jsonHeaders = { 'content-type': 'application/json; charset=utf-8' };
 
@@ -152,4 +156,214 @@ describe('Open-Meteo geocoding transport', () => {
       timeout.mockRestore();
     }
   }, 250);
+});
+
+const validPlace = {
+  id: 3_449_435,
+  name: 'São Paulo',
+  country: 'Brasil',
+  country_code: 'BR',
+  latitude: -23.5475,
+  longitude: -46.6361,
+  timezone: 'America/Sao_Paulo',
+  feature_code: 'PPLA',
+  admin1: 'São Paulo',
+};
+
+describe('Open-Meteo geocoding response validation', () => {
+  it('exposes a search client that validates before returning locations', async () => {
+    const fetchImpl: typeof fetch = async () =>
+      new Response(JSON.stringify({ results: [validPlace] }), { headers: jsonHeaders });
+    const client = createOpenMeteoGeocodingClient(fetchImpl);
+    await expect(client.search('São Paulo')).resolves.toMatchObject([{ id: validPlace.id }]);
+
+    const malformedClient = createOpenMeteoGeocodingClient(
+      async () =>
+        new Response(JSON.stringify({ results: [{ ...validPlace, latitude: 500 }] }), {
+          headers: jsonHeaders,
+        }),
+    );
+    await expect(malformedClient.search('São Paulo')).rejects.toMatchObject({
+      kind: 'invalid_response',
+    });
+  });
+
+  it('normalizes an absent result and Portuguese labels without exposing upstream fields', () => {
+    expect(normalizeGeocodingResponse({ generationtime_ms: 1 })).toEqual([]);
+    expect(
+      normalizeGeocodingResponse({ results: [{ ...validPlace, population: 12_000_000 }] }),
+    ).toEqual([
+      {
+        id: 3_449_435,
+        name: 'São Paulo',
+        region: 'São Paulo',
+        country: 'Brasil',
+        countryCode: 'BR',
+        latitude: -23.5475,
+        longitude: -46.6361,
+        timezone: 'America/Sao_Paulo',
+      },
+    ]);
+  });
+
+  it.each([undefined, '', '   '])('normalizes absent or empty admin1 to null: %s', (admin1) => {
+    const candidate = { ...validPlace, admin1 };
+    expect(normalizeGeocodingResponse({ results: [candidate] })[0]?.region).toBeNull();
+  });
+
+  it('accepts native fallback labels and trims public text', () => {
+    const candidate = {
+      ...validPlace,
+      name: '  München  ',
+      country: '  Deutschland ',
+      admin1: ' Bayern ',
+      timezone: 'Europe/Berlin',
+      country_code: 'DE',
+    };
+    expect(normalizeGeocodingResponse({ results: [candidate] })[0]).toMatchObject({
+      name: 'München',
+      country: 'Deutschland',
+      region: 'Bayern',
+    });
+  });
+
+  it.each([
+    'PPL',
+    'PPLA',
+    'PPLA2',
+    'PPLA3',
+    'PPLA4',
+    'PPLA5',
+    'PPLC',
+    'PPLF',
+    'PPLG',
+    'PPLL',
+    'PPLR',
+    'PPLS',
+    'STLMT',
+  ])('accepts current populated-place code %s', (feature_code) => {
+    expect(normalizeGeocodingResponse({ results: [{ ...validPlace, feature_code }] })).toHaveLength(
+      1,
+    );
+  });
+
+  it.each(['PPLCH', 'PPLH', 'PPLQ', 'PPLW', 'PPLX', 'ADM1'])(
+    'filters historical or unsupported code %s',
+    (feature_code) => {
+      expect(normalizeGeocodingResponse({ results: [{ ...validPlace, feature_code }] })).toEqual(
+        [],
+      );
+    },
+  );
+
+  it('preserves provider order, keeps first duplicate ID and returns at most five', () => {
+    const results = [
+      { ...validPlace, id: 1, name: 'First' },
+      { ...validPlace, id: 1, name: 'Duplicate' },
+      { ...validPlace, id: 2, name: 'Second' },
+      { ...validPlace, id: 8, feature_code: 'PPLH' },
+      ...[3, 4, 5, 6, 7].map((id) => ({ ...validPlace, id, name: `Place ${id}` })),
+    ];
+    expect(normalizeGeocodingResponse({ results }).map((place) => place.name)).toEqual([
+      'First',
+      'Second',
+      'Place 3',
+      'Place 4',
+      'Place 5',
+    ]);
+  });
+
+  it.each([
+    null,
+    [],
+    'data',
+    2,
+    { results: null },
+    { results: {} },
+    { results: Array.from({ length: 11 }, () => validPlace) },
+    { results: [null] },
+    { results: [[]] },
+    { results: [{ ...validPlace, feature_code: '' }] },
+    { results: [{ ...validPlace, feature_code: 1 }] },
+  ])('rejects invalid envelope or candidate structure: %j', (payload) => {
+    expect(() => normalizeGeocodingResponse(payload)).toThrowError(
+      expect.objectContaining({ kind: 'invalid_response' }),
+    );
+  });
+
+  it.each([
+    { id: 0 },
+    { id: -1 },
+    { id: 1.5 },
+    { id: Number.MAX_SAFE_INTEGER + 1 },
+    { id: '1' },
+    { name: '' },
+    { name: 1 },
+    { country: '' },
+    { country_code: 'br' },
+    { country_code: 'BRA' },
+    { country_code: 3 },
+    { timezone: 'Mars/Olympus' },
+    { timezone: '+01:00' },
+    { timezone: 3 },
+    { latitude: -90.1 },
+    { latitude: 90.1 },
+    { latitude: Number.NaN },
+    { longitude: -180.1 },
+    { longitude: 180.1 },
+    { longitude: Number.POSITIVE_INFINITY },
+    { admin1: 2 },
+  ])('rejects malformed consumed field: %j', (override) => {
+    expect(() =>
+      normalizeGeocodingResponse({ results: [{ ...validPlace, ...override }] }),
+    ).toThrowError(expect.objectContaining({ kind: 'invalid_response' }));
+  });
+
+  it.each(['id', 'name', 'country', 'country_code', 'timezone', 'latitude', 'longitude'] as const)(
+    'rejects a missing required field: %s',
+    (field) => {
+      const candidate: Record<string, unknown> = { ...validPlace };
+      delete candidate[field];
+      expect(() => normalizeGeocodingResponse({ results: [candidate] })).toThrowError(
+        expect.objectContaining({ kind: 'invalid_response' }),
+      );
+    },
+  );
+
+  it.each(['name', 'country', 'country_code', 'timezone', 'admin1'] as const)(
+    'rejects controls in %s',
+    (field) => {
+      expect(() =>
+        normalizeGeocodingResponse({ results: [{ ...validPlace, [field]: 'bad\u007f' }] }),
+      ).toThrowError(expect.objectContaining({ kind: 'invalid_response' }));
+    },
+  );
+
+  it.each(['name', 'country', 'timezone', 'admin1'] as const)(
+    'enforces the 256-code-point bound in %s',
+    (field) => {
+      expect(() =>
+        normalizeGeocodingResponse({ results: [{ ...validPlace, [field]: '😀'.repeat(257) }] }),
+      ).toThrowError(expect.objectContaining({ kind: 'invalid_response' }));
+    },
+  );
+
+  it('accepts WGS84 edges and exactly 256 Unicode code points', () => {
+    const result = normalizeGeocodingResponse({
+      results: [
+        { ...validPlace, latitude: 90, longitude: -180, name: '😀'.repeat(256), timezone: 'UTC' },
+      ],
+    });
+    expect(result[0]).toMatchObject({ latitude: 90, longitude: -180, name: '😀'.repeat(256) });
+  });
+
+  it('rejects an invalid accepted candidate even after five valid results', () => {
+    const results = [
+      ...[1, 2, 3, 4, 5].map((id) => ({ ...validPlace, id })),
+      { ...validPlace, id: 6, latitude: 100 },
+    ];
+    expect(() => normalizeGeocodingResponse({ results })).toThrowError(
+      expect.objectContaining({ kind: 'invalid_response' }),
+    );
+  });
 });
