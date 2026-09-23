@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+
 import fastify, {
   type FastifyInstance,
   type FastifyReply,
@@ -14,7 +16,7 @@ import { type BoundedExecutor, createBoundedExecutor } from './infrastructure/co
 import { createSingleFlight, type SingleFlight } from './infrastructure/single-flight.js';
 import { registerCors } from './plugins/cors.js';
 import { registerRateLimit } from './plugins/rate-limit.js';
-import { registerRequestContext } from './plugins/request-context.js';
+import { logRequestCompletion, registerRequestContext } from './plugins/request-context.js';
 import { registerSecurity, REQUEST_BODY_LIMIT_BYTES } from './plugins/security.js';
 import { registerHealthRoute } from './routes/health.js';
 
@@ -60,6 +62,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
             failure instanceof ApiError ? failure.code : 'INTERNAL_ERROR',
           );
         }
+        logRequestCompletion(request, reply);
       })();
     },
     trustProxy: config.trustProxy,
@@ -94,4 +97,3 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   return app;
 }
-import { randomUUID } from 'node:crypto';

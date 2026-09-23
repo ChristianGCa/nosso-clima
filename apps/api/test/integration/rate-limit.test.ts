@@ -256,7 +256,8 @@ describe('inbound rate limiting', () => {
 
   it('counts malformed URL paths and gives them the public error envelope and request ID', async () => {
     const config = parseEnvironment({ API_RATE_LIMIT_MAX: '2' });
-    app = buildApp({ config });
+    const logCapture = createLogCapture();
+    app = buildApp({ config, logger: { level: 'info', stream: logCapture.stream } });
 
     const responses = [];
     for (let index = 0; index < 3; index += 1) {
@@ -274,6 +275,12 @@ describe('inbound rate limiting', () => {
       expect(response.json().error.requestId).toBe(response.headers['x-request-id']);
       expect(response.body).not.toContain('FST_ERR_BAD_URL');
     }
+    const completionLogs = readLogRecords(logCapture.readText()).filter(
+      (record) => record.event === 'request_completed',
+    );
+    expect(completionLogs.map((record) => record.requestId)).toEqual(
+      responses.map((response) => response.headers['x-request-id']),
+    );
   });
 
   it('shares the global budget between malformed paths, preflights and normal routes', async () => {
