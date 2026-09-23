@@ -69,6 +69,10 @@ Checkpoint B verifies the complete public platform contract, including abuse cas
 
 Checkpoint C proves the module satisfies every success criterion in the approved spec and every active constraint.
 
+### Corrective reopening: 2026-09-23
+
+The owner reopened the approved backend-platform module after an execution-based audit. T12 repairs global-limit coverage for preflights and malformed URLs. T13 repairs HTTP status preservation and safe failure diagnostics. T14 repairs request identity, logging correlation and production logger startup. T15 wires bounded provider resources into `buildApp` and bounds queue waiting. T16 includes tests in the official typecheck and repeats Checkpoint C. Each corrective slice requires a focused regression test followed by the module check; the final gate includes coverage, dependency audit and production process smoke verification. No location-search or weather-forecast implementation is authorized by this reopening.
+
 ## Parallelization
 
 - T8, T9 and T10 are safe to implement in parallel after T2 because they share no mutable files.

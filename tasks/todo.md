@@ -1,6 +1,6 @@
 # Tasks: Backend Platform
 
-Status: Approved on 2026-09-21
+Status: Corrective implementation verified on 2026-09-23; pending owner review
 Module id: `backend-platform`
 Plan: `tasks/plan.md`
 
@@ -19,7 +19,15 @@ Plan: `tasks/plan.md`
 - [x] T9 — Consolidate identical in-flight operations
 - [x] T10 — Bound concurrent and queued external work
 - [x] T11 — Add production startup and graceful shutdown
-- [x] Checkpoint C — Module complete
+- [ ] Checkpoint C — Reverification after corrective work
+
+## Corrective slices (approved by owner on 2026-09-23)
+
+- [x] T12 — Count CORS preflights and malformed URLs in the global rate limit; return the request ID and public envelope for malformed URLs. Verify with focused `app.inject` abuse cases.
+- [x] T13 — Preserve documented 400, 413 and 415 client-error statuses; add safe diagnostic classifications for unexpected and startup errors. Verify with HTTP and process tests.
+- [x] T14 — Generate UUID request IDs, remove duplicate serialized keys, correlate visible cache events, and make production startup independent of development-only logging packages. Verify captured logs and production dependency install.
+- [x] T15 — Compose the bounded cache, single-flight and one outbound executor in `buildApp`, expose a typed provider registration context, and bound queue waiting. Verify shared identity, configured limits and cancellation behavior.
+- [x] T16 — Include test files in the official typecheck and rerun the complete checkpoint, including coverage, dependency audit and production smoke test.
 
 ## Phase 1: Reproducible foundation
 
@@ -337,13 +345,13 @@ Plan: `tasks/plan.md`
 
 **Estimated scope:** Medium (5 files)
 
-## Checkpoint C: Module complete
+## Checkpoint C: Module complete (reopened)
 
-- [x] Every success criterion in `SPEC-backend-platform.md` is checked.
+- [x] Every success criterion in `SPEC-backend-platform.md` is checked, including new regressions.
 - [x] `npm run check --workspace @nosso-clima/api`
 - [x] `npm run test:coverage --workspace @nosso-clima/api` meets all 80% thresholds and fully exercises critical branches.
 - [x] `npm run build --workspace @nosso-clima/api`
 - [x] `npm audit --audit-level=high` has no unmitigated high or critical finding.
 - [x] Local handoff checks complete within 90 seconds; full checks remain below five minutes.
 - [x] No floor violation or unapproved exception appears in the diff.
-- [x] Human reviews the implementation before the module is marked complete.
+- [ ] Human reviews the implementation before the module is marked complete.
