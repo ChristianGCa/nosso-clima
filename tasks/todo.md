@@ -368,7 +368,7 @@ Plan: `tasks/plan.md`, Location Search section
 ## Progress
 
 - [x] L1 — Define the public response contract and canonical query
-- [ ] L2 — Enforce fixed-origin, bounded geocoding transport
+- [x] L2 — Enforce fixed-origin, bounded geocoding transport
 - [ ] L3 — Validate and normalize upstream places
 - [ ] Checkpoint L-A — Contract and adapter boundary
 - [ ] L4 — Compose cache, single-flight and shared executor
@@ -400,9 +400,9 @@ Plan: `tasks/plan.md`, Location Search section
 
 **Acceptance criteria:**
 
-- [ ] Request uses the exact HTTPS geocoding path and approved parameters, `redirect: 'error'`, and a 5-second abort signal.
-- [ ] Only 200 JSON responses are accepted; decoded response reading stops at 65,536 bytes, including stalled-stream abort behavior.
-- [ ] Redirect, network, status, content-type, timeout and oversized-body failures are classified without exposing provider text.
+- [x] Request uses the exact HTTPS geocoding path and approved parameters, `redirect: 'error'`, and a 5-second abort signal.
+- [x] Only 200 JSON responses are accepted; decoded response reading stops at 65,536 bytes, including stalled-stream abort behavior.
+- [x] Redirect, network, status, content-type, timeout and oversized-body failures are classified without exposing provider text.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-geocoding`; API typecheck, lint and format check.
 
