@@ -38,9 +38,12 @@ Accept: application/json
 - At most one comma is accepted, and neither side of it may be empty.
 - International letters, diacritics, spaces, hyphens, apostrophes, and other ordinary place-name characters are not restricted by an ASCII allowlist.
 - Unknown or repeated query parameters are rejected instead of being ignored.
+- The route checks the raw query with `URLSearchParams` in a route-local `preValidation` hook, before Fastify's schema validator can remove additional properties. It requires exactly one `query` key and rejects every other key or repeated key with the same safe `400 VALIDATION_ERROR` envelope; the app-wide Ajv behavior is not changed.
 - Invalid input returns the existing `400 VALIDATION_ERROR` envelope with the platform's safe generic validation details.
 
 The API accepts two-character searches because Open-Meteo defines those as exact-name matches. The frontend may impose a three-character threshold and debounce as a separate `weather-ui` concern.
+
+`buildApp()` registers the location module once and owns its one `location-search` cache. `server.ts` remains responsible for process startup and shutdown, not route registration. For offline tests, `buildApp` accepts an optional `fetchImpl` dependency; production defaults to Node's built-in `fetch`.
 
 ### Successful response
 
@@ -298,7 +301,7 @@ export function createLocationSearchService(
 
 - A valid query returns the exact `200` response schema, attribution, content type, and request ID.
 - A city with no matches returns `200` and an empty array.
-- Missing, duplicate, extra, malformed, too-short, and too-long query parameters return the safe `400` envelope without calling the adapter.
+- Missing, duplicate, extra (including `?query=ab&foo=1`), malformed, too-short, and too-long query parameters return the safe `400` envelope without calling the adapter.
 - The route opts into `RATE_LIMIT_GROUP.LOCATION_SEARCH`; its 31st request in a minute returns `429` while the global limit remains independently enforced.
 - Every expected provider failure returns the safe `503` envelope; unexpected defects remain `500`.
 - Concurrent identical requests issue one fake upstream call.

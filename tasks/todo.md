@@ -373,18 +373,18 @@ Plan: `tasks/plan.md`, Location Search section
 - [ ] Checkpoint L-A — Contract and adapter boundary
 - [ ] L4 — Compose cache, single-flight and shared executor
 - [ ] L5 — Register the HTTP route and verify errors, limits and privacy
-- [ ] L6 — Wire production startup and run the complete module gate
+- [ ] L6 — Verify production composition and run the complete module gate
 - [ ] Checkpoint L-B — Owner review
 
 ## Task L1: Define public contract and canonical query
 
-**Description:** Add the TypeBox success schema and fixed attribution plus a pure query canonicalizer that rejects malformed, repeated and unknown parameters before outbound work.
+**Description:** Add the TypeBox success schema and fixed attribution plus pure helpers for query canonicalization and raw query-key validation. The route will call the raw-key helper in `preValidation`, before schema validation.
 
 **Acceptance criteria:**
 
 - [ ] The public schema matches the approved zero-to-five-location response and attribution exactly.
 - [ ] NFKC, whitespace collapse, two-to-100-code-point bounds and optional single qualifier are deterministic; controls, empty qualifiers and multiple commas fail.
-- [ ] Raw-query tests prove repeated or unknown keys fail with safe validation behavior.
+- [ ] `URLSearchParams`-based raw-query tests prove repeated or unknown keys fail; the helper requires exactly one `query` and never relies on Fastify's post-validation `request.query`.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- location-query`; API typecheck, lint and format check.
 
@@ -456,29 +456,29 @@ Plan: `tasks/plan.md`, Location Search section
 
 ## Task L5: Register HTTP route and verify integration behavior
 
-**Description:** Expose `GET /api/v1/locations` through the shared platform context and prove the public contract with Fastify injection.
+**Description:** Compose `GET /api/v1/locations` once in `app.ts` through the shared platform context and prove the public contract with Fastify injection. `server.ts` does not register the route.
 
 **Acceptance criteria:**
 
-- [ ] Valid and empty searches return the exact schema and request ID; invalid, duplicate and unknown query parameters return 400 before adapter work.
-- [ ] Location-group 30/minute and global 60/minute limits both apply; expected provider failures return 503 and defects remain 500.
-- [ ] Concurrent requests coalesce; captured logs omit queries, coordinates, cache keys, raw bodies and upstream URLs.
+- [ ] Valid and empty searches return the exact schema and request ID. A route-local `preValidation` check of raw `URLSearchParams` rejects duplicate or unknown keys before Ajv can remove them, without changing global `removeAdditional` behavior; an HTTP `app.inject` regression proves `GET /api/v1/locations?query=ab&foo=1` returns the safe 400 envelope with zero adapter calls.
+- [ ] `buildApp()` exposes the route by default, `fetchImpl` enables offline HTTP tests, `createCache('location-search')` is called once, and the location-group 30/minute and global 60/minute limits both apply.
+- [ ] Expected provider failures return 503 and defects remain 500; concurrent requests coalesce, and captured logs omit queries, coordinates, cache keys, raw bodies and upstream URLs.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- locations`; `npm run check --workspace @nosso-clima/api`.
 
 **Dependencies:** L1 and L4.
 
-**Files likely touched:** `apps/api/src/routes/locations.ts`, `apps/api/test/integration/locations.test.ts`, `apps/api/src/locations/location-search-service.ts`.
+**Files likely touched:** `apps/api/src/routes/locations.ts`, `apps/api/src/app.ts`, `apps/api/test/integration/locations.test.ts`, `apps/api/test/integration/app.test.ts`.
 
-**Estimated scope:** Medium (3 files).
+**Estimated scope:** Medium (4 files).
 
-## Task L6: Wire production startup and run full gate
+## Task L6: Verify production composition and run full gate
 
-**Description:** Register the location route in the single production server and reverify the complete API module without contacting Open-Meteo.
+**Description:** Verify that the route already composed in `buildApp()` is visible in the single production server; reverify the complete API module without contacting Open-Meteo.
 
 **Acceptance criteria:**
 
-- [ ] `server.ts` composes the route once with one platform cache and shared executor; health and backend-platform behavior remain unchanged.
+- [ ] The unchanged `server.ts` receives the route through `buildApp()` without a second `createCache('location-search')` call; health and backend-platform behavior remain unchanged.
 - [ ] A local compiled-server smoke test confirms startup, the route's offline-safe invalid-query path, and clean shutdown.
 - [ ] Coverage, build, audit, privacy assertions and all spec success criteria pass; public/commercial deployment gates remain documented.
 
@@ -486,12 +486,13 @@ Plan: `tasks/plan.md`, Location Search section
 
 **Dependencies:** L5.
 
-**Files likely touched:** `apps/api/src/server.ts`, `apps/api/test/integration/server-lifecycle.test.ts`, `apps/api/test/integration/locations.test.ts`.
+**Files likely touched:** `apps/api/test/integration/server-lifecycle.test.ts`, `apps/api/test/integration/locations.test.ts`.
 
-**Estimated scope:** Medium (3 files).
+**Estimated scope:** Small (2 files).
 
 ## Checkpoint L-B: Owner review
 
 - [ ] Every `SPEC-location-search.md` success criterion is verified or remains an explicit deployment gate.
 - [ ] All active `CONSTRAINTS.md` floors and local time budgets pass.
+- [ ] Public deployment remains blocked until `production-delivery` approves an aggregate Open-Meteo usage budget or a demonstrably lower traffic ceiling across geocoding and forecast; per-IP limits alone do not satisfy this gate.
 - [ ] Owner reviews the implementation before this module is marked complete.

@@ -119,7 +119,7 @@ Task list: `tasks/todo.md`, Location Search section
 
 ## Overview
 
-Add one geocoding route on the approved backend platform. First define the public query and response contract, then prove the fixed-origin adapter against fake responses, then compose caching and duplicate-work control, and finally register the route in the production server. No weather forecast, UI, deployment, new dependency or live provider call belongs to this plan.
+Add one geocoding route on the approved backend platform. First define the public query and response contract, then prove the fixed-origin adapter against fake responses, then compose caching and duplicate-work control, and finally register the route once in `buildApp`. No weather forecast, UI, deployment, new dependency or live provider call belongs to this plan.
 
 ## Dependency Graph
 
@@ -137,11 +137,11 @@ Each slice consumes the prior contract or boundary; L6 is last. The adapter's fo
 
 ## Architecture Decisions
 
-- **One public contract.** TypeBox describes the route's response; query canonicalization is a focused pure function. Raw Fastify query parsing must retain enough information to reject duplicate and unknown parameters before normalization.
+- **One public contract.** TypeBox describes the route's response; query canonicalization is a focused pure function. The route's `preValidation` hook inspects `URLSearchParams` from `request.raw.url` before Fastify's schema validation and requires exactly one `query` and no other keys. This catches repeats and unknown keys even though Fastify's default Ajv `removeAdditional: true` can otherwise drop extras. Keep this route-local; do not alter the global validator.
 - **One fixed-origin adapter.** Inject `fetch` for deterministic tests. Build the provider URL from constants and `URLSearchParams`; stream and cap the decoded body before parsing JSON. A 5-second `AbortSignal.timeout` covers fetch and body consumption.
 - **Fail closed at the provider boundary.** Validate every consumed upstream field, filter only documented current populated-place codes, and normalize to the approved response shape. Classify expected failures into a bounded warning without logging user input or upstream text.
 - **Use platform resources.** The route receives the process-wide executor and `SingleFlight`, plus one `location-search` cache from `BackendPlatformContext`. The service rechecks the cache inside the flight and only stores validated successes for 24 hours.
-- **One production composition point.** `server.ts` registers the location route via `buildApp({ registerRoutes })`; no second Fastify instance or provider-specific platform primitives are created.
+- **One composition point.** `app.ts` registers the location route by default inside `buildApp()` and claims `createCache('location-search')` exactly once. `server.ts` retains only startup/shutdown. `BuildAppOptions` gains optional `fetchImpl: typeof fetch` for offline route tests; production uses Node's built-in fetch. Existing `registerRoutes` callbacks remain additive and must not register a second location route or claim its cache namespace. Platform regression tests that currently claim that namespace are updated to verify the composed route or use another isolated primitive without a duplicate claim.
 
 ## Phases and Checkpoints
 
@@ -156,10 +156,10 @@ Checkpoint L-A runs focused unit tests and `npm run check --workspace @nosso-cli
 ### Phase 2: End-to-end route
 
 - L4 composes cache, `SingleFlight`, the shared executor and safe failure classification.
-- L5 adds the HTTP route with both limiter layers, safe error mapping and injectable integration tests.
-- L6 connects the route in the production entry point and repeats the full gate, including coverage, audit and a local compiled-server smoke request with a fake provider boundary where possible.
+- L5 adds the HTTP route to `buildApp()` with both limiter layers, safe error mapping, an injectable fetch seam and integration tests, including `?query=ab&foo=1` returning `400` without an upstream call.
+- L6 verifies the already-composed route through the compiled production entry point and repeats the full gate, including coverage, audit and a local smoke request that cannot contact Open-Meteo.
 
-Checkpoint L-B reviews all success criteria, captured logs and public envelopes before owner review. No test calls the live Open-Meteo service.
+Checkpoint L-B reviews all success criteria, captured logs and public envelopes before owner review. It records the unresolved aggregate Open-Meteo usage budget as an explicit blocker for public deployment under `production-delivery`, not for local module completion. No test calls the live Open-Meteo service.
 
 ## Verification Strategy
 
@@ -172,7 +172,7 @@ Checkpoint L-B reviews all success criteria, captured logs and public envelopes 
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| Duplicate query keys disappear in parsed object form | Invalid input reaches provider | Test raw-query duplicate and unknown-key cases before choosing the route parser |
+| Fastify removes unknown query keys before the handler | Invalid input reaches provider | Validate raw `URLSearchParams` in route-local `preValidation`; assert `?query=ab&foo=1` is `400` in HTTP tests |
 | A slow body read occupies a shared executor slot | Capacity exhaustion | Use the same finite abort signal through streaming, and test a stalled body |
 | Provider text or query reaches logs | Privacy failure | Assert captured logs against distinctive query, body, URL and coordinate fixtures |
 | Filtering ten upstream candidates yields fewer than five results | User sees a shorter list | Preserve provider order and accept zero to five valid populated places |
