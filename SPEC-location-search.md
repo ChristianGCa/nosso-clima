@@ -1,0 +1,386 @@
+# Spec: Location Search
+
+- **Status:** Draft for human approval
+- **Module id:** `location-search`
+- **Depends on:** `backend-platform`
+- **Consumer:** `weather-ui`
+
+## Objective
+
+Build the backend capability that accepts a city search, queries Open-Meteo's geocoding API, validates the untrusted response, and returns a small stable list of normalized populated places. A person must be able to distinguish homonymous places by city, first-level administrative region, and country before explicitly selecting one for a forecast.
+
+This module owns geocoding only. It does not render search UI, debounce keystrokes, choose a result automatically, fetch weather, reverse-geocode coordinates, persist history, or provide a provider fallback.
+
+The approved request flow is:
+
+1. Apply the global and `location-search` rate limits from `backend-platform`.
+2. Validate and canonicalize the public query.
+3. Return a valid cached result when available.
+4. Consolidate concurrent misses for the same canonical query with `SingleFlight`.
+5. Run the Open-Meteo request through the shared bounded executor.
+6. Enforce timeout, response-size, HTTP-status, JSON, and schema checks.
+7. Keep only current populated-place results, normalize them, cache the result, and return the public contract.
+
+## Public HTTP Contract
+
+### Request
+
+```http
+GET /api/v1/locations?query=São%20Paulo
+Accept: application/json
+```
+
+- `query` is the only accepted query parameter and is required exactly once.
+- The canonical value is Unicode NFKC-normalized, trimmed, and has consecutive whitespace collapsed to one space.
+- After canonicalization it must contain 2 to 100 Unicode code points.
+- C0 control characters and DEL are rejected.
+- The accepted forms are `<place>` and `<place>, <country or admin1>`.
+- At most one comma is accepted, and neither side of it may be empty.
+- International letters, diacritics, spaces, hyphens, apostrophes, and other ordinary place-name characters are not restricted by an ASCII allowlist.
+- Unknown or repeated query parameters are rejected instead of being ignored.
+- Invalid input returns the existing `400 VALIDATION_ERROR` envelope with the platform's safe generic validation details.
+
+The API accepts two-character searches because Open-Meteo defines those as exact-name matches. The frontend may impose a three-character threshold and debounce as a separate `weather-ui` concern.
+
+### Successful response
+
+```json
+{
+  "locations": [
+    {
+      "id": 3448439,
+      "name": "São Paulo",
+      "region": "São Paulo",
+      "country": "Brasil",
+      "countryCode": "BR",
+      "latitude": -23.5475,
+      "longitude": -46.63611,
+      "timezone": "America/Sao_Paulo"
+    }
+  ],
+  "attribution": {
+    "provider": "Open-Meteo",
+    "source": "GeoNames",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "isModified": true,
+    "providerUrl": "https://open-meteo.com/",
+    "sourceUrl": "https://www.geonames.org/"
+  }
+}
+```
+
+```ts
+export type Location = Readonly<{
+  id: number;
+  name: string;
+  region: string | null;
+  country: string;
+  countryCode: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+}>;
+
+export type LocationSearchResponse = Readonly<{
+  locations: readonly Location[];
+  attribution: Readonly<{
+    provider: 'Open-Meteo';
+    source: 'GeoNames';
+    license: 'CC BY 4.0';
+    licenseUrl: 'https://creativecommons.org/licenses/by/4.0/';
+    isModified: true;
+    providerUrl: 'https://open-meteo.com/';
+    sourceUrl: 'https://www.geonames.org/';
+  }>;
+}>;
+```
+
+- Success is always `200 application/json`, including when no place matches; no match is `{ "locations": [], ... }`, not `404`.
+- At most five locations are returned.
+- Upstream relevance order is preserved after filtering.
+- Duplicate Open-Meteo/GeoNames IDs are collapsed, preserving the first occurrence.
+- `region` is Open-Meteo's `admin1` value or `null` when absent.
+- Names and country/region labels use Portuguese when Open-Meteo provides a translation, otherwise its documented English or native fallback.
+- The response never echoes the search query or exposes upstream-only fields.
+- Every response inherits the platform `x-request-id` behavior.
+- `attribution` is present even for an empty list so the UI can consistently render the required credit.
+
+### Errors
+
+| Condition | HTTP | Public code |
+|---|---:|---|
+| Invalid public query | 400 | `VALIDATION_ERROR` |
+| Global or route-group limit exceeded | 429 | `RATE_LIMITED` |
+| Shared outbound executor saturated | 503 | `SERVICE_UNAVAILABLE` |
+| Open-Meteo timeout, network failure, redirect, non-200 response, invalid content type, oversized body, invalid JSON, or invalid consumed data | 503 | `SERVICE_UNAVAILABLE` |
+| Unexpected application defect | 500 | `INTERNAL_ERROR` |
+
+All errors use the stable `backend-platform` envelope. Upstream status text, response bodies, URLs, exceptions, and validation details are never returned.
+
+## Open-Meteo Adapter
+
+The adapter calls only this fixed origin and path:
+
+```text
+https://geocoding-api.open-meteo.com/v1/search
+```
+
+It constructs the URL with `URL` and `URLSearchParams`; user input is a parameter value and can never select a protocol, host, port, path, or authentication value. The request uses these fixed parameters:
+
+| Parameter | Value |
+|---|---|
+| `name` | Canonical user query |
+| `count` | `10` |
+| `language` | `pt` |
+| `format` | `json` |
+
+Ten upstream candidates allow the module to return up to five populated places even if higher-ranked results have another GeoNames feature type. No `apikey`, `countryCode`, or user-controlled extra parameter is sent in this version.
+
+### Outbound controls
+
+- Use Node.js 24's built-in `fetch` and `AbortSignal.timeout`; do not add an HTTP client dependency.
+- Abort after 5,000 ms.
+- Set `redirect: 'error'` so a provider redirect cannot silently change the approved destination.
+- Accept only HTTP `200` with a JSON content type.
+- Read at most 65,536 decoded response bytes. Abort and return `SERVICE_UNAVAILABLE` as soon as the limit is exceeded; do not call an unbounded body parser.
+- Do not retry in this module. In particular, never retry `429` blindly.
+- Send no cookies, authorization header, client IP, request ID, or application-internal metadata upstream.
+
+### External response validation
+
+External JSON begins as `unknown`. Runtime validation permits documented additional upstream fields but validates every field that influences the public response.
+
+- The top level must be an object.
+- `results` may be absent, which normalizes to an empty list, or it must be an array of at most ten objects.
+- Each candidate must have a non-empty `feature_code` string. Unsupported valid feature codes are filtered out rather than treated as provider failure.
+- Returned candidates are restricted to current populated-place codes: `PPL`, `PPLA`, `PPLA2`, `PPLA3`, `PPLA4`, `PPLA5`, `PPLC`, `PPLF`, `PPLG`, `PPLL`, `PPLR`, `PPLS`, and `STLMT`.
+- Historical, abandoned, destroyed, and subdivision-only codes such as `PPLCH`, `PPLH`, `PPLQ`, `PPLW`, and `PPLX` are not returned.
+- A candidate using an accepted code must contain a positive safe-integer `id`; non-empty bounded `name`, `country`, `country_code`, and `timezone` strings; and finite latitude/longitude within WGS84 ranges.
+- `country_code` must be two uppercase ASCII letters.
+- `timezone` must be accepted as an IANA time-zone identifier by the Node.js runtime.
+- `admin1` may be absent or empty and normalizes to `null`; otherwise it is a bounded non-control string.
+- Text fields used publicly are trimmed, limited to 256 Unicode code points, and rejected if they contain C0 controls or DEL. JSON encoding, not HTML markup, is returned.
+- If an accepted candidate is missing or violates a consumed field, the entire upstream response is rejected. The API does not silently manufacture coordinates, country data, or timezone values.
+
+## Cache and Duplicate Work
+
+- Use the bounded process-local cache, `SingleFlight`, and outbound executor provided by `backend-platform`; do not create parallel implementations.
+- The cache key is namespaced as `location-search:v1:` plus the canonical query lower-cased with locale-independent Unicode casing. Cache keys are never logged or exposed.
+- Cache successful normalized location arrays for 24 hours, including empty arrays. Static attribution need not occupy each entry.
+- Recheck the cache inside the `SingleFlight` operation so a result completed between the first lookup and ownership of the flight prevents duplicate work.
+- Cache only after complete validation and normalization.
+- Timeouts, saturation, network errors, non-200 responses, and invalid data are never cached.
+- Do not serve stale data after an upstream failure in the MVP.
+- Cache and in-flight state are process-local and disposable. Correctness must not depend on them surviving restart or being shared across instances.
+
+The canonical query exists transiently in process memory as the request, cache key, and outbound parameter. It is not persisted. Hashing the cache key would not anonymize low-entropy city names and is therefore not represented as a privacy control.
+
+## Observability, Privacy, and Licensing
+
+- Expected provider failures produce one structured warning named `geocoding_upstream_failed` with `requestId` and a bounded `failureKind`: `timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, or `invalid_response`. A redirect rejected by `fetch` is classified as `network`; the implementation must not inspect unstable exception text to distinguish it.
+- An upstream status failure may include the numeric `upstreamStatus`; it must not include status text or response content.
+- Existing cache hit/miss and executor-saturation events remain keyless and payload-free.
+- Never log or attach to telemetry the query, canonical query, cache key, full URL, coordinates, location names, raw upstream body, client IP, or environment values.
+- The UI must render provider/source/license credit from the response, with working links and an indication that Nosso Clima adapted the data, anywhere geocoding results are presented.
+- The user's query is sent to Open-Meteo, a third party. `production-delivery` must ensure the deployed privacy notice describes that transfer and the provider's applicable retention terms.
+- The fixed free endpoint is approved only for a non-commercial deployment within Open-Meteo's published free limits. A commercial, advertising-supported, subscription, or higher-volume launch requires prior approval, a spec update, a paid customer endpoint, and secret handling through deployment configuration.
+- Per-client inbound rate limits do not prove compliance with Open-Meteo's aggregate minute, hour, and day quotas across geocoding, forecasting, restarts, or multiple instances. Before any public deployment using the free endpoint, `production-delivery` must approve an application-wide usage budget or a demonstrably lower traffic ceiling. If enforcement requires a shared runtime primitive, update `backend-platform` first rather than implementing it privately here.
+- Attribution requirements remain applicable to free and paid use.
+
+## Tech Stack
+
+This module introduces no dependency and uses the versions already approved by `backend-platform`:
+
+| Concern | Choice |
+|---|---|
+| Runtime and HTTP client | Node.js `24.21.x`; built-in stable `fetch` and `AbortSignal.timeout` |
+| Language | TypeScript `7.0.2`, ESM, strict mode |
+| Server | Fastify `5.12.5` |
+| Runtime schemas | TypeBox `1.3.34` with `@fastify/type-provider-typebox` `6.1.0` |
+| Cache | Existing `lru-cache`-backed platform adapter |
+| Tests | Vitest `5.0.1` and Fastify `app.inject` |
+| Format and lint | Biome `2.5.14` |
+
+The lockfile remains authoritative. Any new dependency or major-version change requires review before implementation.
+
+## Commands
+
+```bash
+# Run the location-search unit and integration tests during a slice
+npm test --workspace @nosso-clima/api -- location
+
+# Run all API tests and coverage at the module gate
+npm test --workspace @nosso-clima/api
+npm run test:coverage --workspace @nosso-clima/api
+
+# Static checks and production build
+npm run typecheck --workspace @nosso-clima/api
+npm run lint --workspace @nosso-clima/api
+npm run format:check --workspace @nosso-clima/api
+npm run build --workspace @nosso-clima/api
+
+# Complete module handoff gate and dependency audit
+npm run check --workspace @nosso-clima/api
+npm audit --audit-level=high
+```
+
+No verification test may call the live Open-Meteo API.
+
+## Project Structure
+
+```text
+SPEC-location-search.md
+apps/api/
+├── src/
+│   ├── app.ts                              compose one process-wide location module
+│   ├── locations/
+│   │   ├── location-contract.ts            public TypeBox schemas and inferred types
+│   │   ├── location-query.ts               query validation and canonicalization
+│   │   ├── location-search-service.ts      cache, single-flight and executor orchestration
+│   │   └── open-meteo-geocoding.ts         fixed-origin adapter and response validation
+│   └── routes/
+│       └── locations.ts                    GET /api/v1/locations registration
+└── test/
+    ├── unit/
+    │   ├── location-query.test.ts
+    │   ├── location-search-service.test.ts
+    │   └── open-meteo-geocoding.test.ts
+    └── integration/
+        └── locations.test.ts
+```
+
+Planning may combine files when a smaller structure remains cohesive, but it must not mix weather-forecast logic into this module or move shared platform policy into the provider adapter.
+
+## Code Style
+
+Use named exports, immutable inputs and results, explicit return types at module boundaries, `unknown` for external data, and constructor/function injection for network side effects. Files are kebab-case; types are PascalCase; functions and values are camelCase.
+
+```ts
+export interface GeocodingClient {
+  search(query: string): Promise<readonly Location[]>;
+}
+
+export type LocationSearchService = Readonly<{
+  search(query: string): Promise<readonly Location[]>;
+}>;
+
+export function createLocationSearchService(
+  dependencies: Readonly<{
+    client: GeocodingClient;
+    cache: Cache<string, readonly Location[]>;
+    singleFlight: SingleFlight;
+    executor: BoundedExecutor;
+  }>,
+): LocationSearchService {
+  // Implementation follows the approved contract and is added test-first.
+  return createCachedLocationSearch(dependencies);
+}
+```
+
+- Route TypeBox schemas are the runtime and TypeScript source for the public HTTP contract.
+- External schema validation occurs inside the adapter before mapping.
+- Prefer focused pure functions for canonicalization and normalization.
+- Do not introduce repository classes, a dependency-injection container, generic base services, or a provider abstraction with unused implementations.
+- Do not interpolate URLs or hand-build JSON.
+
+## Testing Strategy
+
+### Unit tests
+
+- Query canonicalization: NFKC, trim, whitespace collapse, case-normalized cache key, two- and 100-code-point boundaries, optional qualifier, and rejection of controls, empty qualifier, multiple commas, too-short, and too-long input.
+- Adapter request: exact HTTPS origin/path, encoded `name`, fixed `count=10`, `language=pt`, `format=json`, no unapproved parameters/headers, 5-second signal, and redirect rejection.
+- Adapter failure matrix: timeout, network rejection, redirect, every non-200 class including `429`, wrong/missing content type, oversized stream, malformed JSON, invalid envelope, excessive result count, bad IDs, out-of-range coordinates, invalid timezone/country code, controls, and oversized strings.
+- Adapter normalization: absent results, optional/empty `admin1`, Portuguese/native fallback data, feature-code allowlist, historical/non-place filtering, deduplication, order preservation, and five-result cap.
+- Service behavior: positive and empty-result caching, exact 24-hour expiry with fake time, cache-key namespace, cache recheck, same-key coalescing, different-key independence, executor use, saturation propagation, and no cache entry after failure.
+
+### Integration tests with `app.inject`
+
+- A valid query returns the exact `200` response schema, attribution, content type, and request ID.
+- A city with no matches returns `200` and an empty array.
+- Missing, duplicate, extra, malformed, too-short, and too-long query parameters return the safe `400` envelope without calling the adapter.
+- The route opts into `RATE_LIMIT_GROUP.LOCATION_SEARCH`; its 31st request in a minute returns `429` while the global limit remains independently enforced.
+- Every expected provider failure returns the safe `503` envelope; unexpected defects remain `500`.
+- Concurrent identical requests issue one fake upstream call.
+- Captured logs correlate failures but contain none of the distinctive query, city, coordinate, cache-key, URL-query, raw-body, or client-IP fixtures.
+
+Use injected fake `fetch`, fake streams, and fake time. Tests must not use a live network or wall-clock sleeps. The entire API suite must retain at least 80% line, branch, function, and statement coverage, with the critical validation, cache, rate-limit, and public-error branches directly exercised as required by `CONSTRAINTS.md`.
+
+## Boundaries
+
+### Always
+
+- Validate public input and every external value used by the application.
+- Use the fixed HTTPS Open-Meteo origin, bounded body reader, timeout, shared rate limits, cache, `SingleFlight`, and bounded executor.
+- Return only the documented normalized contract and stable platform errors.
+- Preserve provider attribution and expose enough structured data for the UI to distinguish homonymous cities.
+- Keep tests deterministic, offline, and free of real sleeps.
+- Run the module handoff gate and dependency audit before completion.
+- Update this spec before changing observable behavior.
+
+### Ask first
+
+- Change the route, public fields, result count, language, TTL, timeout, payload limit, feature-code policy, or error semantics.
+- Add a query filter such as country, pagination, reverse geocoding, autocomplete streaming, stale-on-error, retry, or fallback provider.
+- Add or replace a dependency or create shared code consumed by another module.
+- Send additional user or request metadata upstream or add telemetry that leaves the process.
+- Configure a customer endpoint/API key, exceed free limits, or deploy for commercial use.
+- Move from the approved single-process cache/concurrency model to shared infrastructure.
+
+### Never
+
+- Let user input control an outbound origin, path, header, or credential.
+- Trust TypeScript types in place of runtime validation for Open-Meteo data.
+- Log or persist queries, location labels, coordinates, client IPs, cache keys, full URLs, raw responses, secrets, or provider error text.
+- Return raw provider payloads, provider errors, stack traces, or internal exception messages.
+- Cache failures, serve stale data implicitly, retry `429` blindly, or bypass the shared executor/rate limits.
+- Render or forward provider text as HTML.
+- Add weather data, UI behavior, tracking, accounts, history, or favorites to this module.
+- Weaken a project constraint, suppress a diagnostic, skip/delete a test, or use an unimplemented stub to make the gate pass.
+
+## Success Criteria
+
+- [ ] `GET /api/v1/locations?query=<valid>` returns zero to five normalized current populated places matching the exact public schema.
+- [ ] Homonymous results expose city, region or `null`, and country so a user can distinguish them before selection.
+- [ ] Empty search results are a cached `200` response, not an error.
+- [ ] Invalid requests fail with `400` before cache or outbound work.
+- [ ] The route participates in both the 30/minute location group and the 60/minute global rate limit.
+- [ ] Concurrent canonical-equivalent misses share one bounded external operation.
+- [ ] Valid and empty results expire after 24 hours; failures are never cached.
+- [ ] Every outbound call uses the fixed origin/parameters, a 5-second timeout, redirect rejection, and a 64 KiB decoded-body ceiling.
+- [ ] Malformed, unsafe, oversized, timed-out, rate-limited, and otherwise failed provider responses become the safe `503` envelope.
+- [ ] No response or log leaks the query beyond its necessary third-party request, or leaks cache keys, full URLs, coordinates in logs, raw bodies, or provider diagnostics.
+- [ ] Attribution is machine-readable in every success response and can be rendered by `weather-ui`.
+- [ ] Unit and integration tests use no live network or real sleep and cover all critical branches listed above.
+- [ ] Type checking, lint, formatting, API tests, build, coverage thresholds, time budgets, and the high-severity dependency audit pass.
+- [ ] Public deployment on the free endpoint remains blocked until an aggregate Open-Meteo usage strategy is approved across location and forecast traffic.
+- [ ] Commercial deployment remains blocked until an approved paid Open-Meteo configuration and privacy/licensing review exist.
+
+## Risks and Mitigations
+
+| Risk | Mitigation |
+|---|---|
+| Similar place names lead to the wrong forecast | Return region, country, country code, timezone and coordinates; require explicit UI selection |
+| Arbitrary queries create quota pressure or cache churn | Validate length, rate-limit before handler work, bound the cache, coalesce duplicates and cap concurrency/queue size |
+| Provider slowness consumes server resources | Enforce a 5-second abort, 64 KiB body ceiling and shared bounded executor |
+| Provider schema drift corrupts the UI | Validate all consumed fields and fail closed with `503` |
+| Filtering after an upstream limit returns fewer than five cities | Request ten candidates, retain only approved current populated-place codes, and accept a smaller list as correct |
+| City searches reveal location interest | Do not persist or log queries locally; disclose the necessary Open-Meteo transfer in deployment privacy material |
+| Free API use exceeds aggregate quotas or becomes commercial | Gate public launch on an aggregate usage strategy, gate commercial launch on a paid endpoint, and re-check terms in `production-delivery` |
+| Attribution is omitted by the UI | Make attribution part of every successful API response and an integration requirement for `weather-ui` |
+
+## Open Questions
+
+No question blocks planning after human approval of this draft. Approval explicitly confirms the public route and fields, Portuguese localization, current-populated-place filter, five-result limit, 24-hour cache TTL, 5-second timeout, and 64 KiB response ceiling.
+
+The application's eventual commercial status remains unresolved and is intentionally a blocking decision for `production-delivery`, not an implicit assumption in this module.
+
+## Official Sources
+
+- Open-Meteo Geocoding API: https://open-meteo.com/en/docs/geocoding-api
+- Open-Meteo terms and privacy: https://open-meteo.com/en/terms
+- Open-Meteo plans and attribution requirement: https://open-meteo.com/en/pricing
+- Creative Commons Attribution 4.0: https://creativecommons.org/licenses/by/4.0/
+- GeoNames feature codes: https://www.geonames.org/export/codes.html
+- Node.js 24 global `fetch` and `AbortSignal.timeout`: https://nodejs.org/download/release/latest-v24.x/docs/api/globals.html
+- TypeBox: https://github.com/sinclairzx81/typebox
