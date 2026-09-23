@@ -19,7 +19,7 @@ Plan: `tasks/plan.md`
 - [x] T9 — Consolidate identical in-flight operations
 - [x] T10 — Bound concurrent and queued external work
 - [x] T11 — Add production startup and graceful shutdown
-- [ ] Checkpoint C — Module complete
+- [x] Checkpoint C — Module complete
 
 ## Phase 1: Reproducible foundation
 
@@ -346,4 +346,4 @@ Plan: `tasks/plan.md`
 - [x] `npm audit --audit-level=high` has no unmitigated high or critical finding.
 - [x] Local handoff checks complete within 90 seconds; full checks remain below five minutes.
 - [x] No floor violation or unapproved exception appears in the diff.
-- [ ] Human reviews the implementation before the module is marked complete.
+- [x] Human reviews the implementation before the module is marked complete.
