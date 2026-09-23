@@ -14,15 +14,20 @@ import { registerErrorHandlers, sendPublicError } from './errors/error-handler.j
 import { type Cache, createCache } from './infrastructure/cache.js';
 import { type BoundedExecutor, createBoundedExecutor } from './infrastructure/concurrency.js';
 import { createSingleFlight, type SingleFlight } from './infrastructure/single-flight.js';
+import type { Location } from './locations/location-contract.js';
+import { createLocationSearchService } from './locations/location-search-service.js';
+import { createOpenMeteoGeocodingClient } from './locations/open-meteo-geocoding.js';
 import { registerCors } from './plugins/cors.js';
 import { registerRateLimit } from './plugins/rate-limit.js';
 import { logRequestCompletion, registerRequestContext } from './plugins/request-context.js';
 import { registerSecurity, REQUEST_BODY_LIMIT_BYTES } from './plugins/security.js';
 import { registerHealthRoute } from './routes/health.js';
+import { registerLocationRoute } from './routes/locations.js';
 
 export type BuildAppOptions = Readonly<
   Pick<FastifyServerOptions, 'logger' | 'loggerInstance'> & {
     config?: AppConfig;
+    fetchImpl?: typeof fetch;
     registerRoutes?: (app: FastifyInstance, platform: BackendPlatformContext) => void;
   }
 >;
@@ -35,7 +40,7 @@ export type BackendPlatformContext = Readonly<{
 }>;
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
-  const { config = parseEnvironment({}), registerRoutes, ...serverOptions } = options;
+  const { config = parseEnvironment({}), fetchImpl, registerRoutes, ...serverOptions } = options;
   let checkGlobalRateLimit:
     | ((request: FastifyRequest, reply: FastifyReply) => Promise<void>)
     | undefined;
@@ -93,6 +98,15 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     singleFlight: createSingleFlight(),
     executor: createBoundedExecutor({ maxConcurrency: config.upstreamMaxConcurrency }),
   });
+  registerLocationRoute(
+    app,
+    createLocationSearchService({
+      client: createOpenMeteoGeocodingClient(fetchImpl),
+      cache: platform.createCache<readonly Location[]>('location-search'),
+      singleFlight: platform.singleFlight,
+      executor: platform.executor,
+    }),
+  );
   registerRoutes?.(app, platform);
 
   return app;

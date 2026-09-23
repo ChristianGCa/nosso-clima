@@ -44,4 +44,7 @@ export const LocationSearchResponseSchema = Type.Object(
 );
 
 export type Location = Readonly<Static<typeof LocationSchema>>;
-export type LocationSearchResponse = Readonly<Static<typeof LocationSearchResponseSchema>>;
+export type LocationSearchResponse = Readonly<{
+  locations: readonly Location[];
+  attribution: Readonly<Static<typeof LocationSearchResponseSchema>['attribution']>;
+}>;

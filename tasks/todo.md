@@ -373,7 +373,7 @@ Plan: `tasks/plan.md`, Location Search section
 - [x] L3 — Validate and normalize upstream places
 - [x] Checkpoint L-A — Contract and adapter boundary
 - [x] L4 — Compose cache, single-flight and shared executor
-- [ ] L5 — Register the HTTP route and verify errors, limits and privacy
+- [x] L5 — Register the HTTP route and verify errors, limits and privacy
 - [ ] L6 — Verify production composition and run the complete module gate
 - [ ] Checkpoint L-B — Owner review
 
@@ -461,9 +461,9 @@ Plan: `tasks/plan.md`, Location Search section
 
 **Acceptance criteria:**
 
-- [ ] Valid and empty searches return the exact schema and request ID. A route-local `preValidation` check of raw `URLSearchParams` rejects duplicate or unknown keys before Ajv can remove them, without changing global `removeAdditional` behavior; an HTTP `app.inject` regression proves `GET /api/v1/locations?query=ab&foo=1` returns the safe 400 envelope with zero adapter calls.
-- [ ] `buildApp()` exposes the route by default, `fetchImpl` enables offline HTTP tests, `createCache('location-search')` is called once, and the location-group 30/minute and global 60/minute limits both apply.
-- [ ] Expected provider failures return 503 and defects remain 500; concurrent requests coalesce, and captured logs omit queries, coordinates, cache keys, raw bodies and upstream URLs.
+- [x] Valid and empty searches return the exact schema and request ID. A route-local `preValidation` check of raw `URLSearchParams` rejects duplicate or unknown keys before Ajv can remove them, without changing global `removeAdditional` behavior; an HTTP `app.inject` regression proves `GET /api/v1/locations?query=ab&foo=1` returns the safe 400 envelope with zero adapter calls.
+- [x] `buildApp()` exposes the route by default, `fetchImpl` enables offline HTTP tests, `createCache('location-search')` is called once, and the location-group 30/minute and global 60/minute limits both apply.
+- [x] Expected provider failures return 503 and defects remain 500; concurrent requests coalesce, and captured logs omit queries, coordinates, cache keys, raw bodies and upstream URLs.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- locations`; `npm run check --workspace @nosso-clima/api`.
 
