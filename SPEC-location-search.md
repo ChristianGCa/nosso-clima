@@ -1,6 +1,6 @@
 # Spec: Location Search
 
-- **Status:** Approved by owner on 2026-09-23; implementation in progress
+- **Status:** Approved by owner on 2026-09-23; local implementation verified, pending owner review at Checkpoint L-B
 - **Module id:** `location-search`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
@@ -343,21 +343,21 @@ Use injected fake `fetch`, fake streams, and fake time. Tests must not use a liv
 
 ## Success Criteria
 
-- [ ] `GET /api/v1/locations?query=<valid>` returns zero to five normalized current populated places matching the exact public schema.
-- [ ] Homonymous results expose city, region or `null`, and country so a user can distinguish them before selection.
-- [ ] Empty search results are a cached `200` response, not an error.
-- [ ] Invalid requests fail with `400` before cache or outbound work.
-- [ ] The route participates in both the 30/minute location group and the 60/minute global rate limit.
-- [ ] Concurrent canonical-equivalent misses share one bounded external operation.
-- [ ] Valid and empty results expire after 24 hours; failures are never cached.
-- [ ] Every outbound call uses the fixed origin/parameters, a 5-second timeout, redirect rejection, and a 64 KiB decoded-body ceiling.
-- [ ] Malformed, unsafe, oversized, timed-out, rate-limited, and otherwise failed provider responses become the safe `503` envelope.
-- [ ] No response or log leaks the query beyond its necessary third-party request, or leaks cache keys, full URLs, coordinates in logs, raw bodies, or provider diagnostics.
-- [ ] Attribution is machine-readable in every success response and can be rendered by `weather-ui`.
-- [ ] Unit and integration tests use no live network or real sleep and cover all critical branches listed above.
-- [ ] Type checking, lint, formatting, API tests, build, coverage thresholds, time budgets, and the high-severity dependency audit pass.
-- [ ] Public deployment on the free endpoint remains blocked until an aggregate Open-Meteo usage strategy is approved across location and forecast traffic.
-- [ ] Commercial deployment remains blocked until an approved paid Open-Meteo configuration and privacy/licensing review exist.
+- [x] `GET /api/v1/locations?query=<valid>` returns zero to five normalized current populated places matching the exact public schema.
+- [x] Homonymous results expose city, region or `null`, and country so a user can distinguish them before selection.
+- [x] Empty search results are a cached `200` response, not an error.
+- [x] Invalid requests fail with `400` before cache or outbound work.
+- [x] The route participates in both the 30/minute location group and the 60/minute global rate limit.
+- [x] Concurrent canonical-equivalent misses share one bounded external operation.
+- [x] Valid and empty results expire after 24 hours; failures are never cached.
+- [x] Every outbound call uses the fixed origin/parameters, a 5-second timeout, redirect rejection, and a 64 KiB decoded-body ceiling.
+- [x] Malformed, unsafe, oversized, timed-out, rate-limited, and otherwise failed provider responses become the safe `503` envelope.
+- [x] No response or log leaks the query beyond its necessary third-party request, or leaks cache keys, full URLs, coordinates in logs, raw bodies, or provider diagnostics.
+- [x] Attribution is machine-readable in every success response and can be rendered by `weather-ui`.
+- [x] Unit and integration tests use no live network or real sleep and cover all critical branches listed above.
+- [x] Type checking, lint, formatting, API tests, build, coverage thresholds, time budgets, and the high-severity dependency audit pass.
+- [x] Public deployment on the free endpoint remains blocked until an aggregate Open-Meteo usage strategy is approved across location and forecast traffic.
+- [x] Commercial deployment remains blocked until an approved paid Open-Meteo configuration and privacy/licensing review exist.
 
 ## Risks and Mitigations
 

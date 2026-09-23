@@ -2,6 +2,8 @@ import type { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import type { FastifyInstance } from 'fastify';
 import { type Static, Type } from 'typebox';
 
+import { ApiError } from '../errors/api-error.js';
+import { sendPublicError } from '../errors/error-handler.js';
 import {
   LOCATION_ATTRIBUTION,
   LocationSearchResponseSchema,
@@ -17,9 +19,16 @@ export function registerLocationRoute(app: FastifyInstance, service: LocationSea
     '/api/v1/locations',
     {
       config: { rateLimitGroup: RATE_LIMIT_GROUP.LOCATION_SEARCH },
-      async preValidation(request) {
+      async preValidation(request, reply) {
         // Inspect raw keys before Ajv can remove additional query properties.
-        parseLocationQuery(request.raw.url);
+        try {
+          parseLocationQuery(request.raw.url);
+        } catch (failure) {
+          if (!(failure instanceof ApiError) || failure.code !== 'VALIDATION_ERROR') throw failure;
+          return sendPublicError(reply, request, 'VALIDATION_ERROR', [
+            { field: 'request', reason: 'invalid' },
+          ]);
+        }
       },
       schema: {
         querystring: LocationQuerySchema,

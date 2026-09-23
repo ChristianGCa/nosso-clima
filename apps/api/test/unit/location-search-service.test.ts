@@ -50,20 +50,23 @@ describe('location search service', () => {
     },
   );
 
-  it('uses a namespaced, lowercase key and expires at 24 hours', async () => {
-    let now = 0;
-    const clientSearch = vi.fn(async () => [place]);
-    const { cache, service } = setup(clientSearch, () => now);
+  it.each([{ result: [place] }, { result: [] }])(
+    'uses a namespaced, lowercase key and expires a result at 24 hours',
+    async ({ result }) => {
+      let now = 0;
+      const clientSearch = vi.fn(async () => result);
+      const { cache, service } = setup(clientSearch, () => now);
 
-    await service.search('São Paulo');
-    expect(cache.get('location-search:v1:são paulo')).toEqual([place]);
-    now = 86_400_000 - 1;
-    expect(await service.search('São Paulo')).toEqual([place]);
-    expect(clientSearch).toHaveBeenCalledTimes(1);
-    now = 86_400_000;
-    expect(await service.search('São Paulo')).toEqual([place]);
-    expect(clientSearch).toHaveBeenCalledTimes(2);
-  });
+      await service.search('São Paulo');
+      expect(cache.get('location-search:v1:são paulo')).toEqual(result);
+      now = 86_400_000 - 1;
+      expect(await service.search('São Paulo')).toEqual(result);
+      expect(clientSearch).toHaveBeenCalledTimes(1);
+      now = 86_400_000;
+      expect(await service.search('São Paulo')).toEqual(result);
+      expect(clientSearch).toHaveBeenCalledTimes(2);
+    },
+  );
 
   it('rechecks the cache after becoming the single-flight owner', async () => {
     const clientSearch = vi.fn(async () => [place]);

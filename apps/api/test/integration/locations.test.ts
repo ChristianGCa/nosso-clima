@@ -92,6 +92,51 @@ describe('GET /api/v1/locations', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps homonymous places distinguishable by region and country', async () => {
+    const fetchImpl: typeof fetch = async () =>
+      new Response(
+        JSON.stringify({
+          results: [
+            {
+              id: 1,
+              name: 'Springfield',
+              admin1: 'Illinois',
+              country: 'Estados Unidos',
+              country_code: 'US',
+              latitude: 39.8,
+              longitude: -89.6,
+              timezone: 'America/Chicago',
+              feature_code: 'PPLA',
+            },
+            {
+              id: 2,
+              name: 'Springfield',
+              admin1: 'Missouri',
+              country: 'Estados Unidos',
+              country_code: 'US',
+              latitude: 37.2,
+              longitude: -93.3,
+              timezone: 'America/Chicago',
+              feature_code: 'PPL',
+            },
+          ],
+        }),
+        { headers: jsonHeaders },
+      );
+    app = buildApp({ fetchImpl });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/v1/locations?query=Springfield',
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().locations).toMatchObject([
+      { name: 'Springfield', region: 'Illinois', country: 'Estados Unidos' },
+      { name: 'Springfield', region: 'Missouri', country: 'Estados Unidos' },
+    ]);
+  });
+
   it.each([
     '/api/v1/locations',
     '/api/v1/locations?query=ab&foo=1',
@@ -106,8 +151,13 @@ describe('GET /api/v1/locations', () => {
     const response = await app.inject({ method: 'GET', url });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json()).toMatchObject({
-      error: { code: 'VALIDATION_ERROR', requestId: response.headers['x-request-id'] },
+    expect(response.json()).toEqual({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid request',
+        requestId: response.headers['x-request-id'],
+        details: [{ field: 'request', reason: 'invalid' }],
+      },
     });
     expect(fetchImpl).not.toHaveBeenCalled();
   });

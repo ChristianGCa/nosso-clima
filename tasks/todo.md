@@ -374,7 +374,7 @@ Plan: `tasks/plan.md`, Location Search section
 - [x] Checkpoint L-A — Contract and adapter boundary
 - [x] L4 — Compose cache, single-flight and shared executor
 - [x] L5 — Register the HTTP route and verify errors, limits and privacy
-- [ ] L6 — Verify production composition and run the complete module gate
+- [x] L6 — Verify production composition and run the complete module gate
 - [ ] Checkpoint L-B — Owner review
 
 ## Task L1: Define public contract and canonical query
@@ -479,9 +479,9 @@ Plan: `tasks/plan.md`, Location Search section
 
 **Acceptance criteria:**
 
-- [ ] The unchanged `server.ts` receives the route through `buildApp()` without a second `createCache('location-search')` call; health and backend-platform behavior remain unchanged.
-- [ ] A local compiled-server smoke test confirms startup, the route's offline-safe invalid-query path, and clean shutdown.
-- [ ] Coverage, build, audit, privacy assertions and all spec success criteria pass; public/commercial deployment gates remain documented.
+- [x] The unchanged `server.ts` receives the route through `buildApp()` without a second `createCache('location-search')` call; health and backend-platform behavior remain unchanged.
+- [x] A local compiled-server smoke test confirms startup, the route's offline-safe invalid-query path, and clean shutdown (2026-09-23: `/health` 200, unknown query key 400, `SIGINT` shutdown succeeded).
+- [x] Coverage, build, audit, privacy assertions and all local spec success criteria pass; public/commercial deployment gates remain documented.
 
 **Verification:** `npm run check --workspace @nosso-clima/api`; `npm run test:coverage --workspace @nosso-clima/api`; `npm audit --audit-level=high`; compiled-server smoke test.
 
@@ -493,7 +493,7 @@ Plan: `tasks/plan.md`, Location Search section
 
 ## Checkpoint L-B: Owner review
 
-- [ ] Every `SPEC-location-search.md` success criterion is verified or remains an explicit deployment gate.
-- [ ] All active `CONSTRAINTS.md` floors and local time budgets pass.
-- [ ] Public deployment remains blocked until `production-delivery` approves an aggregate Open-Meteo usage budget or a demonstrably lower traffic ceiling across geocoding and forecast; per-IP limits alone do not satisfy this gate.
+- [x] Every `SPEC-location-search.md` success criterion is verified or remains an explicit deployment gate.
+- [x] All active `CONSTRAINTS.md` floors and local time budgets pass.
+- [x] Public deployment remains blocked until `production-delivery` approves an aggregate Open-Meteo usage budget or a demonstrably lower traffic ceiling across geocoding and forecast; per-IP limits alone do not satisfy this gate.
 - [ ] Owner reviews the implementation before this module is marked complete.
