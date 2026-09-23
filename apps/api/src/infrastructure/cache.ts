@@ -5,7 +5,7 @@ export type CacheSetOptions = Readonly<{
 }>;
 
 export interface Cache<Key, Value> {
-  get(key: Key): Value | undefined;
+  get(key: Key, logger?: CacheLogger): Value | undefined;
   set(key: Key, value: Value, options: CacheSetOptions): void;
   delete(key: Key): boolean;
   clear(): void;
@@ -16,8 +16,8 @@ type CacheLog = Readonly<{
   event: 'cache_hit' | 'cache_miss';
 }>;
 
-type CacheLogger = Readonly<{
-  debug(bindings: CacheLog, message: string): void;
+export type CacheLogger = Readonly<{
+  info(bindings: CacheLog, message: string): void;
 }>;
 
 export type CacheOptions = Readonly<{
@@ -43,14 +43,14 @@ export function createCache<Key, Value>(options: CacheOptions): Cache<Key, Value
   });
 
   return {
-    get(key): Value | undefined {
+    get(key, logger = options.logger): Value | undefined {
       const entry = cache.get(toLruKey(key));
       if (entry === undefined) {
-        options.logger?.debug({ event: 'cache_miss' }, 'cache miss');
+        logger?.info({ event: 'cache_miss' }, 'cache miss');
         return undefined;
       }
 
-      options.logger?.debug({ event: 'cache_hit' }, 'cache hit');
+      logger?.info({ event: 'cache_hit' }, 'cache hit');
       return entry.value;
     },
     set(key, value, setOptions): void {

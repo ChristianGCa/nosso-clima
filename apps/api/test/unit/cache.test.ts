@@ -52,20 +52,21 @@ describe('createCache', () => {
     expect(cache.size).toBe(0);
   });
 
-  it('logs cache hits and misses without exposing cache keys', () => {
-    const debug = vi.fn();
-    const cache = createCache<string, number>({ maxEntries: 1, logger: { debug } });
+  it('logs cache hits and misses at info with request context without exposing cache keys', () => {
+    const info = vi.fn();
+    const cache = createCache<string, number>({ maxEntries: 1 });
+    const logger = { info };
     cache.set('private-location-key', 1, { ttlMs: 1_000 });
 
-    expect(cache.get('private-location-key')).toBe(1);
-    expect(cache.get('another-private-key')).toBeUndefined();
+    expect(cache.get('private-location-key', logger)).toBe(1);
+    expect(cache.get('another-private-key', logger)).toBeUndefined();
 
-    expect(debug.mock.calls).toEqual([
+    expect(info.mock.calls).toEqual([
       [{ event: 'cache_hit' }, 'cache hit'],
       [{ event: 'cache_miss' }, 'cache miss'],
     ]);
-    expect(JSON.stringify(debug.mock.calls)).not.toContain('private-location-key');
-    expect(JSON.stringify(debug.mock.calls)).not.toContain('another-private-key');
+    expect(JSON.stringify(info.mock.calls)).not.toContain('private-location-key');
+    expect(JSON.stringify(info.mock.calls)).not.toContain('another-private-key');
   });
 
   it.each([0, -1, 1.5, Number.POSITIVE_INFINITY, Number.NaN])(

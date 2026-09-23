@@ -10,7 +10,6 @@ export function registerRequestContext(app: FastifyInstance): void {
     request.log.info(
       {
         event: 'request_completed',
-        requestId: request.id,
         method: request.method,
         route: request.is404 ? 'unmatched' : request.routeOptions.url,
         statusCode: reply.statusCode,

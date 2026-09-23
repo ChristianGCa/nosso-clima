@@ -80,6 +80,9 @@ export function createLoggerOptions(
 export async function startServer(options: StartServerOptions): Promise<void> {
   let config: AppConfig;
   try {
+    if (!options.environment.NODE_ENV) {
+      throw new Error('NODE_ENV must be set to development, test or production');
+    }
     config = parseEnvironment(options.environment);
   } catch (failure) {
     options.onStartupFailure?.('configuration', failure);

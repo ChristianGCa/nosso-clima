@@ -28,7 +28,6 @@ export function registerErrorHandlers(app: FastifyInstance): void {
     request.log.error(
       {
         event: 'unexpected_error',
-        requestId: request.id,
         code: 'INTERNAL_ERROR',
         errorType: safeErrorType(error),
       },

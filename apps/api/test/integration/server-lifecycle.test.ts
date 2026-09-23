@@ -81,6 +81,21 @@ describe('createShutdownHandler', () => {
 });
 
 describe('startServer', () => {
+  it('fails before creating the app when NODE_ENV is missing', async () => {
+    const createApp = vi.fn();
+    const onStartupFailure = vi.fn();
+    await expect(
+      startServer({
+        environment: {},
+        createApp,
+        onStartupFailure,
+        onSignal: vi.fn(),
+        setExitCode: vi.fn(),
+      }),
+    ).rejects.toThrow(/NODE_ENV/);
+    expect(createApp).not.toHaveBeenCalled();
+    expect(onStartupFailure).toHaveBeenCalledWith('configuration', expect.any(Error));
+  });
   it('fails invalid configuration before creating or listening with an app', async () => {
     const createApp = vi.fn();
     const onStartupFailure = vi.fn();

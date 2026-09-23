@@ -91,7 +91,6 @@ async function enforceRateLimit(
   request.log.warn(
     {
       event: 'rate_limit_rejected',
-      requestId: request.id,
       scope,
     },
     'request rate limited',

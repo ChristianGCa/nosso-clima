@@ -67,8 +67,20 @@ describe('GET /health', () => {
     expect(healthRequestId).not.toBe('client-controlled-id');
     expect(missingRequestId).not.toBe('another-client-id');
     expect(missingRequestId).not.toBe(healthRequestId);
+    expect(healthRequestId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(missingRequestId).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
 
     const logText = logCapture.readText();
+    expect(
+      logText
+        .trim()
+        .split('\n')
+        .every((line) => (line.match(/"requestId":/g) ?? []).length === 1),
+    ).toBe(true);
     expect(logText).not.toContain('private-city');
     expect(logText).not.toContain('-23.5505');
     expect(logText).not.toContain('-46.6333');

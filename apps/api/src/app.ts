@@ -31,6 +31,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     ...serverOptions,
     bodyLimit: REQUEST_BODY_LIMIT_BYTES,
     requestIdHeader: false,
+    genReqId: () => randomUUID(),
     frameworkErrors(_error, request, reply) {
       reply.header('x-request-id', request.id);
       return (async () => {
@@ -70,3 +71,4 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
 
   return app;
 }
+import { randomUUID } from 'node:crypto';
