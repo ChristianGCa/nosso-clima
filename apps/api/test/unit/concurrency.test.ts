@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ApiError } from '../../src/errors/api-error.js';
 import { createBoundedExecutor } from '../../src/infrastructure/concurrency.js';
@@ -44,7 +44,8 @@ describe('createBoundedExecutor', () => {
   });
 
   it('rejects excess work immediately when the equally bounded queue is full', async () => {
-    const executor = createBoundedExecutor({ maxConcurrency: 2 });
+    const warn = vi.fn();
+    const executor = createBoundedExecutor({ maxConcurrency: 2, logger: { warn } });
     const releases = Array.from({ length: 4 }, () => Promise.withResolvers<void>());
     let excessStarted = false;
 
@@ -57,6 +58,10 @@ describe('createBoundedExecutor', () => {
 
     await rejection;
     expect(excessStarted).toBe(false);
+    expect(warn).toHaveBeenCalledWith(
+      { event: 'upstream_saturation' },
+      'upstream concurrency saturated',
+    );
 
     for (const release of releases) {
       release.resolve();

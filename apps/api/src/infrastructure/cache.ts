@@ -12,9 +12,18 @@ export interface Cache<Key, Value> {
   readonly size: number;
 }
 
+type CacheLog = Readonly<{
+  event: 'cache_hit' | 'cache_miss';
+}>;
+
+type CacheLogger = Readonly<{
+  debug(bindings: CacheLog, message: string): void;
+}>;
+
 export type CacheOptions = Readonly<{
   maxEntries: number;
   now?: () => number;
+  logger?: CacheLogger;
 }>;
 
 type CacheEntry<Value> = Readonly<{
@@ -35,7 +44,14 @@ export function createCache<Key, Value>(options: CacheOptions): Cache<Key, Value
 
   return {
     get(key): Value | undefined {
-      return cache.get(toLruKey(key))?.value;
+      const entry = cache.get(toLruKey(key));
+      if (entry === undefined) {
+        options.logger?.debug({ event: 'cache_miss' }, 'cache miss');
+        return undefined;
+      }
+
+      options.logger?.debug({ event: 'cache_hit' }, 'cache hit');
+      return entry.value;
     },
     set(key, value, setOptions): void {
       assertPositiveNumber(setOptions.ttlMs, 'ttlMs');

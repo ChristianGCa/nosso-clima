@@ -1,7 +1,16 @@
 import { ApiError } from '../errors/api-error.js';
 
+type UpstreamSaturationLog = Readonly<{
+  event: 'upstream_saturation';
+}>;
+
+type ConcurrencyLogger = Readonly<{
+  warn(bindings: UpstreamSaturationLog, message: string): void;
+}>;
+
 export type BoundedExecutorOptions = Readonly<{
   maxConcurrency: number;
+  logger?: ConcurrencyLogger;
 }>;
 
 export interface BoundedExecutor {
@@ -34,6 +43,7 @@ export function createBoundedExecutor(options: BoundedExecutorOptions): BoundedE
     run<Value>(operation: () => Promise<Value>): Promise<Value> {
       if (runningOperations >= options.maxConcurrency) {
         if (waitingOperations.length >= options.maxConcurrency) {
+          options.logger?.warn({ event: 'upstream_saturation' }, 'upstream concurrency saturated');
           return Promise.reject(new ApiError('SERVICE_UNAVAILABLE'));
         }
 
