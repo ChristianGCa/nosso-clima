@@ -355,3 +355,143 @@ Plan: `tasks/plan.md`
 - [x] Local handoff checks complete within 90 seconds; full checks remain below five minutes.
 - [x] No floor violation or unapproved exception appears in the diff.
 - [x] Human reviews the implementation before the module is marked complete (approved on 2026-09-23).
+
+---
+
+# Tasks: Location Search
+
+Status: Proposed for owner review on 2026-09-23
+Module id: `location-search`
+Source spec: `SPEC-location-search.md` (approved 2026-09-23)
+Plan: `tasks/plan.md`, Location Search section
+
+## Progress
+
+- [ ] L1 — Define the public response contract and canonical query
+- [ ] L2 — Enforce fixed-origin, bounded geocoding transport
+- [ ] L3 — Validate and normalize upstream places
+- [ ] Checkpoint L-A — Contract and adapter boundary
+- [ ] L4 — Compose cache, single-flight and shared executor
+- [ ] L5 — Register the HTTP route and verify errors, limits and privacy
+- [ ] L6 — Wire production startup and run the complete module gate
+- [ ] Checkpoint L-B — Owner review
+
+## Task L1: Define public contract and canonical query
+
+**Description:** Add the TypeBox success schema and fixed attribution plus a pure query canonicalizer that rejects malformed, repeated and unknown parameters before outbound work.
+
+**Acceptance criteria:**
+
+- [ ] The public schema matches the approved zero-to-five-location response and attribution exactly.
+- [ ] NFKC, whitespace collapse, two-to-100-code-point bounds and optional single qualifier are deterministic; controls, empty qualifiers and multiple commas fail.
+- [ ] Raw-query tests prove repeated or unknown keys fail with safe validation behavior.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- location-query`; API typecheck, lint and format check.
+
+**Dependencies:** Approved `SPEC-location-search.md`.
+
+**Files likely touched:** `apps/api/src/locations/location-contract.ts`, `apps/api/src/locations/location-query.ts`, `apps/api/test/unit/location-query.test.ts`.
+
+**Estimated scope:** Medium (3 files).
+
+## Task L2: Enforce fixed-origin bounded transport
+
+**Description:** Implement an injectable Node `fetch` adapter that never lets input select an origin and bounds the entire fetch/body operation.
+
+**Acceptance criteria:**
+
+- [ ] Request uses the exact HTTPS geocoding path and approved parameters, `redirect: 'error'`, and a 5-second abort signal.
+- [ ] Only 200 JSON responses are accepted; decoded response reading stops at 65,536 bytes, including stalled-stream abort behavior.
+- [ ] Redirect, network, status, content-type, timeout and oversized-body failures are classified without exposing provider text.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-geocoding`; API typecheck, lint and format check.
+
+**Dependencies:** L1 for canonical query input; transport tests do not require the HTTP route.
+
+**Files likely touched:** `apps/api/src/locations/open-meteo-geocoding.ts`, `apps/api/test/unit/open-meteo-geocoding.test.ts`.
+
+**Estimated scope:** Small (2 files).
+
+## Task L3: Validate and normalize upstream places
+
+**Description:** Treat parsed JSON as unknown, validate every consumed field, filter current populated places, deduplicate IDs and preserve relevance order.
+
+**Acceptance criteria:**
+
+- [ ] Missing results become an empty list; more than ten candidates or malformed consumed fields fail closed.
+- [ ] Accepted feature codes map to at most five valid normalized locations; unsupported and historical codes are filtered.
+- [ ] Optional `admin1`, localized names, coordinates, timezone, text limits and duplicate IDs follow the spec.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-geocoding`; `npm run check --workspace @nosso-clima/api`.
+
+**Dependencies:** L2.
+
+**Files likely touched:** `apps/api/src/locations/open-meteo-geocoding.ts`, `apps/api/test/unit/open-meteo-geocoding.test.ts`.
+
+**Estimated scope:** Small (2 files).
+
+## Checkpoint L-A: Contract and adapter boundary
+
+- [ ] L1–L3 focused tests and the complete API check pass.
+- [ ] Every provider failure and malformed consumed field has a deterministic offline test.
+- [ ] A human reviews the external-data and privacy boundary before orchestration continues.
+
+## Task L4: Compose cache, single-flight and shared executor
+
+**Description:** Orchestrate a namespaced 24-hour cache, duplicate-flight control and the backend-platform executor without creating private infrastructure.
+
+**Acceptance criteria:**
+
+- [ ] Positive and empty arrays cache for exactly 24 hours; failures never cache, and a second cache check occurs inside the flight.
+- [ ] Canonical-equivalent concurrent queries share one outbound operation; distinct queries remain independent.
+- [ ] Saturation and expected adapter failures propagate as safe 503 errors with request-correlated, bounded warnings.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- location-search-service`; API typecheck, lint and format check.
+
+**Dependencies:** L3 and Checkpoint L-A.
+
+**Files likely touched:** `apps/api/src/locations/location-search-service.ts`, `apps/api/test/unit/location-search-service.test.ts`.
+
+**Estimated scope:** Small (2 files).
+
+## Task L5: Register HTTP route and verify integration behavior
+
+**Description:** Expose `GET /api/v1/locations` through the shared platform context and prove the public contract with Fastify injection.
+
+**Acceptance criteria:**
+
+- [ ] Valid and empty searches return the exact schema and request ID; invalid, duplicate and unknown query parameters return 400 before adapter work.
+- [ ] Location-group 30/minute and global 60/minute limits both apply; expected provider failures return 503 and defects remain 500.
+- [ ] Concurrent requests coalesce; captured logs omit queries, coordinates, cache keys, raw bodies and upstream URLs.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- locations`; `npm run check --workspace @nosso-clima/api`.
+
+**Dependencies:** L1 and L4.
+
+**Files likely touched:** `apps/api/src/routes/locations.ts`, `apps/api/test/integration/locations.test.ts`, `apps/api/src/locations/location-search-service.ts`.
+
+**Estimated scope:** Medium (3 files).
+
+## Task L6: Wire production startup and run full gate
+
+**Description:** Register the location route in the single production server and reverify the complete API module without contacting Open-Meteo.
+
+**Acceptance criteria:**
+
+- [ ] `server.ts` composes the route once with one platform cache and shared executor; health and backend-platform behavior remain unchanged.
+- [ ] A local compiled-server smoke test confirms startup, the route's offline-safe invalid-query path, and clean shutdown.
+- [ ] Coverage, build, audit, privacy assertions and all spec success criteria pass; public/commercial deployment gates remain documented.
+
+**Verification:** `npm run check --workspace @nosso-clima/api`; `npm run test:coverage --workspace @nosso-clima/api`; `npm audit --audit-level=high`; compiled-server smoke test.
+
+**Dependencies:** L5.
+
+**Files likely touched:** `apps/api/src/server.ts`, `apps/api/test/integration/server-lifecycle.test.ts`, `apps/api/test/integration/locations.test.ts`.
+
+**Estimated scope:** Medium (3 files).
+
+## Checkpoint L-B: Owner review
+
+- [ ] Every `SPEC-location-search.md` success criterion is verified or remains an explicit deployment gate.
+- [ ] All active `CONSTRAINTS.md` floors and local time budgets pass.
+- [ ] Owner reviews the implementation before this module is marked complete.

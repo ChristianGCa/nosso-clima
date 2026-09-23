@@ -107,3 +107,81 @@ None. Deployment-specific proxy ranges and edge protection remain intentionally 
 ## Approval Gate
 
 Implementation may start only after the human approves this plan and the detailed tasks in `tasks/todo.md`.
+
+---
+
+# Implementation Plan: Location Search
+
+Status: Proposed for owner review on 2026-09-23
+Module id: `location-search`
+Source spec: `SPEC-location-search.md` (approved 2026-09-23)
+Task list: `tasks/todo.md`, Location Search section
+
+## Overview
+
+Add one geocoding route on the approved backend platform. First define the public query and response contract, then prove the fixed-origin adapter against fake responses, then compose caching and duplicate-work control, and finally register the route in the production server. No weather forecast, UI, deployment, new dependency or live provider call belongs to this plan.
+
+## Dependency Graph
+
+```text
+L1 public contract and canonical query
+└── L2 bounded Open-Meteo transport
+    └── L3 external validation and normalization
+        └── Checkpoint L-A
+            └── L4 cached search orchestration
+                └── L5 HTTP route and integration tests
+                    └── L6 production composition and final gate
+```
+
+Each slice consumes the prior contract or boundary; L6 is last. The adapter's focused tests may be prepared alongside the pure-query tests, but integration stays sequential.
+
+## Architecture Decisions
+
+- **One public contract.** TypeBox describes the route's response; query canonicalization is a focused pure function. Raw Fastify query parsing must retain enough information to reject duplicate and unknown parameters before normalization.
+- **One fixed-origin adapter.** Inject `fetch` for deterministic tests. Build the provider URL from constants and `URLSearchParams`; stream and cap the decoded body before parsing JSON. A 5-second `AbortSignal.timeout` covers fetch and body consumption.
+- **Fail closed at the provider boundary.** Validate every consumed upstream field, filter only documented current populated-place codes, and normalize to the approved response shape. Classify expected failures into a bounded warning without logging user input or upstream text.
+- **Use platform resources.** The route receives the process-wide executor and `SingleFlight`, plus one `location-search` cache from `BackendPlatformContext`. The service rechecks the cache inside the flight and only stores validated successes for 24 hours.
+- **One production composition point.** `server.ts` registers the location route via `buildApp({ registerRoutes })`; no second Fastify instance or provider-specific platform primitives are created.
+
+## Phases and Checkpoints
+
+### Phase 1: Contracts and untrusted boundary
+
+- L1 defines the exact public schema, attribution and canonical query rules.
+- L2 proves fixed-origin transport, timeout, redirect rejection, status/content-type checks and a 64 KiB decoded-body cap.
+- L3 validates and normalizes provider results, including empty, duplicate and malformed cases.
+
+Checkpoint L-A runs focused unit tests and `npm run check --workspace @nosso-clima/api` before orchestration expands.
+
+### Phase 2: End-to-end route
+
+- L4 composes cache, `SingleFlight`, the shared executor and safe failure classification.
+- L5 adds the HTTP route with both limiter layers, safe error mapping and injectable integration tests.
+- L6 connects the route in the production entry point and repeats the full gate, including coverage, audit and a local compiled-server smoke request with a fake provider boundary where possible.
+
+Checkpoint L-B reviews all success criteria, captured logs and public envelopes before owner review. No test calls the live Open-Meteo service.
+
+## Verification Strategy
+
+- Red-green-refactor per slice; run the focused `location` tests, then API typecheck, lint and format check.
+- Checkpoints run `npm run check --workspace @nosso-clima/api` and `npm audit --audit-level=high`.
+- Final gate also runs `npm run test:coverage --workspace @nosso-clima/api`, a production build and a process smoke test that does not call Open-Meteo.
+- Maintain every active `CONSTRAINTS.md` floor and the existing backend-platform regression suite; no skipped tests or weakened thresholds.
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Duplicate query keys disappear in parsed object form | Invalid input reaches provider | Test raw-query duplicate and unknown-key cases before choosing the route parser |
+| A slow body read occupies a shared executor slot | Capacity exhaustion | Use the same finite abort signal through streaming, and test a stalled body |
+| Provider text or query reaches logs | Privacy failure | Assert captured logs against distinctive query, body, URL and coordinate fixtures |
+| Filtering ten upstream candidates yields fewer than five results | User sees a shorter list | Preserve provider order and accept zero to five valid populated places |
+| Free-tier aggregate quota is exceeded across users or instances | Provider throttling | Keep public deployment gated on `production-delivery`'s aggregate usage strategy |
+
+## Open Questions
+
+None for local implementation. The approved spec leaves commercial use and public-deployment usage budgeting to `production-delivery`.
+
+## Approval Gate
+
+Implementation starts only after the owner approves this location-search plan and its L1–L6 tasks in `tasks/todo.md`.
