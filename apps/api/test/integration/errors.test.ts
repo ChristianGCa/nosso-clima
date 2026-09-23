@@ -84,6 +84,28 @@ describe('public error envelope', () => {
     expect(response.body).not.toContain('city');
   });
 
+  it('preserves the unsupported media type status with a safe public envelope', async () => {
+    app = buildApp({ registerRoutes: registerTestRoutes });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/test/validated',
+      headers: { 'content-type': 'application/xml' },
+      payload: '<city>private-city</city>',
+    });
+
+    expect(response.statusCode).toBe(415);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid request',
+        requestId: response.headers['x-request-id'],
+        details: [{ field: 'request', reason: 'invalid' }],
+      },
+    });
+    expect(response.body).not.toContain('private-city');
+  });
+
   it.each([
     ['VALIDATION_ERROR', 400, 'Invalid request'],
     ['NOT_FOUND', 404, 'Resource not found'],
@@ -141,6 +163,7 @@ describe('public error envelope', () => {
     expect(logText).not.toContain('stack');
     expect(logText).toContain('unexpected_error');
     expect(logText).toContain('INTERNAL_ERROR');
+    expect(logText).toContain('errorType');
   });
 
   it('sanitizes unexpected non-Error values', async () => {

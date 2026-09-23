@@ -21,11 +21,16 @@ export function registerErrorHandlers(app: FastifyInstance): void {
       return sendPublicError(reply, request, 'VALIDATION_ERROR', SAFE_VALIDATION_DETAILS, 413);
     }
 
+    if (isUnsupportedMediaType(error)) {
+      return sendPublicError(reply, request, 'VALIDATION_ERROR', SAFE_VALIDATION_DETAILS, 415);
+    }
+
     request.log.error(
       {
         event: 'unexpected_error',
         requestId: request.id,
         code: 'INTERNAL_ERROR',
+        errorType: safeErrorType(error),
       },
       'unexpected request failure',
     );
@@ -75,4 +80,21 @@ function isBodyTooLarge(error: unknown): boolean {
   }
 
   return 'code' in error && error.code === 'FST_ERR_CTP_BODY_TOO_LARGE';
+}
+
+function isUnsupportedMediaType(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'FST_ERR_CTP_INVALID_MEDIA_TYPE'
+  );
+}
+
+function safeErrorType(error: unknown): string {
+  if (error instanceof TypeError) return 'TypeError';
+  if (error instanceof RangeError) return 'RangeError';
+  if (error instanceof SyntaxError) return 'SyntaxError';
+  if (error instanceof Error) return 'Error';
+  return 'NonError';
 }

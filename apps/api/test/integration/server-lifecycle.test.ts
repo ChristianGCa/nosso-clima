@@ -5,7 +5,12 @@ import {
   type ShutdownSignal,
   type ShutdownTarget,
 } from '../../src/lifecycle/shutdown.js';
-import { createLoggerOptions, type ServerApp, startServer } from '../../src/server.js';
+import {
+  createLoggerOptions,
+  describeStartupFailure,
+  type ServerApp,
+  startServer,
+} from '../../src/server.js';
 
 describe('createShutdownHandler', () => {
   it.each<ShutdownSignal>(['SIGINT', 'SIGTERM'])(
@@ -78,17 +83,50 @@ describe('createShutdownHandler', () => {
 describe('startServer', () => {
   it('fails invalid configuration before creating or listening with an app', async () => {
     const createApp = vi.fn();
+    const onStartupFailure = vi.fn();
 
     await expect(
       startServer({
         environment: { NODE_ENV: 'production' },
         createApp,
+        onStartupFailure,
         onSignal: vi.fn(),
         setExitCode: vi.fn(),
       }),
     ).rejects.toThrow(/HOST/);
 
     expect(createApp).not.toHaveBeenCalled();
+    expect(onStartupFailure).toHaveBeenCalledWith('configuration', expect.any(Error));
+  });
+
+  it('describes startup failures with allowlisted diagnostics only', () => {
+    expect(
+      describeStartupFailure('configuration', new Error('PORT must be private-secret')),
+    ).toEqual({
+      level: 'error',
+      event: 'startup_failed',
+      stage: 'configuration',
+      field: 'PORT',
+    });
+    expect(
+      describeStartupFailure('configuration', new Error('bad CORS_ALLOWED_ORIGINS *')),
+    ).toEqual({
+      level: 'error',
+      event: 'startup_failed',
+      stage: 'configuration',
+      field: 'CORS_ALLOWED_ORIGINS',
+    });
+    expect(
+      describeStartupFailure(
+        'listen',
+        Object.assign(new Error('private path'), { code: 'EADDRINUSE' }),
+      ),
+    ).toEqual({
+      level: 'error',
+      event: 'startup_failed',
+      stage: 'listen',
+      failureCode: 'EADDRINUSE',
+    });
   });
 
   it('listens with validated configuration and connects both shutdown signals', async () => {
