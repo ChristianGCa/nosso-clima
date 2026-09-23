@@ -354,19 +354,19 @@ No test performs a real network request or sleeps on wall-clock time. The suite 
 
 ## Success Criteria
 
-- [ ] Valid configuration starts one Fastify instance; invalid configuration fails before listening.
-- [ ] `GET /health` matches the documented contract and performs no external I/O.
-- [ ] Every response has `x-request-id`; every error has the same ID in its body.
-- [ ] Validation, not-found, rate-limit, unavailable and unexpected errors match the stable envelope.
-- [ ] The 61st aggregate request from one normalized IP in a minute receives `429` and retry information, including when requests alternate between route groups.
-- [ ] Independent route-group counters enforce the approved 30/minute and 15/minute ceilings without replacing the global counter.
-- [ ] Spoofed forwarding headers do not create new limiter identities when proxy trust is disabled.
-- [ ] Cache TTL, LRU bounds and `SingleFlight` behavior pass deterministic tests.
-- [ ] External work never exceeds configured concurrency or an equally bounded waiting queue.
-- [ ] Logs correlate requests while excluding the prohibited data fields.
-- [ ] SIGINT and SIGTERM close the server gracefully.
-- [ ] Build, types, lint, format, tests, coverage and dependency audit pass.
-- [ ] Coverage and execution time satisfy `CONSTRAINTS.md`.
+- [x] Valid configuration starts one Fastify instance; invalid configuration fails before listening.
+- [x] `GET /health` matches the documented contract and performs no external I/O.
+- [x] Every response has `x-request-id`; every error has the same ID in its body.
+- [x] Validation, not-found, rate-limit, unavailable and unexpected errors match the stable envelope.
+- [x] The 61st aggregate request from one normalized IP in a minute receives `429` and retry information, including when requests alternate between route groups.
+- [x] Independent route-group counters enforce the approved 30/minute and 15/minute ceilings without replacing the global counter.
+- [x] Spoofed forwarding headers do not create new limiter identities when proxy trust is disabled.
+- [x] Cache TTL, LRU bounds and `SingleFlight` behavior pass deterministic tests.
+- [x] External work never exceeds configured concurrency or an equally bounded waiting queue.
+- [x] Logs correlate requests while excluding the prohibited data fields.
+- [x] SIGINT and SIGTERM close the server gracefully.
+- [x] Build, types, lint, format, tests, coverage and dependency audit pass.
+- [x] Coverage and execution time satisfy `CONSTRAINTS.md`.
 
 ## Risks and Mitigations
 

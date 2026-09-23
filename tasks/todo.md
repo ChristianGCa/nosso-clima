@@ -339,11 +339,11 @@ Plan: `tasks/plan.md`
 
 ## Checkpoint C: Module complete
 
-- [ ] Every success criterion in `SPEC-backend-platform.md` is checked.
-- [ ] `npm run check --workspace @nosso-clima/api`
-- [ ] `npm run test:coverage --workspace @nosso-clima/api` meets all 80% thresholds and fully exercises critical branches.
-- [ ] `npm run build --workspace @nosso-clima/api`
-- [ ] `npm audit --audit-level=high` has no unmitigated high or critical finding.
-- [ ] Local handoff checks complete within 90 seconds; full checks remain below five minutes.
-- [ ] No floor violation or unapproved exception appears in the diff.
+- [x] Every success criterion in `SPEC-backend-platform.md` is checked.
+- [x] `npm run check --workspace @nosso-clima/api`
+- [x] `npm run test:coverage --workspace @nosso-clima/api` meets all 80% thresholds and fully exercises critical branches.
+- [x] `npm run build --workspace @nosso-clima/api`
+- [x] `npm audit --audit-level=high` has no unmitigated high or critical finding.
+- [x] Local handoff checks complete within 90 seconds; full checks remain below five minutes.
+- [x] No floor violation or unapproved exception appears in the diff.
 - [ ] Human reviews the implementation before the module is marked complete.
