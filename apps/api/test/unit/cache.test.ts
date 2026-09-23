@@ -22,6 +22,18 @@ describe('createCache', () => {
     expect(cache.size).toBe(1);
   });
 
+  it('expires an entry at the exact TTL boundary', () => {
+    let now = 0;
+    const cache = createCache<string, string>({ maxEntries: 1, now: () => now });
+    cache.set('city', 'São Paulo', { ttlMs: 100 });
+
+    now = 99;
+    expect(cache.get('city')).toBe('São Paulo');
+    now = 100;
+    expect(cache.get('city')).toBeUndefined();
+    expect(cache.size).toBe(0);
+  });
+
   it('evicts the least-recently-used value at the configured bound', () => {
     const cache = createCache<string, number>({ maxEntries: 2 });
 

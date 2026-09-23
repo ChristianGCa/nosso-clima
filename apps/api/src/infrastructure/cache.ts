@@ -44,7 +44,10 @@ export function createCache<Key, Value>(options: CacheOptions): Cache<Key, Value
 
   return {
     get(key, logger = options.logger): Value | undefined {
-      const entry = cache.get(toLruKey(key));
+      const lruKey = toLruKey(key);
+      // lru-cache treats age === TTL as fresh; the public cache contract expires at that boundary.
+      if (cache.getRemainingTTL(lruKey) <= 0) cache.delete(lruKey);
+      const entry = cache.get(lruKey);
       if (entry === undefined) {
         logger?.info({ event: 'cache_miss' }, 'cache miss');
         return undefined;

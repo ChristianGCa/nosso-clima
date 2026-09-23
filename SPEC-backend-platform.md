@@ -168,6 +168,7 @@ interface SingleFlight {
 ```
 
 - The cache uses LRU eviction and per-entry TTL.
+- An entry expires when its age reaches the configured TTL (`age >= ttlMs`), including the exact boundary; a read at that instant returns `undefined` and removes it.
 - A missing key and an expired key both return `undefined`; an expired entry is removed.
 - The maximum number of entries is configured and cannot grow without a bound.
 - Cache values are process-local and disposable; correctness must not depend on their survival.
