@@ -26,7 +26,11 @@ const GROUP_RATE_LIMIT_MAX: Readonly<Record<RateLimitGroup, number>> = {
 };
 const GROUP_RATE_LIMIT_WINDOW_MS = 60_000;
 
-export function registerRateLimit(app: FastifyInstance, config: GlobalRateLimitConfig): void {
+export function registerRateLimit(
+  app: FastifyInstance,
+  config: GlobalRateLimitConfig,
+  onGlobalReady?: (check: (request: FastifyRequest, reply: FastifyReply) => Promise<void>) => void,
+): void {
   app.register(rateLimit, { global: false });
   app.after((error) => {
     if (error) {
@@ -37,6 +41,9 @@ export function registerRateLimit(app: FastifyInstance, config: GlobalRateLimitC
       max: config.apiRateLimitMax,
       timeWindow: config.apiRateLimitWindowMs,
     });
+    onGlobalReady?.((request, reply) =>
+      enforceRateLimit(checkGlobalRateLimit, request, reply, 'global'),
+    );
     const checkGroupRateLimit: Readonly<Record<RateLimitGroup, RateLimitCheck>> = {
       [RATE_LIMIT_GROUP.LOCATION_SEARCH]: app.createRateLimit({
         max: GROUP_RATE_LIMIT_MAX[RATE_LIMIT_GROUP.LOCATION_SEARCH],

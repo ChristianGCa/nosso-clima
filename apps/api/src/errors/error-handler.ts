@@ -34,7 +34,7 @@ export function registerErrorHandlers(app: FastifyInstance): void {
   });
 }
 
-function sendPublicError(
+export function sendPublicError(
   reply: FastifyReply,
   request: FastifyRequest,
   code: ApiErrorCode,

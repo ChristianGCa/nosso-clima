@@ -219,6 +219,78 @@ describe('inbound rate limiting', () => {
     expect(secondResponse.statusCode).toBe(200);
     expect(rejectedResponse.statusCode).toBe(429);
   });
+
+  it.each([
+    ['allowed', { origin: 'http://localhost:5173', 'access-control-request-method': 'GET' }, 204],
+    [
+      'unlisted',
+      { origin: 'https://unlisted.example.com', 'access-control-request-method': 'GET' },
+      204,
+    ],
+    ['malformed', { origin: 'http://localhost:5173' }, 400],
+  ] as const)(
+    'counts %s CORS preflights before responding',
+    async (_name, headers, allowedStatus) => {
+      const config = parseEnvironment({ API_RATE_LIMIT_MAX: '2' });
+      app = buildApp({ config });
+
+      const responses = [];
+      for (let index = 0; index < 3; index += 1) {
+        responses.push(await app.inject({ method: 'OPTIONS', url: '/health', headers }));
+      }
+
+      expect(responses.map((response) => response.statusCode)).toEqual([
+        allowedStatus,
+        allowedStatus,
+        429,
+      ]);
+      expect(responses[2]?.json()).toEqual({
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many requests',
+          requestId: responses[2]?.headers['x-request-id'],
+        },
+      });
+    },
+  );
+
+  it('counts malformed URL paths and gives them the public error envelope and request ID', async () => {
+    const config = parseEnvironment({ API_RATE_LIMIT_MAX: '2' });
+    app = buildApp({ config });
+
+    const responses = [];
+    for (let index = 0; index < 3; index += 1) {
+      responses.push(await app.inject({ method: 'GET', url: '/%' }));
+    }
+
+    expect(responses.map((response) => response.statusCode)).toEqual([400, 400, 429]);
+    expect(responses.map((response) => response.json().error.code)).toEqual([
+      'VALIDATION_ERROR',
+      'VALIDATION_ERROR',
+      'RATE_LIMITED',
+    ]);
+    for (const response of responses) {
+      expect(response.headers['x-request-id']).toEqual(expect.any(String));
+      expect(response.json().error.requestId).toBe(response.headers['x-request-id']);
+      expect(response.body).not.toContain('FST_ERR_BAD_URL');
+    }
+  });
+
+  it('shares the global budget between malformed paths, preflights and normal routes', async () => {
+    app = buildApp({ config: parseEnvironment({ API_RATE_LIMIT_MAX: '2' }) });
+
+    const malformed = await app.inject({ method: 'GET', url: '/%' });
+    const preflight = await app.inject({
+      method: 'OPTIONS',
+      url: '/health',
+      headers: { origin: 'http://localhost:5173', 'access-control-request-method': 'GET' },
+    });
+    const health = await app.inject({ method: 'GET', url: '/health' });
+
+    expect(malformed.statusCode).toBe(400);
+    expect(preflight.statusCode).toBe(204);
+    expect(health.statusCode).toBe(429);
+  });
 });
 
 function registerRateLimitedRoutes(testApp: FastifyInstance): void {

@@ -23,4 +23,12 @@ export function registerCors(app: FastifyInstance, allowedOrigins: readonly stri
     allowedHeaders: [],
     strictPreflight: false,
   });
+
+  app.addHook('onSend', (request, reply, payload, done) => {
+    const origin = request.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      reply.header('access-control-allow-origin', origin);
+    }
+    done(null, payload);
+  });
 }
