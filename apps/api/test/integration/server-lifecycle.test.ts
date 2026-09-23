@@ -5,6 +5,7 @@ import {
   type ShutdownSignal,
   type ShutdownTarget,
 } from '../../src/lifecycle/shutdown.js';
+import { createLoggerOptions, type ServerApp, startServer } from '../../src/server.js';
 
 describe('createShutdownHandler', () => {
   it.each<ShutdownSignal>(['SIGINT', 'SIGTERM'])(
@@ -71,5 +72,80 @@ describe('createShutdownHandler', () => {
     expect(info).not.toHaveBeenCalled();
     expect(exitCodes).toEqual([1]);
     expect(JSON.stringify(error.mock.calls)).not.toContain(closeFailure.message);
+  });
+});
+
+describe('startServer', () => {
+  it('fails invalid configuration before creating or listening with an app', async () => {
+    const createApp = vi.fn();
+
+    await expect(
+      startServer({
+        environment: { NODE_ENV: 'production' },
+        createApp,
+        onSignal: vi.fn(),
+        setExitCode: vi.fn(),
+      }),
+    ).rejects.toThrow(/HOST/);
+
+    expect(createApp).not.toHaveBeenCalled();
+  });
+
+  it('listens with validated configuration and connects both shutdown signals', async () => {
+    const listen = vi.fn(async () => 'http://127.0.0.1:43117');
+    const close = vi.fn(async () => undefined);
+    const app: ServerApp = {
+      listen,
+      close,
+      log: { info: vi.fn(), error: vi.fn() },
+    };
+    const signalHandlers = new Map<ShutdownSignal, () => void>();
+
+    await startServer({
+      environment: { NODE_ENV: 'test', HOST: '127.0.0.1', PORT: '43117' },
+      createApp: () => app,
+      onSignal: (signal, handler) => signalHandlers.set(signal, handler),
+      setExitCode: vi.fn(),
+    });
+
+    expect(listen).toHaveBeenCalledWith({ host: '127.0.0.1', port: 43_117 });
+    expect([...signalHandlers.keys()]).toEqual(['SIGINT', 'SIGTERM']);
+
+    signalHandlers.get('SIGTERM')?.();
+    await Promise.resolve();
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('closes the app and propagates a startup failure from listen', async () => {
+    const startupFailure = new Error('listen failed');
+    const close = vi.fn(async () => undefined);
+    const app: ServerApp = {
+      listen: vi.fn(async () => {
+        throw startupFailure;
+      }),
+      close,
+      log: { info: vi.fn(), error: vi.fn() },
+    };
+
+    await expect(
+      startServer({
+        environment: { NODE_ENV: 'test' },
+        createApp: () => app,
+        onSignal: vi.fn(),
+        setExitCode: vi.fn(),
+      }),
+    ).rejects.toBe(startupFailure);
+
+    expect(close).toHaveBeenCalledOnce();
+  });
+
+  it('enables pretty logs only in development', () => {
+    expect(createLoggerOptions({ nodeEnv: 'development', logLevel: 'debug' })).toEqual({
+      level: 'debug',
+      transport: { target: 'pino-pretty' },
+    });
+    expect(createLoggerOptions({ nodeEnv: 'production', logLevel: 'info' })).toEqual({
+      level: 'info',
+    });
   });
 });

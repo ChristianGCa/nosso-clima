@@ -18,7 +18,7 @@ Plan: `tasks/plan.md`
 - [x] T8 — Implement the bounded TTL/LRU cache adapter
 - [x] T9 — Consolidate identical in-flight operations
 - [x] T10 — Bound concurrent and queued external work
-- [ ] T11 — Add production startup and graceful shutdown
+- [x] T11 — Add production startup and graceful shutdown
 - [ ] Checkpoint C — Module complete
 
 ## Phase 1: Reproducible foundation
@@ -315,15 +315,15 @@ Plan: `tasks/plan.md`
 
 **Acceptance criteria:**
 
-- [ ] `server.ts` is the only module that calls `listen` and reads the real process environment.
-- [ ] SIGINT and SIGTERM close Fastify once and produce the documented exit behavior.
-- [ ] Production build starts, serves `/health` and stops cleanly without contacting Open-Meteo.
+- [x] `server.ts` is the only module that calls `listen` and reads the real process environment.
+- [x] SIGINT and SIGTERM close Fastify once and produce the documented exit behavior.
+- [x] Production build starts, serves `/health` and stops cleanly without contacting Open-Meteo.
 
 **Verification:**
 
-- [ ] `npm test --workspace @nosso-clima/api -- server-lifecycle.test.ts`
-- [ ] `npm run build --workspace @nosso-clima/api`
-- [ ] Run the compiled server smoke test, request `/health`, send SIGTERM and verify clean exit.
+- [x] `npm test --workspace @nosso-clima/api -- server-lifecycle.test.ts`
+- [x] `npm run build --workspace @nosso-clima/api`
+- [x] Run the compiled server smoke test, request `/health`, send SIGTERM and verify clean exit.
 
 **Dependencies:** Tasks 3 through 10
 
