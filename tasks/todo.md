@@ -28,6 +28,7 @@ Plan: `tasks/plan.md`
 - [x] T14 — Generate UUID request IDs, remove duplicate serialized keys, correlate visible cache events, and make production startup independent of development-only logging packages. Verify captured logs and production dependency install.
 - [x] T15 — Compose the bounded cache, single-flight and one outbound executor in `buildApp`, expose a typed provider registration context, and bound queue waiting. Verify shared identity, configured limits and cancellation behavior.
 - [x] T16 — Include test files in the official typecheck and rerun the complete checkpoint, including coverage, dependency audit and production smoke test.
+- [x] T17 — Make cache expiry inclusive at the exact TTL boundary, with a deterministic regression test (owner approved 2026-09-23 during L4).
 
 ## Phase 1: Reproducible foundation
 
@@ -370,8 +371,8 @@ Plan: `tasks/plan.md`, Location Search section
 - [x] L1 — Define the public response contract and canonical query
 - [x] L2 — Enforce fixed-origin, bounded geocoding transport
 - [x] L3 — Validate and normalize upstream places
-- [ ] Checkpoint L-A — Contract and adapter boundary
-- [ ] L4 — Compose cache, single-flight and shared executor
+- [x] Checkpoint L-A — Contract and adapter boundary
+- [x] L4 — Compose cache, single-flight and shared executor
 - [ ] L5 — Register the HTTP route and verify errors, limits and privacy
 - [ ] L6 — Verify production composition and run the complete module gate
 - [ ] Checkpoint L-B — Owner review
@@ -434,7 +435,7 @@ Plan: `tasks/plan.md`, Location Search section
 
 - [x] L1–L3 focused tests and the complete API check pass.
 - [x] Every provider failure and malformed consumed field has a deterministic offline test.
-- [ ] A human reviews the external-data and privacy boundary before orchestration continues.
+- [x] A human reviews the external-data and privacy boundary before orchestration continues (owner: “continue”, 2026-09-23).
 
 ## Task L4: Compose cache, single-flight and shared executor
 
@@ -442,9 +443,9 @@ Plan: `tasks/plan.md`, Location Search section
 
 **Acceptance criteria:**
 
-- [ ] Positive and empty arrays cache for exactly 24 hours; failures never cache, and a second cache check occurs inside the flight.
-- [ ] Canonical-equivalent concurrent queries share one outbound operation; distinct queries remain independent.
-- [ ] Saturation and expected adapter failures propagate as safe 503 errors with request-correlated, bounded warnings.
+- [x] Positive and empty arrays cache for exactly 24 hours; failures never cache, and a second cache check occurs inside the flight.
+- [x] Canonical-equivalent concurrent queries share one outbound operation; distinct queries remain independent.
+- [x] Saturation and expected adapter failures propagate as safe 503 errors with request-correlated, bounded warnings.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- location-search-service`; API typecheck, lint and format check.
 
