@@ -361,7 +361,7 @@ Plan: `tasks/plan.md`
 
 # Tasks: Location Search
 
-Status: Approved by owner on 2026-09-23; implementation in progress
+Status: Complete; Checkpoint L-B approved by owner on 2026-09-23
 Module id: `location-search`
 Source spec: `SPEC-location-search.md` (approved 2026-09-23)
 Plan: `tasks/plan.md`, Location Search section
@@ -375,7 +375,7 @@ Plan: `tasks/plan.md`, Location Search section
 - [x] L4 — Compose cache, single-flight and shared executor
 - [x] L5 — Register the HTTP route and verify errors, limits and privacy
 - [x] L6 — Verify production composition and run the complete module gate
-- [ ] Checkpoint L-B — Owner review
+- [x] Checkpoint L-B — Owner review
 
 ## Task L1: Define public contract and canonical query
 
@@ -496,4 +496,4 @@ Plan: `tasks/plan.md`, Location Search section
 - [x] Every `SPEC-location-search.md` success criterion is verified or remains an explicit deployment gate.
 - [x] All active `CONSTRAINTS.md` floors and local time budgets pass.
 - [x] Public deployment remains blocked until `production-delivery` approves an aggregate Open-Meteo usage budget or a demonstrably lower traffic ceiling across geocoding and forecast; per-IP limits alone do not satisfy this gate.
-- [ ] Owner reviews the implementation before this module is marked complete.
+- [x] Owner reviews the implementation before this module is marked complete (owner: “continue”, 2026-09-23).

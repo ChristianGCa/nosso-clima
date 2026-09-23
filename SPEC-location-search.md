@@ -1,6 +1,6 @@
 # Spec: Location Search
 
-- **Status:** Approved by owner on 2026-09-23; local implementation verified, pending owner review at Checkpoint L-B
+- **Status:** Complete; Checkpoint L-B approved by owner on 2026-09-23. Public and commercial deployment gates remain open under `production-delivery`.
 - **Module id:** `location-search`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`

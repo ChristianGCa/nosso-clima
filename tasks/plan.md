@@ -112,7 +112,7 @@ Implementation may start only after the human approves this plan and the detaile
 
 # Implementation Plan: Location Search
 
-Status: Approved by owner on 2026-09-23
+Status: Complete; Checkpoint L-B approved by owner on 2026-09-23
 Module id: `location-search`
 Source spec: `SPEC-location-search.md` (approved 2026-09-23)
 Task list: `tasks/todo.md`, Location Search section
