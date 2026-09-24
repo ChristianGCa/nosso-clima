@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { type BackendPlatformContext, buildApp } from '../../src/app.js';
 import { parseEnvironment } from '../../src/config/env.js';
+import { createCache } from '../../src/infrastructure/cache.js';
 
 describe('buildApp', () => {
   it('readies and closes an injectable app without opening a network port', async () => {
@@ -36,11 +37,7 @@ describe('buildApp', () => {
     try {
       await app.ready();
       expect(context?.config).toBe(config);
-      const cache = context?.createCache<number>('weather-forecast');
-      cache?.set('first', 1, { ttlMs: 1000 });
-      cache?.set('second', 2, { ttlMs: 1000 });
-      expect(cache?.get('first')).toBeUndefined();
-      expect(cache?.get('second')).toBe(2);
+      // Both cache namespaces are claimed by the built-in route registrations.
       expect(() => context?.createCache<number>('weather-forecast')).toThrow(/already initialized/);
       expect(() => context?.createCache<number>('location-search')).toThrow(/already initialized/);
       expect(context?.singleFlight).toBeDefined();
@@ -68,8 +65,10 @@ describe('buildApp', () => {
     });
     const app = buildApp({
       logger: { level: 'info', stream },
-      registerRoutes(testApp, platform) {
-        const cache = platform.createCache<number>('weather-forecast');
+      registerRoutes(testApp) {
+        // Both namespaces are already claimed; create an independent test cache
+        // directly from the infrastructure module to verify log correlation.
+        const cache = createCache<string, number>({ maxEntries: 10 });
         testApp.get('/test/cache', (request) => {
           const value = cache.get('private-location-key', request.log);
           if (value === undefined) cache.set('private-location-key', 1, { ttlMs: 1000 });

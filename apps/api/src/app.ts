@@ -23,6 +23,10 @@ import { logRequestCompletion, registerRequestContext } from './plugins/request-
 import { registerSecurity, REQUEST_BODY_LIMIT_BYTES } from './plugins/security.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerLocationRoute } from './routes/locations.js';
+import { createForecastService } from './forecast/forecast-service.js';
+import { fetchForecastJson } from './forecast/open-meteo-forecast.js';
+import type { ForecastResponse } from './forecast/forecast-contract.js';
+import { registerForecastRoute } from './routes/forecast.js';
 
 export type BuildAppOptions = Readonly<
   Pick<FastifyServerOptions, 'logger' | 'loggerInstance'> & {
@@ -103,6 +107,15 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     createLocationSearchService({
       client: createOpenMeteoGeocodingClient(fetchImpl),
       cache: platform.createCache<readonly Location[]>('location-search'),
+      singleFlight: platform.singleFlight,
+      executor: platform.executor,
+    }),
+  );
+  registerForecastRoute(
+    app,
+    createForecastService({
+      client: { fetch: (location) => fetchForecastJson(location, fetchImpl) },
+      cache: platform.createCache<ForecastResponse>('weather-forecast'),
       singleFlight: platform.singleFlight,
       executor: platform.executor,
     }),

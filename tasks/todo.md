@@ -497,3 +497,174 @@ Plan: `tasks/plan.md`, Location Search section
 - [x] All active `CONSTRAINTS.md` floors and local time budgets pass.
 - [x] Public deployment remains blocked until `production-delivery` approves an aggregate Open-Meteo usage budget or a demonstrably lower traffic ceiling across geocoding and forecast; per-IP limits alone do not satisfy this gate.
 - [x] Owner reviews the implementation before this module is marked complete (owner: “continue”, 2026-09-23).
+
+---
+
+# Tasks: Weather Forecast
+
+Status: Local implementation complete; owner review approved on 2026-09-24
+Module id: `weather-forecast`
+Source spec: `SPEC-weather-forecast.md` (approved 2026-09-23)
+Plan: `tasks/plan.md`, Weather Forecast section
+
+## Progress
+
+- [x] W1 — Define forecast response contract and canonical request query
+- [x] W2 — Map WMO conditions and UV risk bands
+- [x] W3 — Bound fixed-origin Open-Meteo transport
+- [x] Checkpoint W-A — Public contract and outbound transport
+- [x] W4 — Validate and normalize external forecast data
+- [x] W5 — Compose cache, single-flight and shared executor
+- [x] W6 — Register and verify the HTTP route
+- [x] Checkpoint W-B — Injected end-to-end forecast flow
+- [x] W7 — Verify production composition and complete module gate
+- [x] Checkpoint W-C — Owner review
+
+## Task W1: Define public contract and canonical request query
+
+**Description:** Add the TypeBox success schema and fixed attribution, plus pure helpers for exact raw-key validation, bounded coordinates, three-decimal rounding, canonical IANA timezone and canonical cache-key input. No route or fetch is added yet.
+
+**Acceptance criteria:**
+
+- [ ] Success schema matches the approved current-plus-seven-day shape and permits `null` only for daily UV maximum, its risk and precipitation probability.
+- [ ] Exactly one of each required key is accepted; unknown/repeated keys, invalid coordinates, numeric offsets and invalid timezone strings fail as safe validation errors.
+- [ ] Equivalent numeric spellings and coordinates rounding to the same three-decimal values share canonical coordinates; exact halfway cases round away from zero, negative zero becomes zero, and bounds are checked before rounding.
+- [ ] Accepted IANA aliases resolve to the runtime's canonical timezone for the outbound parameter, response and cache key, while offsets remain invalid.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- forecast-query`; API typecheck, lint and format check.
+
+**Dependencies:** Approved `SPEC-weather-forecast.md`.
+
+**Files likely touched:** `apps/api/src/forecast/forecast-contract.ts`, `apps/api/src/forecast/forecast-query.ts`, `apps/api/test/unit/forecast-query.test.ts`.
+
+**Estimated scope:** Medium (3 files).
+
+## Task W2: Map WMO conditions and UV risk bands
+
+**Description:** Implement pure, exhaustive WMO category/Portuguese-label mapping and the approved decimal UV bands.
+
+**Acceptance criteria:**
+
+- [ ] Every listed WMO code maps to the documented category and label; unknown/non-integer codes fail closed.
+- [ ] UV edges at 3, 6, 8 and 11 and representative decimals map correctly; invalid and negative UV fail.
+- [ ] Daily and current conditions use the same mapping, without computing an hourly predominant condition.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- wmo-condition`; API typecheck, lint and format check.
+
+**Dependencies:** W1 for public types.
+
+**Files likely touched:** `apps/api/src/forecast/wmo-condition.ts`, `apps/api/test/unit/wmo-condition.test.ts`.
+
+**Estimated scope:** Small (2 files).
+
+## Task W3: Bound fixed-origin Open-Meteo transport
+
+**Description:** Add a fetch-injected transport that builds only the approved forecast URL and returns parsed `unknown` JSON under a finite whole-operation bound. Record an offline fixture from an actual Open-Meteo forecast response for a public city, with retrieval date and source URL, and use it for the transport success path.
+
+**Acceptance criteria:**
+
+- [ ] The HTTPS origin, path and fixed parameters are exact; input only fills validated coordinates and timezone values, with `redirect: 'error'` and no extra caller-controlled metadata.
+- [ ] One 5-second abort bounds both fetch and stream consumption; stalled operations, non-200/non-JSON responses, invalid JSON and decoded bodies over 65,536 bytes fail safely.
+- [ ] Failure kinds are bounded; tests use fake fetch/streams and a captured real response fixture, without live network or sleep during verification. Synthetic failure variants are clearly labeled.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-forecast`; API typecheck, lint and format check.
+
+**Dependencies:** W1.
+
+**Files likely touched:** `apps/api/src/forecast/open-meteo-forecast.ts`, `apps/api/test/unit/open-meteo-forecast.test.ts`, `apps/api/test/fixtures/open-meteo-forecast.json` (fixture provenance recorded alongside it).
+
+**Estimated scope:** Medium (3–4 files).
+
+## Checkpoint W-A: Public contract and outbound transport
+
+- [ ] W1–W3 focused tests and `npm run check --workspace @nosso-clima/api` pass; the real response fixture has documented provenance and runs offline.
+- [ ] Raw query validation, WMO/UV boundaries and transport failure branches have deterministic offline tests.
+- [ ] Review the request and outbound privacy boundary before normalization expands.
+
+## Task W4: Validate and normalize external forecast data
+
+**Description:** Treat the parsed payload as `unknown` and produce only the documented response fields after validating all consumed units and values. Use the immutable real-response fixture as the baseline and explicitly labeled mutations for malformed and nullable cases.
+
+**Acceptance criteria:**
+
+- [ ] Current values, unit metadata, timezone, each seven-entry daily array and seven consecutive local dates are validated; malformed consumed values fail as `invalid_response`.
+- [ ] Individual `null` daily UV/probability values are preserved, with `uvRisk: null` for unavailable UV; missing values or `null` elsewhere fail.
+- [ ] Daily condition uses `daily.weather_code` as the most severe condition; a real provider fixture normalizes to the expected shape, and no unconsumed provider field reaches the public result.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-forecast`; `npm run check --workspace @nosso-clima/api`.
+
+**Dependencies:** W2, W3 and Checkpoint W-A.
+
+**Files likely touched:** `apps/api/src/forecast/open-meteo-forecast.ts`, `apps/api/test/unit/open-meteo-forecast.test.ts`, `apps/api/test/fixtures/open-meteo-forecast.json` (read-only baseline).
+
+**Estimated scope:** Medium (3 files).
+
+## Task W5: Compose cache, single-flight and shared executor
+
+**Description:** Add a forecast service using only existing backend-platform resources for bounded external work and process-local reuse.
+
+**Acceptance criteria:**
+
+- [ ] Fake-time tests prove a validated success and `retrievedAtUtc` stay unchanged at 599,999 ms, expire at exactly 600,000 ms and refetch at or after that boundary; failures never cache, and a second cache lookup occurs inside the flight.
+- [ ] Equivalent concurrent locations coalesce while distinct locations remain independent; shared executor saturation yields safe 503 behavior.
+- [ ] Expected provider failures emit one request-correlated warning with fixed failure kind and optional numeric status, without private query, coordinate, timezone, URL or body data.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- forecast-service`; API typecheck, lint and format check.
+
+**Dependencies:** W4.
+
+**Files likely touched:** `apps/api/src/forecast/forecast-service.ts`, `apps/api/test/unit/forecast-service.test.ts`.
+
+**Estimated scope:** Small (2 files).
+
+## Task W6: Register and verify the HTTP route
+
+**Description:** Compose the forecast route once in `buildApp()` through the shared platform context and prove the public contract with Fastify injection.
+
+**Acceptance criteria:**
+
+- [ ] Valid requests return the exact schema, attribution and request ID; `preValidation` rejects unknown/repeated keys, including an HTTP `foo=1` regression with zero fetches.
+- [ ] The route is available from plain `buildApp()`, claims `createCache('weather-forecast')` once and uses both 15/minute weather-group and 60/minute global limits.
+- [ ] Timeout/provider errors return safe 503, defects stay 500, concurrent misses coalesce and captured logs/public errors omit private data; existing platform/location tests remain green.
+
+**Verification:** `npm test --workspace @nosso-clima/api -- forecast`; `npm run check --workspace @nosso-clima/api`.
+
+**Dependencies:** W1, W5.
+
+**Files likely touched:** `apps/api/src/routes/forecast.ts`, `apps/api/src/app.ts`, `apps/api/test/integration/forecast.test.ts`, `apps/api/test/integration/app.test.ts` (and one existing namespace-claim test if needed).
+
+**Estimated scope:** Medium (4–5 files).
+
+## Checkpoint W-B: Injected end-to-end forecast flow
+
+- [ ] `npm run check --workspace @nosso-clima/api` passes with all location and platform regressions.
+- [ ] Exact HTTP schema, limiter layering, safe error envelopes and privacy/log assertions pass offline.
+- [ ] Review the complete injected route before process-level verification.
+
+## Task W7: Verify production composition and complete module gate
+
+**Description:** Verify the already-composed forecast route through the compiled server and repeat every active API quality gate without contacting Open-Meteo.
+
+**Acceptance criteria:**
+
+- [x] Compiled server serves `/health`, returns safe 400 for an invalid forecast query and stops cleanly; `server.ts` needs no route registration.
+- [x] Complete API check, coverage, production build, audit and local time budgets pass with no weakened constraint or skipped test.
+- [x] Every forecast success criterion is verified or remains an explicit public/commercial deployment gate.
+
+**Verification:** `npm run check --workspace @nosso-clima/api`; `npm run test:coverage --workspace @nosso-clima/api`; `npm run build --workspace @nosso-clima/api`; `npm audit --audit-level=high`; compiled-server smoke test.
+
+**Dependencies:** W6 and Checkpoint W-B.
+
+**Files likely touched:** `apps/api/test/integration/server-lifecycle.test.ts`, `apps/api/test/integration/forecast.test.ts`.
+
+**Estimated scope:** Small (2 files).
+
+**W7 evidence (2026-09-24):** With the pinned npm 12.0.2, `npm run check --workspace @nosso-clima/api` passed in 7.54 s (367 tests); `npm run test:coverage --workspace @nosso-clima/api` passed in 5.80 s with 93.91% statements, 89.64% branches, 95.36% functions and 97.4% lines; `npm run build --workspace @nosso-clima/api` passed in 0.65 s; `npm audit --audit-level=high` found zero vulnerabilities. A production-configured `node dist/server.js` process bound to `127.0.0.1`, returned `200` from `/health` and `400 VALIDATION_ERROR` with a request ID for an invalid forecast query, then exited cleanly after `SIGTERM`. No request contacted Open-Meteo. All local checks stayed below the 90-second budget. Public and commercial deployment gates remain in `production-delivery`.
+
+**W7 follow-up (2026-09-24):** The forecast handler now uses the query canonicalized in `preValidation`. Regression tests cover the same-request handoff, network failure after a streamed chunk, invalid provider timezone, nonconsecutive or mismatched local dates, and three-key invalid queries. Redundant unreachable guards were removed. The complete API check passed in 4.51 s (380 tests) and coverage passed in 3.74 s: 95.14% statements, 92.03% branches, 95.36% functions and 98.02% lines overall. `forecast-query.ts` and `open-meteo-forecast.ts` now have 100% line coverage; this does not claim 100% branch coverage.
+
+## Checkpoint W-C: Owner review
+
+- [x] Every local `SPEC-weather-forecast.md` success criterion and active `CONSTRAINTS.md` floor is met.
+- [x] Public deployment remains blocked until `production-delivery` approves aggregate Open-Meteo usage across geocoding and forecasting, current licensing, attribution and privacy notice; commercial deployment additionally needs paid-endpoint review.
+- [x] Owner reviews implementation before this module is marked complete (owner: “aprovo”, 2026-09-24).

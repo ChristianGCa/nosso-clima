@@ -185,3 +185,91 @@ None for local implementation. The approved spec leaves commercial use and publi
 ## Approval Gate
 
 Implementation starts only after the owner approves this location-search plan and its L1–L6 tasks in `tasks/todo.md`.
+
+---
+
+# Implementation Plan: Weather Forecast
+
+Status: Approved by owner with W1/W3/W4/W5 amendments on 2026-09-23
+Module id: `weather-forecast`
+Source spec: `SPEC-weather-forecast.md` (approved 2026-09-23)
+Task list: `tasks/todo.md`, Weather Forecast section
+
+## Overview
+
+Add one forecast route for an explicitly selected location, returning validated current conditions and seven local calendar days. Reuse the backend platform's shared executor, single-flight registry, cache factory, rate limits and error envelope. This plan does not implement `weather-ui`, choose a default city, add an aggregate quota mechanism or contact Open-Meteo in tests. Public deployment remains gated on an application-wide usage budget and licensing/privacy review in `production-delivery`.
+
+## Dependency Graph
+
+```text
+W1 public contract and query
+├── W2 WMO and UV mapping
+└── W3 fixed-origin bounded transport
+    └── Checkpoint W-A
+        └── W4 external response validation
+            └── W5 cached service orchestration
+                └── W6 HTTP route and buildApp composition
+                    └── Checkpoint W-B
+                        └── W7 production smoke and complete gate
+                            └── Checkpoint W-C
+```
+
+W4 also consumes W2's mapping. W6 consumes W1 and W5. Each task leaves the API checkable; no task relies on a live provider.
+
+## Architecture Decisions
+
+- **One HTTP contract.** TypeBox owns the exact success response and `null` only for a daily UV maximum, its risk, or precipitation probability. Route-local raw `URLSearchParams` validation rejects missing, repeated and unknown query keys before Fastify can remove them. A pure helper validates the original coordinates, rounds them to three decimals with halfway cases away from zero and negative zero normalized, and resolves accepted IANA timezone aliases through `Intl.DateTimeFormat(...).resolvedOptions().timeZone`.
+- **One fixed-origin adapter.** The injected `fetchImpl` seam already exists in `buildApp()`. Build only the approved forecast URL, reject redirects and non-200/non-JSON responses, and enforce the 5-second abort through streaming body consumption with a 65,536-byte decoded-body bound. W3 and W4 use committed, offline fixtures captured from actual Open-Meteo forecast responses, with retrieval date and public-city provenance documented; synthetic mutations are labeled separately for failure branches. Validate consumed provider data from `unknown`, including units, timezone, seven aligned dates and allowed nullable fields.
+- **One process composition point.** `app.ts` calls `createCache('weather-forecast')` once and registers the forecast route by default, alongside location search. `server.ts` remains lifecycle-only. The service uses the existing platform executor and single-flight registry, then caches validated successes for exactly 10 minutes.
+- **Module ownership stays intact.** Forecast schemas, mapping, adapter, service and route are weather-forecast code. No new shared primitive or weather UI is introduced. Any platform test currently claiming the forecast cache namespace is adjusted only enough to avoid a duplicate claim while preserving its regression coverage.
+- **Safe observable failures.** Expected provider failures become one classified, request-correlated warning and safe 503 envelope; unexpected defects remain 500. Tests inspect structured logs for forbidden query, coordinate, timezone, URL and provider content.
+
+## Phases and Checkpoints
+
+### Phase 1: Contract and outbound boundary
+
+- W1 defines the public response schema and pure request validation, including raw-key rejection and canonical cache-key inputs.
+- W2 defines WMO-to-condition and UV-risk mappings with every boundary covered by pure tests.
+- W3 proves the fixed-origin, bounded transport and failure classification with an injectable fake fetch backed by a captured real response fixture.
+
+Checkpoint W-A runs focused tests and the complete API check before response normalization.
+
+### Phase 2: Normalization and HTTP composition
+
+- W4 validates and normalizes all consumed Open-Meteo fields, including units, timezone, exactly seven local days and per-day `null` UV/probability handling, starting from the captured real response fixture.
+- W5 composes the 10-minute cache, second cache lookup, single-flight and shared executor; only validated successes cache. Fake-time tests probe just before, exactly at and just after the TTL boundary.
+- W6 registers the route once in `buildApp()` with both limiter layers and the exact public errors, attribution and offline HTTP tests.
+
+Checkpoint W-B checks the end-to-end injected route, privacy assertions, limiter interaction and existing platform/location regressions.
+
+### Phase 3: Complete module gate
+
+- W7 verifies the compiled server's health and invalid forecast path, then runs the full API check, coverage and dependency audit.
+
+Checkpoint W-C reviews every local success criterion with the owner. The public-deployment aggregate Open-Meteo usage budget, current license and privacy notice remain explicit `production-delivery` gates, not a claim that this module is production-ready.
+
+## Verification Strategy
+
+- Use red-green-refactor for behavior changes; run the focused forecast tests after each task, then API typecheck, lint and format checks.
+- At checkpoints run `npm run check --workspace @nosso-clima/api`; at W7 also run `npm run test:coverage --workspace @nosso-clima/api`, `npm run build --workspace @nosso-clima/api` and `npm audit --audit-level=high`.
+- Use fake time, deterministic streams and `app.inject`; no wall-clock sleep or live Open-Meteo call. Preserve the 80% coverage floor and local time budgets.
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Fastify strips unknown query keys | Invalid requests can reach the provider | Inspect raw keys in route `preValidation`; assert `?latitude=-23&longitude=-46&timezone=America%2FSao_Paulo&foo=1` returns 400 and causes zero fetches |
+| Stalled fetch or body read consumes a shared executor slot | Other providers become unavailable | Keep one finite abort across fetch and stream; test a stalled body and slot release |
+| Seven arrays or local dates are misaligned | Wrong daily values are displayed together | Validate every consumed array's length and date sequence before normalization |
+| A nullable metric is silently converted to zero or a missing field is accepted | Misleading forecast | Keep `null` only for the approved daily metrics; derive and label null/missing-field variants from an actual response fixture |
+| A fixture drifts from the provider's real shape | Adapter tests offer false confidence | Record source URL, public-city coordinates and retrieval date; keep the real sample immutable and label synthetic mutations |
+| Weather and platform tests claim the same cache namespace | `buildApp()` fails or tests lose coverage | Register once in `app.ts`; adapt platform test namespace claims without dropping assertions |
+| Ten-minute cache plus fourteen variables increases provider usage | Aggregate free-tier quota is exceeded | Keep public deployment gated on an application-wide geocoding-plus-forecast budget |
+
+## Open Questions
+
+None for local implementation. The approved spec fixes three-decimal coordinate rounding, canonical timezone, TTL, first-load behavior, UV bands, daily-condition source and nullable metrics. Public and commercial delivery gates remain in `production-delivery`.
+
+## Approval Gate
+
+The owner approved this weather-forecast plan and W1–W7 tasks, subject to the W1/W3/W4/W5 amendments now recorded here and in `tasks/todo.md`, on 2026-09-23.
