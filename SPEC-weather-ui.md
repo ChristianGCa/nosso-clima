@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Approved by owner on 2026-09-24; implementation awaits plan and task approval
+- **Status:** Approved by owner on 2026-09-24; plan and U1–U10 tasks approved on 2026-09-24
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -128,14 +128,14 @@ type ForecastViewState =
 
 ## Success Criteria
 
-- [ ] First load makes no location or forecast request and shows a useful neutral state.
-- [ ] A keyboard or pointer user can search, distinguish homonymous places, explicitly select one, and load its seven-day forecast.
-- [ ] Search, selection, loading, empty, 429, provider failure, malformed response and retry states are understandable and never show a mismatched city's data.
-- [ ] Current and daily metrics use the approved labels, units, local dates, distinct valid/retrieval times, null policy and “most severe” daily-condition meaning.
-- [ ] All ten background mappings, a neutral fallback and all source/licence credits work without compromising contrast or initial load.
-- [ ] The app works from 360 px through desktop with keyboard access and zero critical or serious axe violations.
-- [ ] Web typecheck, lint, format, tests, 80% coverage, production build, root check and boundary check pass within their active budgets.
-- [ ] Public deployment still waits for `production-delivery` to verify aggregate API usage, privacy, current provider licensing, image rights and performance.
+- [x] First load makes no location or forecast request and shows a useful neutral state.
+- [x] A keyboard or pointer user can search, distinguish homonymous places, explicitly select one, and load its seven-day forecast.
+- [x] Search, selection, loading, empty, 429, provider failure, malformed response and retry states are understandable and never show a mismatched city's data.
+- [x] Current and daily metrics use the approved labels, units, local dates, distinct valid/retrieval times, null policy and “most severe” daily-condition meaning.
+- [x] All ten background mappings, a neutral fallback and all source/licence credits work without compromising contrast or initial load.
+- [x] The app works from 360 px through desktop with keyboard access and zero critical or serious axe violations.
+- [x] Web typecheck, lint, format, tests, 80% coverage, production build, root check and boundary check pass within their active budgets.
+- [x] Public deployment still waits for `production-delivery` to verify aggregate API usage, privacy, current provider licensing, image rights and performance.
 
 ## Decisions for Owner Review
 
@@ -144,4 +144,4 @@ type ForecastViewState =
 3. Daily cards say “Condição mais severa” and keep chance and volume of rain as separate labelled values.
 4. The existing WebP images may be used during local development. Their provenance and publication rights must be confirmed before public delivery; no ownership or licence is inferred from their presence in the repository.
 
-The owner approved this spec on 2026-09-24. Implementation begins after the resulting plan and tasks are approved under the repository workflow.
+The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-09-24.

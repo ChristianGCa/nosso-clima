@@ -278,7 +278,7 @@ The owner approved this weather-forecast plan and W1–W7 tasks, subject to the 
 
 # Implementation Plan: Weather UI
 
-Status: Proposed for owner review on 2026-09-24; implementation not yet approved
+Status: Approved by owner on 2026-09-24
 Module id: `weather-ui`
 Source spec: `SPEC-weather-ui.md` (approved 2026-09-24)
 Task list: `tasks/todo.md`, Weather UI section
@@ -367,4 +367,4 @@ No unresolved choice blocks the local plan. The approved spec fixes the search t
 
 ## Approval Gate
 
-Owner approval of this plan and its U1–U10 tasks is required before implementing `apps/web`, as stated in the approved `SPEC-weather-ui.md`.
+The owner approved this plan and its U1–U10 tasks on 2026-09-24.

@@ -673,25 +673,25 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 # Tasks: Weather UI
 
-Status: Proposed for owner review on 2026-09-24; implementation not yet approved
+Status: Local implementation complete on 2026-09-24; Checkpoint U-C awaits owner review
 Module id: `weather-ui`
 Source spec: `SPEC-weather-ui.md` (approved 2026-09-24)
 Plan: `tasks/plan.md`, Weather UI section
 
 ## Progress
 
-- [ ] U1 — Bootstrap an independent neutral web app
-- [ ] U2 — Activate web quality and architecture gates
-- [ ] U3 — Parse and request location suggestions safely
-- [ ] U4 — Parse and request forecasts safely
-- [ ] Checkpoint U-A — Independent HTTP boundaries
-- [ ] U5 — Build accessible city search
-- [ ] U6 — Connect explicit selection and forecast states
-- [ ] Checkpoint U-B — Offline city-to-forecast flow
-- [ ] U7 — Present current conditions and timestamps
-- [ ] U8 — Present seven local-day cards
-- [ ] U9 — Map backgrounds and build responsive surfaces
-- [ ] U10 — Complete browser accessibility and module gate
+- [x] U1 — Bootstrap an independent neutral web app
+- [x] U2 — Activate web quality and architecture gates
+- [x] U3 — Parse and request location suggestions safely
+- [x] U4 — Parse and request forecasts safely
+- [x] Checkpoint U-A — Independent HTTP boundaries
+- [x] U5 — Build accessible city search
+- [x] U6 — Connect explicit selection and forecast states
+- [x] Checkpoint U-B — Offline city-to-forecast flow
+- [x] U7 — Present current conditions and timestamps
+- [x] U8 — Present seven local-day cards
+- [x] U9 — Map backgrounds and build responsive surfaces
+- [x] U10 — Complete browser accessibility and module gate
 - [ ] Checkpoint U-C — Owner review
 
 ## Task U1: Bootstrap an independent neutral web app
@@ -700,9 +700,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] A 360 px and desktop browser can render a labelled city search prompt without a default city or network request.
-- [ ] `npm run dev --workspace @nosso-clima/web` and `npm run build --workspace @nosso-clima/web` work independently from the API; the lockfile pins reviewed versions.
-- [ ] The dependency diff has no unmitigated high/critical advisory, and no API runtime import enters the web app.
+- [x] A 360 px and desktop browser can render a labelled city search prompt without a default city or network request.
+- [x] `npm run dev --workspace @nosso-clima/web` and `npm run build --workspace @nosso-clima/web` work independently from the API; the lockfile pins reviewed versions.
+- [x] The dependency diff has no unmitigated high/critical advisory, and no API runtime import enters the web app.
 
 **Verification:** `npm run build --workspace @nosso-clima/web`; `npm run typecheck --workspace @nosso-clima/web`; `npm audit --audit-level=high`; browser first-load network inspection.
 
@@ -718,9 +718,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] Web-local check and coverage commands run; the 80% thresholds cover statements, branches, functions and lines.
-- [ ] `npm run check:boundaries` fails on prohibited web-to-API and API-to-web imports and passes the real repository.
-- [ ] Root `npm run check` includes the web workspace without losing the existing API tests.
+- [x] Web-local check and coverage commands run; the 80% thresholds cover statements, branches, functions and lines.
+- [x] `npm run check:boundaries` fails on prohibited web-to-API and API-to-web imports and passes the real repository.
+- [x] Root `npm run check` includes the web workspace without losing the existing API tests.
 
 **Verification:** `npm run check --workspace @nosso-clima/web`; `npm run check:boundaries`; `npm run check`; boundary-command negative fixtures.
 
@@ -736,9 +736,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] The request uses `URLSearchParams` with only `query`; base URL configuration cannot come from user input.
-- [ ] Valid, empty, malformed, 429, 503 and network responses produce typed results or bounded errors without leaking provider data.
-- [ ] Location fields needed for selection and both attribution sources survive parsing; extra unconsumed fields do not appear in the UI model.
+- [x] The request uses `URLSearchParams` with only `query`; base URL configuration cannot come from user input.
+- [x] Valid, empty, malformed, 429, 503 and network responses produce typed results or bounded errors without leaking provider data.
+- [x] Location fields needed for selection and both attribution sources survive parsing; extra unconsumed fields do not appear in the UI model.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- locations`; web typecheck, lint and format check.
 
@@ -754,9 +754,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] Outbound query uses only selected `latitude`, `longitude` and `timezone`; malformed HTTP/JSON/data and public errors become bounded UI errors.
-- [ ] The parser keeps seven ordered local dates, current/attribution fields and only the permitted nullable probability, UV and UV-risk fields.
-- [ ] Tests cover 429/503, malformed dates and fields, null preservation and no backend source import.
+- [x] Outbound query uses only selected `latitude`, `longitude` and `timezone`; malformed HTTP/JSON/data and public errors become bounded UI errors.
+- [x] The parser keeps seven ordered local dates, current/attribution fields and only the permitted nullable probability, UV and UV-risk fields.
+- [x] Tests cover 429/503, malformed dates and fields, null preservation and no backend source import.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- forecast`; web typecheck, lint and format check.
 
@@ -768,9 +768,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 ## Checkpoint U-A: Independent HTTP boundaries
 
-- [ ] `npm run check --workspace @nosso-clima/web`, root `npm run check` and `npm run check:boundaries` pass.
-- [ ] Neutral first load and both clients are verified offline with no provider call or API runtime import.
-- [ ] Review response parsing and privacy boundary before asynchronous UI state expands.
+- [x] `npm run check --workspace @nosso-clima/web`, root `npm run check` and `npm run check:boundaries` pass.
+- [x] Neutral first load and both clients are verified offline with no provider call or API runtime import.
+- [x] Review response parsing and privacy boundary before asynchronous UI state expands.
 
 ## Task U5: Build accessible city search
 
@@ -778,9 +778,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] No search request occurs below three trimmed code points or before the debounce; at most five distinguishable results appear after success.
-- [ ] Arrow keys, Enter, Escape, Tab, pointer selection, active-option semantics and live result status work without a focus trap.
-- [ ] Superseded responses cannot replace newer suggestions; 429, unavailable and empty states differ, and search attribution links are visible with results.
+- [x] No search request occurs below three trimmed code points or before the debounce; at most five distinguishable results appear after success.
+- [x] Arrow keys, Enter, Escape, Tab, pointer selection, active-option semantics and live result status work without a focus trap.
+- [x] Superseded responses cannot replace newer suggestions; 429, unavailable and empty states differ, and search attribution links are visible with results.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- city-search`; web check; real-browser keyboard inspection.
 
@@ -796,9 +796,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] Initial and edited-but-unselected states make no forecast call; selection passes only that result's coordinates and timezone.
-- [ ] Selecting another city clears the prior forecast; aborted or late older responses cannot replace the new city's state.
-- [ ] 429 has a specific message, other failures are generic, a retry is explicit, and no automatic retry or stale weather appears.
+- [x] Initial and edited-but-unselected states make no forecast call; selection passes only that result's coordinates and timezone.
+- [x] Selecting another city clears the prior forecast; aborted or late older responses cannot replace the new city's state.
+- [x] 429 has a specific message, other failures are generic, a retry is explicit, and no automatic retry or stale weather appears.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- forecast-flow`; web check; browser selection/retry smoke.
 
@@ -810,9 +810,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 ## Checkpoint U-B: Offline city-to-forecast flow
 
-- [ ] A mocked city search, explicit keyboard/pointer selection and forecast success work through the rendered app.
-- [ ] Empty, 429, 503, malformed response, retry and crossed-request races remain safe and distinct.
-- [ ] Web/root checks and the architecture boundary check pass before weather presentation expands.
+- [x] A mocked city search, explicit keyboard/pointer selection and forecast success work through the rendered app.
+- [x] Empty, 429, 503, malformed response, retry and crossed-request races remain safe and distinct.
+- [x] Web/root checks and the architecture boundary check pass before weather presentation expands.
 
 ## Task U7: Present current conditions and timestamps
 
@@ -820,9 +820,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] Temperature, apparent temperature, category label and wind use the approved contract and units without WMO remapping.
-- [ ] `validAtLocal` remains the city's local time, while `retrievedAtUtc` is formatted in the response timezone; tests use a viewer in another timezone.
-- [ ] Open-Meteo/CC BY 4.0 credit is linked and says the data was adapted; no current value is called an observed measurement.
+- [x] Temperature, apparent temperature, category label and wind use the approved contract and units without WMO remapping.
+- [x] `validAtLocal` remains the city's local time, while `retrievedAtUtc` is formatted in the response timezone; tests use a viewer in another timezone.
+- [x] Open-Meteo/CC BY 4.0 credit is linked and says the data was adapted; no current value is called an observed measurement.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- current`; web check; 360 px/desktop preview.
 
@@ -838,9 +838,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] Seven ordered dates and weekdays remain correct across browser/selected-city timezone differences.
-- [ ] Max/min temperature and apparent temperature, maximum wind, chance, amount, UV value and Portuguese risk all show correct units.
-- [ ] `null` rain chance and UV display “Indisponível”, never zero; condition wording says “mais severa”, never “predominante”.
+- [x] Seven ordered dates and weekdays remain correct across browser/selected-city timezone differences.
+- [x] Max/min temperature and apparent temperature, maximum wind, chance, amount, UV value and Portuguese risk all show correct units.
+- [x] `null` rain chance and UV display “Indisponível”, never zero; condition wording says “mais severa”, never “predominante”.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- daily`; web check; mobile/desktop card inspection.
 
@@ -856,9 +856,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] All ten category/day-night combinations resolve to the intended file; neutral/loading/image-failure states have no wrong-weather photo.
-- [ ] The first load fetches zero photos and an active forecast fetches only its chosen photo; the page has no horizontal overflow at 360 px.
-- [ ] Text, controls and focus states retain documented contrast over every background; reduced motion is respected.
+- [x] All ten category/day-night combinations resolve to the intended file; neutral/loading/image-failure states have no wrong-weather photo.
+- [x] The first load fetches zero photos and an active forecast fetches only its chosen photo; the page has no horizontal overflow at 360 px.
+- [x] Text, controls and focus states retain documented contrast over every background; reduced motion is respected.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- background`; web check; browser network/contrast inspection for all ten files at 360 px and desktop.
 
@@ -874,9 +874,9 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Acceptance criteria:**
 
-- [ ] `npm run test:a11y` reports zero critical or serious issues for neutral, suggestions, loading, error and success states; keyboard/focus behavior is checked in a real browser.
-- [ ] Web/root checks, 80% coverage per metric, boundary check, build, audit and 90-second local budgets pass without weakened thresholds or skipped tests.
-- [ ] All local spec criteria pass; provider aggregate usage, privacy, licensing, image rights and production performance remain explicit `production-delivery` gates.
+- [x] `npm run test:a11y` reports zero critical or serious issues for neutral, suggestions, loading, error and success states; keyboard/focus behavior is checked in a real browser.
+- [x] Web/root checks, 80% coverage per metric, boundary check, build, audit and 90-second local budgets pass without weakened thresholds or skipped tests.
+- [x] All local spec criteria pass; provider aggregate usage, privacy, licensing, image rights and production performance remain explicit `production-delivery` gates.
 
 **Verification:** `npm run check --workspace @nosso-clima/web`; `npm run check`; `npm run test:coverage --workspace @nosso-clima/web`; `npm run test:a11y`; `npm run check:boundaries`; `npm audit --audit-level=high`; preview smoke.
 
@@ -888,6 +888,6 @@ Plan: `tasks/plan.md`, Weather UI section
 
 ## Checkpoint U-C: Owner review
 
-- [ ] Every local `SPEC-weather-ui.md` success criterion and active `CONSTRAINTS.md` floor is met.
-- [ ] Public deployment remains blocked until `production-delivery` verifies aggregate Open-Meteo usage, privacy, current licensing, image rights and mobile performance.
+- [x] Every local `SPEC-weather-ui.md` success criterion and active `CONSTRAINTS.md` floor is met.
+- [x] Public deployment remains blocked until `production-delivery` verifies aggregate Open-Meteo usage, privacy, current licensing, image rights and mobile performance.
 - [ ] Owner reviews the complete local user flow before this module is marked complete.
