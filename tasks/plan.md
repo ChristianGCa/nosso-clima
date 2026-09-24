@@ -273,3 +273,98 @@ None for local implementation. The approved spec fixes three-decimal coordinate 
 ## Approval Gate
 
 The owner approved this weather-forecast plan and W1–W7 tasks, subject to the W1/W3/W4/W5 amendments now recorded here and in `tasks/todo.md`, on 2026-09-23.
+
+---
+
+# Implementation Plan: Weather UI
+
+Status: Proposed for owner review on 2026-09-24; implementation not yet approved
+Module id: `weather-ui`
+Source spec: `SPEC-weather-ui.md` (approved 2026-09-24)
+Task list: `tasks/todo.md`, Weather UI section
+
+## Overview
+
+Create the `@nosso-clima/web` workspace and deliver one local flow: search for a city, explicitly select it, and read current conditions and seven daily cards. The UI consumes the two approved HTTP contracts, starts neutral, maintains accessible request states, and uses only the active decorative background. Public deployment and provider/image-rights review remain in `production-delivery`.
+
+## Dependency Graph
+
+```text
+U1 web workspace and neutral shell
+└── U2 quality gates and boundary check
+    ├── U3 location HTTP boundary
+    └── U4 forecast HTTP boundary
+U3 + U4 ── Checkpoint U-A
+             └── U5 accessible city search
+                 └── U6 explicit selection and forecast state
+                     └── Checkpoint U-B
+                         └── U7 current conditions and local times
+                             └── U8 seven daily cards and unavailable metrics
+                                 └── U9 background mapping and responsive surfaces
+                                     └── U10 browser accessibility and complete gate
+                                         └── Checkpoint U-C
+```
+
+U6 also needs U4; U8 consumes the U4 forecast model. Attribution is rendered where each response is used: location credit with U5, forecast credit with U7. Each task leaves a buildable app; unfinished data paths use explicit loading or empty states, never placeholder weather values.
+
+## Architecture Decisions
+
+- **Separate application boundary.** `apps/web` is an independent React/Vite/TypeScript workspace. It has web-local response types and runtime parsing from `unknown`; it imports no `apps/api/src` code. A root boundary command checks both application import directions. Development routes `/api` through a fixed Vite proxy; production API origin configuration waits for `production-delivery`.
+- **Small native request layer.** Use `fetch`, `URLSearchParams` and `AbortController` without an HTTP or state library. Keep search and forecast requests in separate state machines, abort superseded requests, and reject late responses by request identity. No initial request, automatic retry, persistence or client cache.
+- **Explicit city identity.** Only a selected `Location` from the search contract may start a forecast request. Selecting another city clears the prior forecast before loading. Typing new search text leaves the current selected forecast visible until a new result is selected.
+- **Presentation follows provider contracts.** Web formatters preserve the offset-less local current time, convert `retrievedAtUtc` in the forecast timezone, compute weekdays from civil dates, keep nullable metrics unavailable, and label daily conditions as the day's most severe. No WMO remapping or backend contract change.
+- **Readable imagery.** Move the ten existing WebP files into the web asset directory during U9. A typed map chooses exactly one file from current category and `isDay`; neutral/loading/error states have a neutral fallback. Cards and controls own their contrast so photographs never carry essential text directly. Assets are for local development until publication rights are verified.
+- **Enforced accessibility and quality.** Unit/component tests use offline fixtures and fake time. U10 implements a browser axe command and checks keyboard behavior, 360 px/desktop layouts and all image states. The root boundary gate, web coverage floor and existing API gates stay active; end-to-end and performance release gates belong to `production-delivery`.
+
+## Phases and Checkpoints
+
+### Phase 1: Independent workspace and safe HTTP boundary
+
+- U1 pins compatible approved dependencies and establishes the independently buildable web workspace with a neutral shell.
+- U2 activates web typecheck, lint, format, test and coverage commands plus the root cross-app boundary check.
+- U3 validates the location response and error envelope from `unknown`, with fixed route construction and offline tests.
+- U4 validates the forecast response and fixed route construction, including seven records and nullable daily metrics.
+
+Checkpoint U-A verifies the neutral app, both parsers and the independent web build before asynchronous UI behavior expands.
+
+### Phase 2: Search and selection
+
+- U5 builds the labelled, keyboard-operable search and location attribution with the three-code-point/300 ms rule and stale-response protection.
+- U6 connects explicit selection to forecast loading, rate-limit/unavailable errors and manual retry; a changed selection can never display the previous city's forecast.
+
+Checkpoint U-B tests the complete offline search-to-forecast transition, including network races, keyboard selection and safe failure states.
+
+### Phase 3: Weather presentation and module gate
+
+- U7 presents current conditions, local valid time, retrieval time and forecast attribution.
+- U8 presents all seven daily cards, separate rain chance/amount, UV risk and unavailable metrics.
+- U9 adds the ten category/day-night image mappings and responsive readable surfaces, fetching only the active image.
+- U10 runs browser accessibility and contrast checks, the complete web/root gates, coverage, audit and local preview smoke verification.
+
+Checkpoint U-C reviews every local spec criterion with the owner. Public usage, privacy, current licensing, image rights and production performance stay explicit `production-delivery` gates.
+
+## Verification Strategy
+
+- Use red-green-refactor for each behavior slice; run focused Vitest tests and web typecheck/lint/format after each task, then commit the verified slice.
+- At checkpoints run `npm run check --workspace @nosso-clima/web` and the root `npm run check`. At U10 also run `npm run test:coverage --workspace @nosso-clima/web`, `npm run test:a11y`, `npm run check:boundaries`, `npm run build --workspace @nosso-clima/web` and `npm audit --audit-level=high`.
+- Mock the API in unit/component and browser accessibility tests. Use fake timers for debounce and deferred promises for races; no live Open-Meteo request or wall-clock sleep. Inspect the rendered UI at 360 px and desktop with every image because an automated axe report alone does not prove photographic contrast.
+- Select exact supported dependency versions at U1, pin them in the lockfile, and review its diff and audit before committing. Keep local commands within the 90-second budget; full browser checks use the approved five-minute budget.
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| An older search or forecast response wins a race | Wrong city or results appear | Abort superseded requests and check request identity before committing results; test ignored aborts |
+| Browser timezone shifts an offset-less local time or civil date | Misleading time/day | Keep `validAtLocal` as local text, format UTC retrieval in response timezone, test a viewer in another timezone |
+| Missing UV or rain chance becomes zero | False reassurance | Preserve `null` in web parser and render “Indisponível”; test individual daily nulls |
+| Photograph defeats contrast or loads all images | Unreadable/slow page | Opaque surfaces, neutral fallback, one active image request, all ten visual checks at mobile and desktop |
+| City suggestions are inaccessible | Core flow blocked for keyboard users | Labelled combobox behavior, active-option semantics, focus tests and browser axe gate |
+| Image provenance or provider usage is unresolved | Public release cannot proceed | Keep local module completion separate from `production-delivery` rights, privacy and aggregate-budget gates |
+
+## Open Questions
+
+No unresolved choice blocks the local plan. The approved spec fixes the search threshold, debounce, selected-city behavior, daily-condition wording and image rule. Exact compatible dependency versions and the browser axe runner are selected in U1/U10 without changing those product decisions; any new package is reviewed through the lockfile and audit. Public release questions remain with `production-delivery`.
+
+## Approval Gate
+
+Owner approval of this plan and its U1–U10 tasks is required before implementing `apps/web`, as stated in the approved `SPEC-weather-ui.md`.

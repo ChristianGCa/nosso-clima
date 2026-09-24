@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Draft for owner review on 2026-09-24; implementation is not approved
+- **Status:** Approved by owner on 2026-09-24; implementation awaits plan and task approval
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -144,4 +144,4 @@ type ForecastViewState =
 3. Daily cards say “Condição mais severa” and keep chance and volume of rain as separate labelled values.
 4. The existing WebP images may be used during local development. Their provenance and publication rights must be confirmed before public delivery; no ownership or licence is inferred from their presence in the repository.
 
-Approval of this spec authorizes planning and task breakdown for `weather-ui`. Implementation begins only after the spec and resulting plan/tasks are approved under the repository workflow.
+The owner approved this spec on 2026-09-24. Implementation begins after the resulting plan and tasks are approved under the repository workflow.

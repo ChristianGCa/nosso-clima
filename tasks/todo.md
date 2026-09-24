@@ -668,3 +668,226 @@ Plan: `tasks/plan.md`, Weather Forecast section
 - [x] Every local `SPEC-weather-forecast.md` success criterion and active `CONSTRAINTS.md` floor is met.
 - [x] Public deployment remains blocked until `production-delivery` approves aggregate Open-Meteo usage across geocoding and forecasting, current licensing, attribution and privacy notice; commercial deployment additionally needs paid-endpoint review.
 - [x] Owner reviews implementation before this module is marked complete (owner: “aprovo”, 2026-09-24).
+
+---
+
+# Tasks: Weather UI
+
+Status: Proposed for owner review on 2026-09-24; implementation not yet approved
+Module id: `weather-ui`
+Source spec: `SPEC-weather-ui.md` (approved 2026-09-24)
+Plan: `tasks/plan.md`, Weather UI section
+
+## Progress
+
+- [ ] U1 — Bootstrap an independent neutral web app
+- [ ] U2 — Activate web quality and architecture gates
+- [ ] U3 — Parse and request location suggestions safely
+- [ ] U4 — Parse and request forecasts safely
+- [ ] Checkpoint U-A — Independent HTTP boundaries
+- [ ] U5 — Build accessible city search
+- [ ] U6 — Connect explicit selection and forecast states
+- [ ] Checkpoint U-B — Offline city-to-forecast flow
+- [ ] U7 — Present current conditions and timestamps
+- [ ] U8 — Present seven local-day cards
+- [ ] U9 — Map backgrounds and build responsive surfaces
+- [ ] U10 — Complete browser accessibility and module gate
+- [ ] Checkpoint U-C — Owner review
+
+## Task U1: Bootstrap an independent neutral web app
+
+**Description:** Add `@nosso-clima/web` to the existing npm workspace with pinned compatible React/Vite/TypeScript dependencies and a buildable neutral first screen. This slice makes no API request and does not move the WebP assets.
+
+**Acceptance criteria:**
+
+- [ ] A 360 px and desktop browser can render a labelled city search prompt without a default city or network request.
+- [ ] `npm run dev --workspace @nosso-clima/web` and `npm run build --workspace @nosso-clima/web` work independently from the API; the lockfile pins reviewed versions.
+- [ ] The dependency diff has no unmitigated high/critical advisory, and no API runtime import enters the web app.
+
+**Verification:** `npm run build --workspace @nosso-clima/web`; `npm run typecheck --workspace @nosso-clima/web`; `npm audit --audit-level=high`; browser first-load network inspection.
+
+**Dependencies:** Approved `SPEC-weather-ui.md` and approved UI plan/tasks.
+
+**Files likely touched:** `apps/web/package.json`, `apps/web/index.html`, `apps/web/vite.config.ts`, `apps/web/src/main.tsx`, `apps/web/src/app.tsx`, generated root `package-lock.json`.
+
+**Estimated scope:** Medium (one bootstrap slice plus generated lockfile).
+
+## Task U2: Activate web quality and architecture gates
+
+**Description:** Add web test/coverage/typecheck/lint/format commands and a root import-boundary check before feature logic grows. Keep the root canonical checks passing.
+
+**Acceptance criteria:**
+
+- [ ] Web-local check and coverage commands run; the 80% thresholds cover statements, branches, functions and lines.
+- [ ] `npm run check:boundaries` fails on prohibited web-to-API and API-to-web imports and passes the real repository.
+- [ ] Root `npm run check` includes the web workspace without losing the existing API tests.
+
+**Verification:** `npm run check --workspace @nosso-clima/web`; `npm run check:boundaries`; `npm run check`; boundary-command negative fixtures.
+
+**Dependencies:** U1.
+
+**Files likely touched:** `apps/web/package.json`, `apps/web/tsconfig.json`, `apps/web/vitest.config.ts`, `package.json`, `scripts/check-boundaries.mjs`.
+
+**Estimated scope:** Medium (5 files).
+
+## Task U3: Parse and request location suggestions safely
+
+**Description:** Define a web-local location contract and fixed-route fetch adapter that accepts only the consumed approved response shape and bounded public errors.
+
+**Acceptance criteria:**
+
+- [ ] The request uses `URLSearchParams` with only `query`; base URL configuration cannot come from user input.
+- [ ] Valid, empty, malformed, 429, 503 and network responses produce typed results or bounded errors without leaking provider data.
+- [ ] Location fields needed for selection and both attribution sources survive parsing; extra unconsumed fields do not appear in the UI model.
+
+**Verification:** `npm test --workspace @nosso-clima/web -- locations`; web typecheck, lint and format check.
+
+**Dependencies:** U2.
+
+**Files likely touched:** `apps/web/src/api/locations.ts`, `apps/web/src/api/location-contract.ts`, `apps/web/test/locations.test.ts`.
+
+**Estimated scope:** Medium (3 files).
+
+## Task U4: Parse and request forecasts safely
+
+**Description:** Add a fixed-route forecast client and web-local parser for the approved current-plus-seven-day response, without importing backend runtime code.
+
+**Acceptance criteria:**
+
+- [ ] Outbound query uses only selected `latitude`, `longitude` and `timezone`; malformed HTTP/JSON/data and public errors become bounded UI errors.
+- [ ] The parser keeps seven ordered local dates, current/attribution fields and only the permitted nullable probability, UV and UV-risk fields.
+- [ ] Tests cover 429/503, malformed dates and fields, null preservation and no backend source import.
+
+**Verification:** `npm test --workspace @nosso-clima/web -- forecast`; web typecheck, lint and format check.
+
+**Dependencies:** U2.
+
+**Files likely touched:** `apps/web/src/api/forecast.ts`, `apps/web/src/api/forecast-contract.ts`, `apps/web/test/forecast.test.ts`.
+
+**Estimated scope:** Medium (3 files).
+
+## Checkpoint U-A: Independent HTTP boundaries
+
+- [ ] `npm run check --workspace @nosso-clima/web`, root `npm run check` and `npm run check:boundaries` pass.
+- [ ] Neutral first load and both clients are verified offline with no provider call or API runtime import.
+- [ ] Review response parsing and privacy boundary before asynchronous UI state expands.
+
+## Task U5: Build accessible city search
+
+**Description:** Provide a labelled suggestion picker with search loading, empty, failure and attribution states. Use a three-code-point threshold, 300 ms debounce, cancellation and request-identity guard.
+
+**Acceptance criteria:**
+
+- [ ] No search request occurs below three trimmed code points or before the debounce; at most five distinguishable results appear after success.
+- [ ] Arrow keys, Enter, Escape, Tab, pointer selection, active-option semantics and live result status work without a focus trap.
+- [ ] Superseded responses cannot replace newer suggestions; 429, unavailable and empty states differ, and search attribution links are visible with results.
+
+**Verification:** `npm test --workspace @nosso-clima/web -- city-search`; web check; real-browser keyboard inspection.
+
+**Dependencies:** U3 and Checkpoint U-A.
+
+**Files likely touched:** `apps/web/src/components/city-search.tsx`, `apps/web/src/hooks/use-location-search.ts`, `apps/web/src/app.tsx`, `apps/web/test/city-search.test.tsx`.
+
+**Estimated scope:** Medium (4 files).
+
+## Task U6: Connect explicit selection and forecast states
+
+**Description:** A selected location starts one forecast request and drives loading, ready, rate-limited, unavailable and manual-retry states; a changed city cannot inherit old data.
+
+**Acceptance criteria:**
+
+- [ ] Initial and edited-but-unselected states make no forecast call; selection passes only that result's coordinates and timezone.
+- [ ] Selecting another city clears the prior forecast; aborted or late older responses cannot replace the new city's state.
+- [ ] 429 has a specific message, other failures are generic, a retry is explicit, and no automatic retry or stale weather appears.
+
+**Verification:** `npm test --workspace @nosso-clima/web -- forecast-flow`; web check; browser selection/retry smoke.
+
+**Dependencies:** U4 and U5.
+
+**Files likely touched:** `apps/web/src/hooks/use-forecast.ts`, `apps/web/src/app.tsx`, `apps/web/src/components/forecast-state.tsx`, `apps/web/test/forecast-flow.test.tsx`.
+
+**Estimated scope:** Medium (4 files).
+
+## Checkpoint U-B: Offline city-to-forecast flow
+
+- [ ] A mocked city search, explicit keyboard/pointer selection and forecast success work through the rendered app.
+- [ ] Empty, 429, 503, malformed response, retry and crossed-request races remain safe and distinct.
+- [ ] Web/root checks and the architecture boundary check pass before weather presentation expands.
+
+## Task U7: Present current conditions and timestamps
+
+**Description:** Render the current result, selected city, local valid minute, retrieval time and forecast attribution with clear units and Portuguese wording.
+
+**Acceptance criteria:**
+
+- [ ] Temperature, apparent temperature, category label and wind use the approved contract and units without WMO remapping.
+- [ ] `validAtLocal` remains the city's local time, while `retrievedAtUtc` is formatted in the response timezone; tests use a viewer in another timezone.
+- [ ] Open-Meteo/CC BY 4.0 credit is linked and says the data was adapted; no current value is called an observed measurement.
+
+**Verification:** `npm test --workspace @nosso-clima/web -- current`; web check; 360 px/desktop preview.
+
+**Dependencies:** U6.
+
+**Files likely touched:** `apps/web/src/components/current-conditions.tsx`, `apps/web/src/format/weather-format.ts`, `apps/web/src/app.tsx`, `apps/web/test/current-conditions.test.tsx`.
+
+**Estimated scope:** Medium (4 files).
+
+## Task U8: Present seven local-day cards
+
+**Description:** Render seven civil-date cards with approved metric labels, most-severe daily condition, separate rain chance/amount and unavailable UV/probability.
+
+**Acceptance criteria:**
+
+- [ ] Seven ordered dates and weekdays remain correct across browser/selected-city timezone differences.
+- [ ] Max/min temperature and apparent temperature, maximum wind, chance, amount, UV value and Portuguese risk all show correct units.
+- [ ] `null` rain chance and UV display “Indisponível”, never zero; condition wording says “mais severa”, never “predominante”.
+
+**Verification:** `npm test --workspace @nosso-clima/web -- daily`; web check; mobile/desktop card inspection.
+
+**Dependencies:** U7.
+
+**Files likely touched:** `apps/web/src/components/daily-forecast.tsx`, `apps/web/src/format/weather-format.ts`, `apps/web/src/app.tsx`, `apps/web/test/daily-forecast.test.tsx`.
+
+**Estimated scope:** Medium (4 files).
+
+## Task U9: Map backgrounds and build responsive surfaces
+
+**Description:** Move the ten existing WebP files into the web app and select one from current category and `isDay`. Add neutral/failure fallback, readable content surfaces and responsive styling.
+
+**Acceptance criteria:**
+
+- [ ] All ten category/day-night combinations resolve to the intended file; neutral/loading/image-failure states have no wrong-weather photo.
+- [ ] The first load fetches zero photos and an active forecast fetches only its chosen photo; the page has no horizontal overflow at 360 px.
+- [ ] Text, controls and focus states retain documented contrast over every background; reduced motion is respected.
+
+**Verification:** `npm test --workspace @nosso-clima/web -- background`; web check; browser network/contrast inspection for all ten files at 360 px and desktop.
+
+**Dependencies:** U8.
+
+**Files likely touched:** `apps/web/src/assets/backgrounds/` (one mechanical move of ten files), `apps/web/src/backgrounds.ts`, `apps/web/src/styles.css`, `apps/web/src/app.tsx`, `apps/web/test/backgrounds.test.ts`.
+
+**Estimated scope:** Medium behavior change plus one mechanical asset batch.
+
+## Task U10: Complete browser accessibility and module gate
+
+**Description:** Add the browser axe command and prove the complete local flow, readability and active constraints without a live provider.
+
+**Acceptance criteria:**
+
+- [ ] `npm run test:a11y` reports zero critical or serious issues for neutral, suggestions, loading, error and success states; keyboard/focus behavior is checked in a real browser.
+- [ ] Web/root checks, 80% coverage per metric, boundary check, build, audit and 90-second local budgets pass without weakened thresholds or skipped tests.
+- [ ] All local spec criteria pass; provider aggregate usage, privacy, licensing, image rights and production performance remain explicit `production-delivery` gates.
+
+**Verification:** `npm run check --workspace @nosso-clima/web`; `npm run check`; `npm run test:coverage --workspace @nosso-clima/web`; `npm run test:a11y`; `npm run check:boundaries`; `npm audit --audit-level=high`; preview smoke.
+
+**Dependencies:** U9.
+
+**Files likely touched:** `apps/web/test/a11y.spec.ts`, `apps/web/playwright.config.ts`, `apps/web/package.json`, `package.json`, and focused UI fixes if the gate reveals defects.
+
+**Estimated scope:** Medium (4 files plus issue-specific fixes).
+
+## Checkpoint U-C: Owner review
+
+- [ ] Every local `SPEC-weather-ui.md` success criterion and active `CONSTRAINTS.md` floor is met.
+- [ ] Public deployment remains blocked until `production-delivery` verifies aggregate Open-Meteo usage, privacy, current licensing, image rights and mobile performance.
+- [ ] Owner reviews the complete local user flow before this module is marked complete.
