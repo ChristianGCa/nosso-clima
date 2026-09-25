@@ -1,3 +1,5 @@
+import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
+
 import { buildApp } from './app.js';
 import {
   type AppConfig,
@@ -118,6 +120,8 @@ export async function startServer(options: StartServerOptions): Promise<void> {
 
 if (import.meta.main) {
   try {
+    // Allow a slow IPv4 connection to finish before trying an unavailable IPv6 route.
+    setDefaultAutoSelectFamilyAttemptTimeout(1_000);
     await startServer({
       environment: process.env,
       createApp: (config) =>
