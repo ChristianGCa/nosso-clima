@@ -368,3 +368,98 @@ No unresolved choice blocks the local plan. The approved spec fixes the search t
 ## Approval Gate
 
 The owner approved this plan and its U1–U10 tasks on 2026-09-24, then approved the completed local user flow at Checkpoint U-C on 2026-09-24.
+
+---
+
+# Implementation Plan: Production Delivery
+
+Status: Draft for owner review; implementation not yet approved
+Module id: `production-delivery`
+Source spec: `SPEC-production-delivery.md` (approved for planning 2026-09-24)
+Task list: `tasks/todo.md`, Production Delivery section
+
+## Overview
+
+Make the existing two applications independently buildable and verifiable as one browser flow, then add the production quality gates and a reviewable release package. The first slices are local and offline. Provider usage, privacy, image rights and a host-specific deployment stay explicit release gates until the owner supplies the missing decisions. No task publishes the site.
+
+## Dependency Graph
+
+```text
+P1 production configuration and clean builds
+ └── P2 local HTTP/browser fixture harness
+      └── P3 complete browser journey ── Checkpoint P-A
+           └── P4 mobile performance gate
+                └── P5 CI and secret scanning ── Checkpoint P-B
+
+P6 provider terms and combined usage model ── P7 privacy notice ──┐
+P8 image-rights inventory ────────────────────────────────────────┼── P9 host-specific deployment runbook
+P5 CI and secret scanning ─────────────────────────────────────────┘    └── P10 release rehearsal ── Checkpoint P-C
+```
+
+P6–P8 may be researched after Checkpoint P-A without changing provider code. P9 needs the owner's host, domain, expected traffic and commercial status; P10 also needs verified publication rights. P1–P4 can be completed locally after this plan and task list are approved. P5 can be prepared locally, but requires a hosted run for completion.
+
+## Architecture Decisions
+
+- **Independent artifacts.** Use `npm ci` with the committed lockfile. Build API and web separately; verify the API's production-dependency installation path and the static web output. A production web build requires an explicit HTTPS API origin, while an isolated E2E fixture build may use a loopback HTTP origin and never becomes a deploy artifact.
+- **Real cross-app tests, offline upstream.** Start an actual Fastify HTTP listener from `buildApp({ fetchImpl })` with deterministic geocoding and forecast responses, plus a server for the built static web app. Playwright drives a real browser and checks visible behavior. The fixture intercepts only Open-Meteo calls; browser requests reach the API over HTTP.
+- **Small E2E suite.** Keep reusable process/fixture setup separate from user journeys. Cover neutral, search/select, current and seven days, no result, upstream failure/retry, keyboard flow, attribution and stale-city protection. Avoid duplicating parser-unit matrices already owned by source modules.
+- **Measured mobile gate.** Use the installed Playwright Chromium and its DevTools protocol for a fixed 360×800 viewport, CPU/network throttling and browser `PerformanceObserver` entries. Assert navigation LCP and page-lifetime CLS through a successful selection; log the measurement profile and numbers. Run the built app so Vite development transforms do not distort results.
+- **CI and security.** Propose a GitHub Actions workflow using pinned Node/npm, `npm ci`, workspace/root gates, browser setup, E2E, performance, audit and a pinned Gitleaks installation or action with redacted output. Since the repository has no remote configured, local commands prove the workflow content, while a hosted CI run remains a completion gate once a GitHub remote exists. A different CI host requires a plan amendment.
+- **Evidence before publication.** Keep a dated provider-terms review and combined usage calculation, privacy notice, ten-file rights inventory, deployment runbook and rollback record under `docs/deploy/`. Unknowns stay marked as blockers; no inferred image licence or invented traffic forecast fills a missing owner decision.
+- **Single-process baseline.** Preserve `TRUST_PROXY=false` and current API platform limits until a selected host supplies specific trusted proxy ranges or a reviewed edge design. Multi-instance deployment changes the platform's process-local assumptions and requires its own approved amendment.
+
+## Phases and Checkpoints
+
+### Phase 1: Repeatable local release candidate
+
+- P1 adds a tested production-origin preflight, explicit environment examples and clean independent build verification without changing API contracts.
+- P2 adds the cross-app harness: built static web, real HTTP API, fixed provider fixture transport and reliable startup/cleanup.
+- P3 adds the small Playwright user-journey suite with success, error, empty, keyboard and stale-city cases.
+
+Checkpoint P-A verifies root/workspace gates, independent builds and the complete offline browser journey. It also confirms no fixture request reaches Open-Meteo.
+
+### Phase 2: Enforced production checks
+
+- P4 implements and stabilizes the mobile LCP/CLS command under the exact `CONSTRAINTS.md` thresholds and five-minute budget.
+- P5 adds CI and the redacted Gitleaks gate, retaining coverage, audit, axe, boundaries and independent build checks.
+
+Checkpoint P-B runs the complete local pipeline from a clean checkout. Hosted CI evidence is required when a remote is available; a local workflow simulation is not represented as a hosted pass.
+
+### Phase 3: Release evidence and deployment
+
+- P6 records current official Open-Meteo terms and a combined geocoding/forecast usage model. The owner-provided traffic and commercial status determine whether the free endpoint is viable or a paid plan is required.
+- P7 documents data transfers, provider retention and application logging/retention in a public privacy notice, reviewed against the selected host and current provider material.
+- P8 inventories rights and required credit for each WebP file. Missing evidence remains a blocker; any replacement-image project requires explicit approval under the `weather-ui` boundary.
+- P9 writes the host-specific API/static-web deployment procedure, HTTPS/CORS/proxy/edge settings, health check, smoke and rollback steps after the host/domain are chosen.
+- P10 rehearses deployment and rollback, collects the full gate output and creates a release decision record without making the site public.
+
+Checkpoint P-C is the owner's review of completed release evidence. The actual public deploy requires a separate approval after every gate passes.
+
+## Verification Strategy
+
+- Work in small verified slices. P1–P5 use offline fixtures; no automated test calls live Open-Meteo. Run focused checks per task and root `npm run check` at checkpoints.
+- Keep at least 80% lines, branches, functions and statements in each application. Run `npm run test:coverage`, `npm run test:a11y`, `npm run test:e2e`, `npm run test:performance`, `npm run check:boundaries`, `npm audit --audit-level=high` and `gitleaks detect --redact --no-banner` at the final local gate.
+- Record command durations against the 90-second local and five-minute browser/security budgets. The E2E and performance commands use bounded readiness waits and always close listeners/browsers after failure.
+- Review current official provider and privacy sources while preparing P6/P7, recording URLs and review dates. Do not substitute an old spec statement for a release-time terms check.
+- P9/P10 test the chosen host's actual configuration. A generic README is insufficient evidence for the production smoke and rollback criteria.
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation |
+|---|---|---|
+| Fixture browser tests accidentally use the live provider | Quota/privacy failure and flaky CI | Inject only the API's outbound `fetchImpl`; fail on any unmatched provider URL and assert call counts |
+| E2E preflight allows a loopback origin into public assets | Insecure deployed client | Keep fixture build mode separate and test that public production mode rejects loopback/HTTP/empty origins |
+| LCP/CLS varies with host load | Unreliable quality gate | Pin browser/profile, measure built assets, record numbers and diagnose variance rather than relaxing thresholds |
+| Secret scan is missing from local or hosted checks | Undetected credential | Pin Gitleaks setup, redact findings and make scan failure blocking |
+| Unknown usage, commercial status or image rights are treated as approval | Provider or publication breach | Record each as an explicit release blocker with owner evidence and dated terms review |
+| Host topology silently enables broad proxy trust or multi-instance behavior | Bypass of per-IP limits and aggregate budget | Keep one process and `TRUST_PROXY=false` until specific topology is reviewed |
+
+## Open Decisions
+
+- Owner: confirm commercial status, host/domain, expected peak and daily traffic, and evidence or replacement direction for all ten images. None is inferred from approval of the specification.
+- The proposed CI host is GitHub Actions; there is currently no configured remote. The owner can select another CI host before P5, in which case the plan is updated before implementation.
+- P9/P10 and public launch depend on these answers. P1–P8 can produce local checks or draft evidence, but P6–P8 cannot be marked complete if required facts remain unknown.
+
+## Approval Gate
+
+Implementation starts only after the owner approves this plan and its P1–P10 tasks in `tasks/todo.md`. Approving them does not authorize public deployment; Checkpoint P-C is a separate release review.
