@@ -1,6 +1,6 @@
 # Spec: Production Delivery
 
-- **Status:** Draft for owner review; implementation is not approved
+- **Status:** Approved for planning by owner on 2026-09-24; deployment decisions remain open
 - **Module id:** `production-delivery`
 - **Depends on:** `location-search`, `weather-forecast`, `weather-ui`
 - **Source:** `CAPABILITY-MAP.md`, `CONSTRAINTS.md`, and the four completed module specs
@@ -9,7 +9,7 @@
 
 Make the completed local weather flow reproducible, testable in a real browser, and ready for a separately deployed static web app and single-process Node API. A public launch is a distinct decision: it requires evidence for upstream usage, current terms, privacy, image rights, performance, and deployment security. Passing local tests alone does not authorize publication.
 
-## Proposed Assumptions for Review
+## Planning Baseline
 
 1. The first deployment is non-commercial and uses one persistent API process; no shared cache or distributed rate limiter is introduced implicitly.
 2. The web app is built as static files and deployed separately from the API, with an explicit HTTPS API origin and a matching explicit CORS origin.
@@ -117,4 +117,5 @@ gitleaks detect --redact --no-banner
 1. Is the intended public site strictly non-commercial, including no ads, sponsorship, or subscription? If not, a paid Open-Meteo plan is required before deployment design is finalized.
 2. Which host, domain, and expected peak/daily traffic should the deployment target? The traffic answer determines whether a demonstrably low ceiling is feasible or an aggregate control is required.
 3. What is the provenance and public-use permission for each of the ten WebP images? If unavailable, should replacement assets be commissioned or selected under a verified licence?
-No implementation of this draft is authorized until the owner approves the final spec. An approval of the completed `weather-ui` Checkpoint U-C does not approve this new module or a public deployment.
+
+The owner approved this specification for planning on 2026-09-24. The implementation plan and task list still require review. Public deployment requires the open decisions, completed evidence gates, and a separate release approval.
