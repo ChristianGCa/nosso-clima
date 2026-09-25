@@ -673,7 +673,7 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 # Tasks: Weather UI
 
-Status: Local implementation complete on 2026-09-24; Checkpoint U-C awaits owner review
+Status: Complete; Checkpoint U-C approved by owner on 2026-09-24
 Module id: `weather-ui`
 Source spec: `SPEC-weather-ui.md` (approved 2026-09-24)
 Plan: `tasks/plan.md`, Weather UI section
@@ -692,7 +692,7 @@ Plan: `tasks/plan.md`, Weather UI section
 - [x] U8 — Present seven local-day cards
 - [x] U9 — Map backgrounds and build responsive surfaces
 - [x] U10 — Complete browser accessibility and module gate
-- [ ] Checkpoint U-C — Owner review
+- [x] Checkpoint U-C — Owner review (approved 2026-09-24)
 
 ## Task U1: Bootstrap an independent neutral web app
 
@@ -890,4 +890,4 @@ Plan: `tasks/plan.md`, Weather UI section
 
 - [x] Every local `SPEC-weather-ui.md` success criterion and active `CONSTRAINTS.md` floor is met.
 - [x] Public deployment remains blocked until `production-delivery` verifies aggregate Open-Meteo usage, privacy, current licensing, image rights and mobile performance.
-- [ ] Owner reviews the complete local user flow before this module is marked complete.
+- [x] Owner reviews the complete local user flow before this module is marked complete (approved 2026-09-24).

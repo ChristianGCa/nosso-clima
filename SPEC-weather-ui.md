@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Approved by owner on 2026-09-24; plan and U1–U10 tasks approved on 2026-09-24
+- **Status:** Complete; Checkpoint U-C approved by owner on 2026-09-24
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -144,4 +144,4 @@ type ForecastViewState =
 3. Daily cards say “Condição mais severa” and keep chance and volume of rain as separate labelled values.
 4. The existing WebP images may be used during local development. Their provenance and publication rights must be confirmed before public delivery; no ownership or licence is inferred from their presence in the repository.
 
-The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-09-24.
+The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-09-24. The owner approved the completed local user flow at Checkpoint U-C on 2026-09-24.
