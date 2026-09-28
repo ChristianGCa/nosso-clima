@@ -409,6 +409,7 @@ a {
 .daily-strip {
   display: grid;
   grid-template-columns: minmax(15rem, 1.7fr) repeat(6, minmax(7.6rem, 1fr));
+  grid-auto-rows: 1fr;
   gap: 0.55rem;
   align-items: stretch;
 }
@@ -432,8 +433,27 @@ a {
 .day-card h3 {
   margin: 0;
   color: #f4fbff;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   line-height: 1.25;
+}
+
+.today-date {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.today-badge {
+  padding: 0.2rem 0.4rem;
+  border: 1px solid rgb(168 227 235 / 0.45);
+  border-radius: 0.3rem;
+  background: rgb(121 196 207 / 0.18);
+  color: #e3fbff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 1;
 }
 
 .today-condition {
@@ -459,12 +479,12 @@ a {
 
 .today-condition span {
   color: #c4dce5;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
 }
 
 .today-condition strong {
   color: #fff;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
 }
 
 .today-metrics,
@@ -483,7 +503,7 @@ a {
 .today-metrics dt,
 .day-metrics dt {
   color: #c4dce5;
-  font-size: 0.68rem;
+  font-size: 0.75rem;
   line-height: 1.25;
 }
 
@@ -491,7 +511,7 @@ a {
 .day-metrics dd {
   margin: 0.12rem 0 0;
   color: #fff;
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   line-height: 1.3;
@@ -500,14 +520,14 @@ a {
 
 .temperature-range {
   display: grid;
-  gap: 0.05rem;
+  gap: 0.25rem;
 }
 
 .metric-reading,
 .icon-value {
   display: flex;
   align-items: center;
-  gap: 0.1rem;
+  gap: 0.5rem;
   white-space: nowrap;
 }
 
@@ -520,13 +540,20 @@ a {
 .day-card {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+}
+
+.day-weather {
+  display: flex;
+  flex-direction: column;
   align-items: flex-start;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
 }
 
 .day-card .condition-icon {
   width: 4rem;
   height: 4rem;
-  margin-top: 1rem;
   border-radius: 0.6rem;
   background: #243b49;
 }
@@ -537,21 +564,38 @@ a {
 }
 
 .day-condition {
-  min-height: 2.2rem;
-  margin: 0.45rem 0 0.8rem;
+  margin: 0;
   color: #edfaff;
-  font-size: 0.86rem;
+  font-size: 0.9rem;
   font-weight: 800;
   line-height: 1.2;
 }
 
 .day-metrics {
-  display: grid;
-  gap: 0.65rem;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
   width: 100%;
-  margin-top: auto;
-  padding-top: 0.75rem;
+  margin-top: 0.65rem;
+  padding-top: 0.65rem;
   border-top: 1px solid rgb(204 231 235 / 0.3);
+}
+
+.day-metrics > div {
+  padding-block: 0.55rem;
+}
+
+.day-metrics > div:first-child {
+  padding-top: 0;
+}
+
+.day-metrics > div:last-child {
+  padding-bottom: 0;
+}
+
+.day-metrics > div + div {
+  border-top: 1px solid rgb(204 231 235 / 0.22);
 }
 
 .site-footer {
@@ -687,31 +731,32 @@ a {
 
   .day-card {
     display: grid;
-    grid-template-columns: minmax(0, 0.8fr) 4rem minmax(0, 1.3fr);
-    align-items: center;
-    gap: 0.15rem 0.55rem;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-rows: min-content 1fr;
+    align-items: stretch;
+    gap: 0.45rem 0.65rem;
     padding: 0.7rem;
   }
 
-  .day-card .condition-icon {
-    grid-column: 2;
-    grid-row: 1 / 3;
-    width: 4rem;
-    height: 4rem;
-    margin: 0;
+  .day-card h3 {
+    grid-column: 1 / -1;
   }
 
-  .day-condition {
+  .day-weather {
     grid-column: 1;
     grid-row: 2;
-    min-height: 0;
-    margin: 0;
+    margin-top: 0;
+  }
+
+  .day-weather .condition-icon {
+    width: 4rem;
+    height: 4rem;
   }
 
   .day-metrics {
-    grid-column: 3;
-    grid-row: 1 / 3;
-    gap: 0.3rem;
+    grid-column: 2;
+    grid-row: 2;
+    margin: 0;
     padding: 0 0 0 0.6rem;
     border-top: 0;
     border-left: 1px solid rgb(204 231 235 / 0.3);
@@ -725,12 +770,11 @@ a {
 
 @media (max-width: 380px) {
   .day-card {
-    grid-template-columns: minmax(0, 0.75fr) 3.75rem minmax(0, 1.25fr);
-    gap: 0.15rem 0.35rem;
+    gap: 0.35rem 0.5rem;
     padding: 0.55rem;
   }
 
-  .day-card .condition-icon {
+  .day-weather .condition-icon {
     width: 3.75rem;
     height: 3.75rem;
   }

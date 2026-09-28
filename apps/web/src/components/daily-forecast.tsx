@@ -37,7 +37,10 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
         <h2 id="daily-title">Previsão de 7 dias</h2>
         <div className="daily-strip">
           <article className="today-card">
-            <h3>{dayLabel(today.date)}</h3>
+            <h3 className="today-date">
+              <span className="today-badge">HOJE</span>
+              <span>{dayLabel(today.date)}</span>
+            </h3>
             <div className="today-condition">
               <ConditionIcon category={today.condition.category} />
               <p>
@@ -95,11 +98,13 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
           {upcoming.map((day) => (
             <article className="day-card" key={day.date}>
               <h3>{compactDayLabel(day.date)}</h3>
-              <ConditionIcon category={day.condition.category} />
-              <p className="day-condition">
-                <span className="visually-hidden">Condição mais severa</span>{' '}
-                {day.condition.labelPt}
-              </p>
+              <div className="day-weather">
+                <ConditionIcon category={day.condition.category} />
+                <p className="day-condition">
+                  <span className="visually-hidden">Condição mais severa</span>{' '}
+                  {day.condition.labelPt}
+                </p>
+              </div>
               <dl className="day-metrics">
                 <div>
                   <dt className="visually-hidden">Temperatura</dt>
