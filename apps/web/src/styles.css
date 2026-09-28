@@ -91,25 +91,13 @@ a {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 0.55rem;
-  color: #f5fbff;
-  font-size: 1.02rem;
-  font-weight: 800;
-  letter-spacing: -0.025em;
   text-decoration: none;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 1.75rem;
-  height: 1.75rem;
-  color: #98ecf3;
-}
-
-.brand-mark svg {
-  width: 100%;
-  height: 100%;
+.brand-logo {
+  display: block;
+  width: clamp(9.5rem, 14vw, 11.75rem);
+  height: auto;
 }
 
 .city-search {

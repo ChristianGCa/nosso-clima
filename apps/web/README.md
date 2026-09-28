@@ -16,3 +16,5 @@ Run the local checks with `npm run check --workspace @nosso-clima/web`, `npm run
 The ten bundled background files are approved for local development. Their publication rights and provider licensing must be verified by `production-delivery` before a public release.
 
 The footer contains a local explanation of data use, project information, and the distinct data and icon licences. The repository URL is intentionally unset in `src/components/site-information.tsx` until the owner provides a public address; the site shows non-clickable text meanwhile. The project code has no licence selected. This local explanation does not replace the release-time privacy notice, which needs the selected host's logging/retention and a public contact route.
+
+The owner-supplied brand variants live in the repository's `logo/` directory. The dark-header vector wordmark is copied into `src/assets/brand/`; the supplied favicon and touch/home-screen icons are copied into `public/`. The page loads only the header wordmark and browser-selected icons.

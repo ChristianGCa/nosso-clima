@@ -158,6 +158,25 @@ try {
   });
 
   await page.goto(origin);
+  assert.equal(
+    await page
+      .getByRole('link', { name: 'Nosso Clima, início' })
+      .locator('img')
+      .evaluate((element) => element.complete && element.naturalWidth > 0),
+    true,
+    'header logo must load',
+  );
+  for (const asset of [
+    'favicon.svg',
+    'favicon.ico',
+    'apple-touch-icon.png',
+    'site.webmanifest',
+    'icon-192.png',
+    'icon-512.png',
+  ]) {
+    const response = await page.request.get(`${origin}/${asset}`);
+    assert.equal(response.status(), 200, `${asset} must be served`);
+  }
   await scan(page, 'neutral mobile');
   await page.getByRole('link', { name: 'Como usamos seus dados' }).click();
   assert.equal(new URL(page.url()).hash, '#seus-dados');

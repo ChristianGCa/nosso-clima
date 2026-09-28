@@ -12,6 +12,11 @@ describe('neutral first screen', () => {
       'O clima da sua cidade, sem mistério.',
     );
     expect(screen.getByRole('combobox', { name: 'Buscar cidade' })).toBeTruthy();
+    const brandImage = screen
+      .getByRole('link', { name: 'Nosso Clima, início' })
+      .querySelector('img');
+    expect(brandImage?.getAttribute('src')).toBeTruthy();
+    expect(brandImage?.getAttribute('alt')).toBe('');
     expect(screen.queryByRole('heading', { name: 'Previsão de 7 dias' })).toBeNull();
     expect(screen.getByRole('link', { name: 'Como usamos seus dados' }).getAttribute('href')).toBe(
       '#seus-dados',

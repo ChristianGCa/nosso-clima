@@ -1,6 +1,7 @@
 import { CitySearch } from './components/city-search';
 import { ForecastStatus } from './components/forecast-state';
 import { SiteInformation } from './components/site-information';
+import logoEscuro from './assets/brand/logo-escuro.svg';
 import { useForecast } from './hooks/use-forecast';
 import { useWeatherBackground } from './hooks/use-weather-background';
 
@@ -15,15 +16,7 @@ export function App() {
       <header className="site-header" id="inicio">
         <div className="header-inner">
           <a className="brand" href="/" aria-label="Nosso Clima, início">
-            <span className="brand-mark" aria-hidden="true">
-              <svg viewBox="0 0 32 32" fill="none" focusable="false">
-                <title>Marca do Nosso Clima</title>
-                <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="2" />
-                <path d="M5 19h22M8 24h16" stroke="currentColor" strokeWidth="2" />
-                <circle cx="16" cy="12" r="3" fill="currentColor" />
-              </svg>
-            </span>
-            <span>nosso clima</span>
+            <img className="brand-logo" src={logoEscuro} alt="" />
           </a>
           <CitySearch onSelect={forecast.choose} />
         </div>
