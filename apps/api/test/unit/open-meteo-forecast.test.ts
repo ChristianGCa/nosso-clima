@@ -35,7 +35,7 @@ describe('Open-Meteo forecast transport', () => {
       ['current', 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day'],
       [
         'daily',
-        'weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,uv_index_max',
+        'weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
       ],
       ['temperature_unit', 'celsius'],
       ['wind_speed_unit', 'kmh'],
@@ -200,14 +200,23 @@ describe('Open-Meteo forecast response validation', () => {
       date: '2026-09-23',
       condition: { code: 80, category: 'rain', labelPt: 'Chuva' },
       precipitationProbabilityMaxPercent: 97,
-      uvIndexMax: 2.65,
-      uvRisk: 'low',
     });
+    expect(Object.keys(result.daily[0] ?? {})).toEqual([
+      'date',
+      'temperatureMaxC',
+      'temperatureMinC',
+      'apparentTemperatureMaxC',
+      'apparentTemperatureMinC',
+      'condition',
+      'precipitationProbabilityMaxPercent',
+      'precipitationSumMm',
+      'windSpeedMaxKmh',
+    ]);
     expect(result).not.toHaveProperty('latitude');
     expect(result.daily).toHaveLength(7);
   });
 
-  it('preserves approved nullable daily metrics without turning them into zero', () => {
+  it('preserves unavailable rain probability without turning it into zero', () => {
     const payload = {
       ...realForecast,
       daily: {
@@ -216,14 +225,11 @@ describe('Open-Meteo forecast response validation', () => {
           null,
           ...realForecast.daily.precipitation_probability_max.slice(1),
         ],
-        uv_index_max: [null, ...realForecast.daily.uv_index_max.slice(1)],
       },
     };
     const result = normalizeForecastResponse(payload, location, '2026-09-23T23:00:00.000Z');
     expect(result.daily[0]).toMatchObject({
       precipitationProbabilityMaxPercent: null,
-      uvIndexMax: null,
-      uvRisk: null,
     });
   });
 
@@ -247,18 +253,6 @@ describe('Open-Meteo forecast response validation', () => {
       daily: {
         ...realForecast.daily,
         temperature_2m_max: [null, ...realForecast.daily.temperature_2m_max.slice(1)],
-      },
-    },
-    {
-      daily: {
-        ...realForecast.daily,
-        uv_index_max: [-1, ...realForecast.daily.uv_index_max.slice(1)],
-      },
-    },
-    {
-      daily: {
-        ...realForecast.daily,
-        uv_index_max: ['invalid', ...realForecast.daily.uv_index_max.slice(1)],
       },
     },
     {

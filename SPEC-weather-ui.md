@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Complete; Checkpoint U-C approved by owner on 2026-09-24
+- **Status:** Complete; Checkpoint U-C approved by owner on 2026-09-24; revised by owner request on 2026-09-28 to remove UV maximum and risk
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -32,12 +32,12 @@ The frontend calls the same configured API base URL for both routes and uses `UR
 |---|---|---|
 | Search suggestions | `GET /api/v1/locations` from `SPEC-location-search.md` | Show `name`, optional `region`, and `country`; use the complete selected result for the forecast request. |
 | Current conditions | `GET /api/v1/forecast` from `SPEC-weather-forecast.md` | Show current temperature, apparent temperature, condition label, wind speed and local valid time. |
-| Seven-day forecast | `daily` from forecast response | Show local date and weekday for all seven days. Today shows max/min temperature and apparent temperature, the day's **most severe** condition, maximum rain chance, rain amount, maximum wind and UV value/risk. Each of the next six days shows only its condition, maximum rain chance, rain amount and max/min temperature. |
+| Seven-day forecast | `daily` from forecast response | Show local date and weekday for all seven days. Today shows max/min temperature and apparent temperature, the day's **most severe** condition, maximum rain chance, rain amount and maximum wind. Each of the next six days shows only its condition, maximum rain chance, rain amount and max/min temperature. |
 | Attribution | Each response's `attribution` | Credit Open-Meteo, GeoNames for search results and the selected city, linked CC BY 4.0 licence, and say Nosso Clima adapted the data. |
 
-The idea document's phrase “condição predominante” is superseded by the approved forecast contract: `daily.weather_code` represents the most severe condition of the day. Do not compute a predominant condition or derive daily conditions from the current condition. Backend `condition.category`, `condition.labelPt` and `uvRisk` are authoritative for wording and visual grouping.
+The idea document's phrase “condição predominante” is superseded by the approved forecast contract: `daily.weather_code` represents the most severe condition of the day. Do not compute a predominant condition or derive daily conditions from the current condition. Backend `condition.category` and `condition.labelPt` are authoritative for wording and visual grouping.
 
-Use `pt-BR` number and date formatting. Show °C, km/h, mm and percent explicitly. Distinguish rain chance (%) and rain amount (mm) with different icons and units, and keep their full names available to assistive technology so `70%` is not mistaken for `8,4 mm`. Maximum and minimum temperatures may use distinct upward and downward icons when their names remain available to assistive technology. A `null` daily precipitation probability or UV index is shown as “Indisponível”; `uvRisk` is also unavailable when UV is `null`. Never substitute zero. UV risk labels are “Baixo”, “Moderado”, “Alto”, “Muito alto” and “Extremo”; the text remains visible even if color is used.
+Use `pt-BR` number and date formatting. Show °C, km/h, mm and percent explicitly. Distinguish rain chance (%) and rain amount (mm) with different icons and units, and keep their full names available to assistive technology so `70%` is not mistaken for `8,4 mm`. Maximum and minimum temperatures may use distinct upward and downward icons when their names remain available to assistive technology. A `null` daily precipitation probability is shown as “Indisponível”; never substitute zero.
 
 `current.validAtLocal` is an offset-less local minute in the returned `timezone`; display its clock time directly and identify it as the time the current conditions apply to. Do not parse it as UTC or call it an observed measurement. `retrievedAtUtc` is a distinct retrieval timestamp; format it in the returned timezone and label it “Dados consultados às …”. For daily `YYYY-MM-DD`, calculate weekday from that civil date without shifting it through the browser's local timezone. The site must behave the same when the viewer and selected city are in different timezones.
 
@@ -51,7 +51,7 @@ Use one decorative WebP background from the ten existing `backgrounds/` files, s
 
 Text and controls sit on opaque or sufficiently strong translucent surfaces, never directly on the photograph. Verify contrast on every day/night image and on the neutral state at mobile and desktop sizes; meet at least 4.5:1 for ordinary text and 3:1 for large text and interactive boundaries. The image is decorative and has no alternative text. Ensure focus indicators remain visible against every background. Respect reduced-motion preferences; motion cannot carry essential state.
 
-The city picker has a persistent accessible name without a separate visible label and supports keyboard operation: Tab reaches the field and suggestions, arrow keys move the active suggestion, Enter selects it, Escape closes the list, and focus is never trapped. Search feedback, suggestions and search attribution appear in a panel anchored below the field without changing the header height. The current active option and result count are exposed to assistive technology without announcing every keystroke. Loading and error messages use appropriate live announcements; retry and attribution links have discernible names. An empty result is distinguishable from a transport error. Color alone never identifies weather or UV risk.
+The city picker has a persistent accessible name without a separate visible label and supports keyboard operation: Tab reaches the field and suggestions, arrow keys move the active suggestion, Enter selects it, Escape closes the list, and focus is never trapped. Search feedback, suggestions and search attribution appear in a panel anchored below the field without changing the header height. The current active option and result count are exposed to assistive technology without announcing every keystroke. Loading and error messages use appropriate live announcements; retry and attribution links have discernible names. An empty result is distinguishable from a transport error. Color alone never identifies weather.
 
 ## Tech Stack and Commands
 
@@ -122,7 +122,7 @@ type ForecastViewState =
 
 ### Never
 
-- Treat `null` UV or rain probability as zero; call the daily condition “predominant”; parse the local current timestamp as UTC.
+- Treat `null` rain probability as zero; call the daily condition “predominant”; parse the local current timestamp as UTC.
 - Hide text directly in imagery, rely on color alone, or silently choose a search result.
 - Import `apps/api/src` at runtime, expose raw provider diagnostics, or publish images with unverified rights.
 

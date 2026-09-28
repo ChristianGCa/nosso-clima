@@ -203,7 +203,7 @@ Add one forecast route for an explicitly selected location, returning validated 
 
 ```text
 W1 public contract and query
-├── W2 WMO and UV mapping
+├── W2 WMO mapping
 └── W3 fixed-origin bounded transport
     └── Checkpoint W-A
         └── W4 external response validation
@@ -218,7 +218,7 @@ W4 also consumes W2's mapping. W6 consumes W1 and W5. Each task leaves the API c
 
 ## Architecture Decisions
 
-- **One HTTP contract.** TypeBox owns the exact success response and `null` only for a daily UV maximum, its risk, or precipitation probability. Route-local raw `URLSearchParams` validation rejects missing, repeated and unknown query keys before Fastify can remove them. A pure helper validates the original coordinates, rounds them to three decimals with halfway cases away from zero and negative zero normalized, and resolves accepted IANA timezone aliases through `Intl.DateTimeFormat(...).resolvedOptions().timeZone`.
+- **One HTTP contract.** TypeBox owns the exact success response and permits `null` only for daily precipitation probability. Route-local raw `URLSearchParams` validation rejects missing, repeated and unknown query keys before Fastify can remove them. A pure helper validates the original coordinates, rounds them to three decimals with halfway cases away from zero and negative zero normalized, and resolves accepted IANA timezone aliases through `Intl.DateTimeFormat(...).resolvedOptions().timeZone`.
 - **One fixed-origin adapter.** The injected `fetchImpl` seam already exists in `buildApp()`. Build only the approved forecast URL, reject redirects and non-200/non-JSON responses, and enforce the 5-second abort through streaming body consumption with a 65,536-byte decoded-body bound. W3 and W4 use committed, offline fixtures captured from actual Open-Meteo forecast responses, with retrieval date and public-city provenance documented; synthetic mutations are labeled separately for failure branches. Validate consumed provider data from `unknown`, including units, timezone, seven aligned dates and allowed nullable fields.
 - **One process composition point.** `app.ts` calls `createCache('weather-forecast')` once and registers the forecast route by default, alongside location search. `server.ts` remains lifecycle-only. The service uses the existing platform executor and single-flight registry, then caches validated successes for exactly 10 minutes.
 - **Module ownership stays intact.** Forecast schemas, mapping, adapter, service and route are weather-forecast code. No new shared primitive or weather UI is introduced. Any platform test currently claiming the forecast cache namespace is adjusted only enough to avoid a duplicate claim while preserving its regression coverage.
@@ -229,14 +229,14 @@ W4 also consumes W2's mapping. W6 consumes W1 and W5. Each task leaves the API c
 ### Phase 1: Contract and outbound boundary
 
 - W1 defines the public response schema and pure request validation, including raw-key rejection and canonical cache-key inputs.
-- W2 defines WMO-to-condition and UV-risk mappings with every boundary covered by pure tests.
+- W2 defines WMO-to-condition mappings with every supported code covered by pure tests.
 - W3 proves the fixed-origin, bounded transport and failure classification with an injectable fake fetch backed by a captured real response fixture.
 
 Checkpoint W-A runs focused tests and the complete API check before response normalization.
 
 ### Phase 2: Normalization and HTTP composition
 
-- W4 validates and normalizes all consumed Open-Meteo fields, including units, timezone, exactly seven local days and per-day `null` UV/probability handling, starting from the captured real response fixture.
+- W4 validates and normalizes all consumed Open-Meteo fields, including units, timezone, exactly seven local days and per-day `null` rain probability handling, starting from the captured real response fixture.
 - W5 composes the 10-minute cache, second cache lookup, single-flight and shared executor; only validated successes cache. Fake-time tests probe just before, exactly at and just after the TTL boundary.
 - W6 registers the route once in `buildApp()` with both limiter layers and the exact public errors, attribution and offline HTTP tests.
 
@@ -268,7 +268,7 @@ Checkpoint W-C reviews every local success criterion with the owner. The public-
 
 ## Open Questions
 
-None for local implementation. The approved spec fixes three-decimal coordinate rounding, canonical timezone, TTL, first-load behavior, UV bands, daily-condition source and nullable metrics. Public and commercial delivery gates remain in `production-delivery`.
+None for local implementation. The approved spec fixes three-decimal coordinate rounding, canonical timezone, TTL, first-load behavior, daily-condition source and nullable rain probability. Public and commercial delivery gates remain in `production-delivery`.
 
 ## Approval Gate
 
@@ -337,7 +337,7 @@ Checkpoint U-B tests the complete offline search-to-forecast transition, includi
 ### Phase 3: Weather presentation and module gate
 
 - U7 presents current conditions, local valid time, retrieval time and forecast attribution.
-- U8 presents all seven daily cards, separate rain chance/amount, UV risk and unavailable metrics.
+- U8 presents all seven daily cards, separate rain chance/amount and unavailable metrics.
 - U9 adds the ten category/day-night image mappings and responsive readable surfaces, fetching only the active image.
 - U10 runs browser accessibility and contrast checks, the complete web/root gates, coverage, audit and local preview smoke verification.
 
@@ -356,7 +356,7 @@ Checkpoint U-C reviews every local spec criterion with the owner. Public usage, 
 |---|---|---|
 | An older search or forecast response wins a race | Wrong city or results appear | Abort superseded requests and check request identity before committing results; test ignored aborts |
 | Browser timezone shifts an offset-less local time or civil date | Misleading time/day | Keep `validAtLocal` as local text, format UTC retrieval in response timezone, test a viewer in another timezone |
-| Missing UV or rain chance becomes zero | False reassurance | Preserve `null` in web parser and render “Indisponível”; test individual daily nulls |
+| Missing rain chance becomes zero | False reassurance | Preserve `null` in web parser and render “Indisponível”; test individual daily nulls |
 | Photograph defeats contrast or loads all images | Unreadable/slow page | Opaque surfaces, neutral fallback, one active image request, all ten visual checks at mobile and desktop |
 | City suggestions are inaccessible | Core flow blocked for keyboard users | Labelled combobox behavior, active-option semantics, focus tests and browser axe gate |
 | Image provenance or provider usage is unresolved | Public release cannot proceed | Keep local module completion separate from `production-delivery` rights, privacy and aggregate-budget gates |

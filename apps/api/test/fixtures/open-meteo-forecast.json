@@ -33,8 +33,7 @@
     "apparent_temperature_min": "°C",
     "precipitation_probability_max": "%",
     "precipitation_sum": "mm",
-    "wind_speed_10m_max": "km/h",
-    "uv_index_max": ""
+    "wind_speed_10m_max": "km/h"
   },
   "daily": {
     "time": [
@@ -53,7 +52,6 @@
     "apparent_temperature_min": [12.0, 12.4, 15.0, 17.6, 16.5, 17.7, 20.6],
     "precipitation_probability_max": [97, 14, 72, 0, 6, 23, 18],
     "precipitation_sum": [6.2, 0.0, 3.1, 0.0, 0.0, 0.3, 0.0],
-    "wind_speed_10m_max": [13.6, 10.2, 12.1, 8.8, 13.2, 12.7, 15.5],
-    "uv_index_max": [2.65, 5.5, 7.95, 8.4, 8.4, 8.5, 8.7]
+    "wind_speed_10m_max": [13.6, 10.2, 12.1, 8.8, 13.2, 12.7, 15.5]
   }
 }

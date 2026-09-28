@@ -3,7 +3,7 @@ import {
   type ForecastLocation,
   type ForecastResponse,
 } from './forecast-contract.js';
-import { mapUvRisk, mapWmoCondition } from './wmo-condition.js';
+import { mapWmoCondition } from './wmo-condition.js';
 
 export type ForecastFailureKind =
   | 'timeout'
@@ -30,7 +30,7 @@ const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const MAX_BODY_BYTES = 65_536;
 const CURRENT_VARIABLES = 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day';
 const DAILY_VARIABLES =
-  'weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max,uv_index_max';
+  'weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max';
 
 export async function fetchForecastJson(
   location: ForecastLocation,
@@ -139,7 +139,6 @@ export function normalizeForecastResponse(
     precipitation_probability_max: '%',
     precipitation_sum: 'mm',
     wind_speed_10m_max: 'km/h',
-    uv_index_max: '',
   });
 
   const currentTime = readLocalMinute(readString(current, 'time'));
@@ -160,17 +159,12 @@ export function normalizeForecastResponse(
   const precipitationProbability = readSevenValues(daily, 'precipitation_probability_max');
   const precipitationSum = readSevenValues(daily, 'precipitation_sum');
   const windSpeedMax = readSevenValues(daily, 'wind_speed_10m_max');
-  const uvIndexMax = readSevenValues(daily, 'uv_index_max');
 
   const normalizedDaily = dates.map((date, index) => {
     const condition = mapWmoCondition(weatherCodes[index]);
     if (condition === undefined) return invalidResponse();
     const probability = readNullableNumberValue(precipitationProbability[index], 0, 100);
     const precipitation = readNonnegativeNumberValue(precipitationSum[index]);
-    const uvIndex = uvIndexMax[index];
-    if (uvIndex !== null && typeof uvIndex !== 'number') return invalidResponse();
-    const uvRisk = mapUvRisk(uvIndex);
-    if (uvRisk === undefined) return invalidResponse();
     return {
       date,
       temperatureMaxC: readFiniteNumberValue(temperatureMax[index]),
@@ -181,8 +175,6 @@ export function normalizeForecastResponse(
       precipitationProbabilityMaxPercent: probability,
       precipitationSumMm: precipitation,
       windSpeedMaxKmh: readNonnegativeNumberValue(windSpeedMax[index]),
-      uvIndexMax: uvIndex,
-      uvRisk,
     };
   });
 

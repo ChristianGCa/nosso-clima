@@ -1,7 +1,7 @@
 import type { Forecast } from '../api/forecast';
 import rainVolumeIcon from '../assets/icons/raindrop-measure.svg';
 import rainChanceIcon from '../assets/icons/umbrella.svg';
-import { compactDayLabel, dayLabel, metric, uvRiskLabel } from '../format/weather-format';
+import { compactDayLabel, dayLabel, metric } from '../format/weather-format';
 import { ConditionIcon } from './condition-icon';
 
 function MetricIcon({ source }: { source: string }) {
@@ -64,14 +64,14 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
                 </dd>
               </div>
               <div>
-                <dt className="visually-hidden">Chance de chuva</dt>
+                <dt>Chance de chuva</dt>
                 <dd className="icon-value">
                   <MetricIcon source={rainChanceIcon} />
                   {metric(today.precipitationProbabilityMaxPercent, '%')}
                 </dd>
               </div>
               <div>
-                <dt className="visually-hidden">Volume de chuva</dt>
+                <dt>Volume de chuva</dt>
                 <dd className="icon-value">
                   <MetricIcon source={rainVolumeIcon} />
                   {metric(today.precipitationSumMm, 'mm')}
@@ -80,12 +80,6 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
               <div>
                 <dt>Vento máximo</dt>
                 <dd>{metric(today.windSpeedMaxKmh, 'km/h')}</dd>
-              </div>
-              <div className="today-uv">
-                <dt>UV máximo</dt>
-                <dd>{metric(today.uvIndexMax, '')}</dd>
-                <dt>Risco UV</dt>
-                <dd>{uvRiskLabel(today.uvRisk)}</dd>
               </div>
             </dl>
           </article>
@@ -107,14 +101,14 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
                   </dd>
                 </div>
                 <div>
-                  <dt className="visually-hidden">Chance de chuva</dt>
+                  <dt>Chance de chuva</dt>
                   <dd className="icon-value">
                     <MetricIcon source={rainChanceIcon} />
                     {metric(day.precipitationProbabilityMaxPercent, '%')}
                   </dd>
                 </div>
                 <div>
-                  <dt className="visually-hidden">Volume de chuva</dt>
+                  <dt>Volume de chuva</dt>
                   <dd className="icon-value">
                     <MetricIcon source={rainVolumeIcon} />
                     {metric(day.precipitationSumMm, 'mm')}

@@ -4,7 +4,6 @@ import { boolean, civilDate, exact, finite, oneOf, record, text, timezone } from
 
 const categories = ['clear', 'cloudy', 'rain', 'snow', 'storm'] as const;
 const labels = ['Limpo', 'Nublado', 'Chuva', 'Neve', 'Tempestade'] as const;
-const uvRisks = ['low', 'moderate', 'high', 'very_high', 'extreme'] as const;
 
 export type Condition = Readonly<{
   code: number;
@@ -22,8 +21,6 @@ export type Daily = Readonly<{
   precipitationProbabilityMaxPercent: number | null;
   precipitationSumMm: number;
   windSpeedMaxKmh: number;
-  uvIndexMax: number | null;
-  uvRisk: (typeof uvRisks)[number] | null;
 }>;
 
 export type Forecast = Readonly<{
@@ -54,9 +51,6 @@ function nullableNumber(value: unknown, min = -Infinity, max = Infinity): number
 
 function daily(value: unknown): Daily {
   const item = record(value);
-  const uvIndexMax = nullableNumber(item.uvIndexMax, 0);
-  const uvRisk = item.uvRisk === null ? null : oneOf(item.uvRisk, uvRisks);
-  if ((uvIndexMax === null) !== (uvRisk === null)) throw new Error('invalid data');
   return {
     date: civilDate(item.date),
     temperatureMaxC: finite(item.temperatureMaxC),
@@ -71,8 +65,6 @@ function daily(value: unknown): Daily {
     ),
     precipitationSumMm: finite(item.precipitationSumMm, 0),
     windSpeedMaxKmh: finite(item.windSpeedMaxKmh, 0),
-    uvIndexMax,
-    uvRisk,
   };
 }
 

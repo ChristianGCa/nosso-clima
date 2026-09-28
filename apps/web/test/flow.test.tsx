@@ -52,8 +52,14 @@ describe('city-to-forecast flow', () => {
     await resolveUpdates();
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('heading', { name: 'São Paulo, São Paulo, Brasil' })).toBeTruthy();
-    expect(screen.getAllByText('Indisponível')).toHaveLength(3);
+    expect(screen.getAllByText('Indisponível')).toHaveLength(1);
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
+    expect(
+      screen
+        .getByRole('heading', { name: /Quinta-feira, 24\/09/ })
+        .closest('article')
+        ?.querySelectorAll('dt'),
+    ).toHaveLength(5);
     expect(screen.getAllByText('Condição mais severa')).toHaveLength(7);
     expect(screen.getByText(/Dados adaptados pelo Nosso Clima sob/)).toBeTruthy();
     expect(

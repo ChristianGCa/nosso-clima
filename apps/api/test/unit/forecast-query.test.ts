@@ -97,8 +97,6 @@ describe('forecast response contract', () => {
     precipitationProbabilityMaxPercent: 70,
     precipitationSumMm: 8.4,
     windSpeedMaxKmh: 18.6,
-    uvIndexMax: 7.2,
-    uvRisk: 'high',
   };
   const response = {
     timezone: 'America/Sao_Paulo',
@@ -115,15 +113,12 @@ describe('forecast response contract', () => {
     attribution: FORECAST_ATTRIBUTION,
   };
 
-  it('accepts exact results with fixed attribution and nullable metrics', () => {
+  it('accepts exact results with fixed attribution and nullable rain probability', () => {
     expect(Value.Check(ForecastResponseSchema, response)).toBe(true);
     expect(
       Value.Check(ForecastResponseSchema, {
         ...response,
-        daily: [
-          { ...day, precipitationProbabilityMaxPercent: null, uvIndexMax: null, uvRisk: null },
-          ...response.daily.slice(1),
-        ],
+        daily: [{ ...day, precipitationProbabilityMaxPercent: null }, ...response.daily.slice(1)],
       }),
     ).toBe(true);
   });

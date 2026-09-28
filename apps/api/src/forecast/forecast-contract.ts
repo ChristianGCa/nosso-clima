@@ -55,15 +55,6 @@ const DailySchema = Type.Object(
     ]),
     precipitationSumMm: Type.Number({ minimum: 0 }),
     windSpeedMaxKmh: Type.Number({ minimum: 0 }),
-    uvIndexMax: Type.Union([Type.Number({ minimum: 0 }), Type.Null()]),
-    uvRisk: Type.Union([
-      Type.Literal('low'),
-      Type.Literal('moderate'),
-      Type.Literal('high'),
-      Type.Literal('very_high'),
-      Type.Literal('extreme'),
-      Type.Null(),
-    ]),
   },
   { additionalProperties: false },
 );

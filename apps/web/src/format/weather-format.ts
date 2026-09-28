@@ -39,15 +39,3 @@ export function compactDayLabel(date: string): string {
     timeZone: 'UTC',
   }).format(new Date(`${date}T12:00:00Z`));
 }
-
-const uvNames = {
-  low: 'Baixo',
-  moderate: 'Moderado',
-  high: 'Alto',
-  very_high: 'Muito alto',
-  extreme: 'Extremo',
-} as const;
-
-export function uvRiskLabel(risk: keyof typeof uvNames | null): string {
-  return risk === null ? 'Indisponível' : uvNames[risk];
-}

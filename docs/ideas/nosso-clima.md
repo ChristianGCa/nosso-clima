@@ -2,7 +2,7 @@
 
 ## Problem Statement
 
-Como podemos permitir que pessoas comuns entendam rapidamente o clima atual e dos próximos sete dias, com informações claras sobre chuva, temperatura, vento e índice UV, sem uma interface carregada ou ambígua?
+Como podemos permitir que pessoas comuns entendam rapidamente o clima atual e dos próximos sete dias, com informações claras sobre chuva, temperatura e vento, sem uma interface carregada ou ambígua?
 
 ## Recommended Direction
 
@@ -64,7 +64,6 @@ Um cache em memória funciona melhor com um processo Node persistente. Em um amb
 - Probabilidade máxima de precipitação em `%`.
 - Volume previsto de precipitação em `mm`.
 - Velocidade máxima do vento.
-- Índice UV máximo.
 
 ### Qualidade técnica
 
@@ -111,4 +110,3 @@ Também deve ser possível diagnosticar uma falha externa pelos logs e provar po
 - Quais serão os TTLs exatos de geocodificação e previsão?
 - Quais plataformas de deploy oferecem a melhor combinação para um frontend estático e um processo Node persistente?
 - O primeiro carregamento deve mostrar uma tela neutra ou uma cidade padrão?
-- Quais faixas e tratamentos visuais representarão o índice UV?

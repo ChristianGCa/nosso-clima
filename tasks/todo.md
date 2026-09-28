@@ -510,7 +510,7 @@ Plan: `tasks/plan.md`, Weather Forecast section
 ## Progress
 
 - [x] W1 — Define forecast response contract and canonical request query
-- [x] W2 — Map WMO conditions and UV risk bands
+- [x] W2 — Map WMO conditions
 - [x] W3 — Bound fixed-origin Open-Meteo transport
 - [x] Checkpoint W-A — Public contract and outbound transport
 - [x] W4 — Validate and normalize external forecast data
@@ -526,7 +526,7 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 **Acceptance criteria:**
 
-- [ ] Success schema matches the approved current-plus-seven-day shape and permits `null` only for daily UV maximum, its risk and precipitation probability.
+- [ ] Success schema matches the approved current-plus-seven-day shape and permits `null` only for daily precipitation probability.
 - [ ] Exactly one of each required key is accepted; unknown/repeated keys, invalid coordinates, numeric offsets and invalid timezone strings fail as safe validation errors.
 - [ ] Equivalent numeric spellings and coordinates rounding to the same three-decimal values share canonical coordinates; exact halfway cases round away from zero, negative zero becomes zero, and bounds are checked before rounding.
 - [ ] Accepted IANA aliases resolve to the runtime's canonical timezone for the outbound parameter, response and cache key, while offsets remain invalid.
@@ -539,14 +539,13 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 **Estimated scope:** Medium (3 files).
 
-## Task W2: Map WMO conditions and UV risk bands
+## Task W2: Map WMO conditions
 
-**Description:** Implement pure, exhaustive WMO category/Portuguese-label mapping and the approved decimal UV bands.
+**Description:** Implement pure, exhaustive WMO category/Portuguese-label mapping.
 
 **Acceptance criteria:**
 
 - [ ] Every listed WMO code maps to the documented category and label; unknown/non-integer codes fail closed.
-- [ ] UV edges at 3, 6, 8 and 11 and representative decimals map correctly; invalid and negative UV fail.
 - [ ] Daily and current conditions use the same mapping, without computing an hourly predominant condition.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- wmo-condition`; API typecheck, lint and format check.
@@ -578,7 +577,7 @@ Plan: `tasks/plan.md`, Weather Forecast section
 ## Checkpoint W-A: Public contract and outbound transport
 
 - [ ] W1–W3 focused tests and `npm run check --workspace @nosso-clima/api` pass; the real response fixture has documented provenance and runs offline.
-- [ ] Raw query validation, WMO/UV boundaries and transport failure branches have deterministic offline tests.
+- [ ] Raw query validation, WMO boundaries and transport failure branches have deterministic offline tests.
 - [ ] Review the request and outbound privacy boundary before normalization expands.
 
 ## Task W4: Validate and normalize external forecast data
@@ -588,7 +587,7 @@ Plan: `tasks/plan.md`, Weather Forecast section
 **Acceptance criteria:**
 
 - [ ] Current values, unit metadata, timezone, each seven-entry daily array and seven consecutive local dates are validated; malformed consumed values fail as `invalid_response`.
-- [ ] Individual `null` daily UV/probability values are preserved, with `uvRisk: null` for unavailable UV; missing values or `null` elsewhere fail.
+- [ ] Individual `null` daily rain probabilities are preserved; missing values or `null` elsewhere fail.
 - [ ] Daily condition uses `daily.weather_code` as the most severe condition; a real provider fixture normalizes to the expected shape, and no unconsumed provider field reaches the public result.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-forecast`; `npm run check --workspace @nosso-clima/api`.
@@ -755,7 +754,7 @@ Plan: `tasks/plan.md`, Weather UI section
 **Acceptance criteria:**
 
 - [x] Outbound query uses only selected `latitude`, `longitude` and `timezone`; malformed HTTP/JSON/data and public errors become bounded UI errors.
-- [x] The parser keeps seven ordered local dates, current/attribution fields and only the permitted nullable probability, UV and UV-risk fields.
+- [x] The parser keeps seven ordered local dates, current/attribution fields and only the permitted nullable rain probability.
 - [x] Tests cover 429/503, malformed dates and fields, null preservation and no backend source import.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- forecast`; web typecheck, lint and format check.
@@ -834,13 +833,13 @@ Plan: `tasks/plan.md`, Weather UI section
 
 ## Task U8: Present seven local-day cards
 
-**Description:** Render seven civil-date cards with approved metric labels, most-severe daily condition, separate rain chance/amount and unavailable UV/probability.
+**Description:** Render seven civil-date cards with approved metric labels, most-severe daily condition, separate rain chance/amount and unavailable rain probability.
 
 **Acceptance criteria:**
 
 - [x] Seven ordered dates and weekdays remain correct across browser/selected-city timezone differences.
-- [x] Max/min temperature and apparent temperature, maximum wind, chance, amount, UV value and Portuguese risk all show correct units.
-- [x] `null` rain chance and UV display “Indisponível”, never zero; condition wording says “mais severa”, never “predominante”.
+- [x] Max/min temperature and apparent temperature, maximum wind, chance and amount all show correct units.
+- [x] `null` rain chance displays “Indisponível”, never zero; condition wording says “mais severa”, never “predominante”.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- daily`; web check; mobile/desktop card inspection.
 

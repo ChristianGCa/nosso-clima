@@ -1,5 +1,4 @@
 export type ConditionCategory = 'clear' | 'cloudy' | 'rain' | 'snow' | 'storm';
-export type UvRisk = 'low' | 'moderate' | 'high' | 'very_high' | 'extreme';
 
 export type WmoCondition = Readonly<{
   code: number;
@@ -42,14 +41,4 @@ export function mapWmoCondition(code: unknown): WmoCondition | undefined {
   if (typeof code !== 'number' || !Number.isInteger(code)) return undefined;
   const condition = CONDITIONS.get(code);
   return condition === undefined ? undefined : { code, ...condition };
-}
-
-export function mapUvRisk(value: unknown): UvRisk | null | undefined {
-  if (value === null) return null;
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) return undefined;
-  if (value < 3) return 'low';
-  if (value < 6) return 'moderate';
-  if (value < 8) return 'high';
-  if (value < 11) return 'very_high';
-  return 'extreme';
 }

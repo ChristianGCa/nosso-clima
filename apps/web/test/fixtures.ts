@@ -45,8 +45,6 @@ export const forecastResponse = {
     precipitationProbabilityMaxPercent: index === 0 ? null : 70,
     precipitationSumMm: index === 0 ? 0 : 8.4,
     windSpeedMaxKmh: 25,
-    uvIndexMax: index === 0 ? null : 5.7,
-    uvRisk: index === 0 ? null : 'moderate',
   })),
   attribution: {
     provider: 'Open-Meteo',

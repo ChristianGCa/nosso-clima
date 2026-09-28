@@ -16,8 +16,17 @@ describe('forecast HTTP boundary', () => {
     expect(url.searchParams.get('timezone')).toBe('America/Sao_Paulo');
     expect(result.daily).toHaveLength(7);
     expect(result.daily[0]?.precipitationProbabilityMaxPercent).toBeNull();
-    expect(result.daily[0]?.uvIndexMax).toBeNull();
-    expect(result.daily[0]?.uvRisk).toBeNull();
+    expect(Object.keys(result.daily[0] ?? {})).toEqual([
+      'date',
+      'temperatureMaxC',
+      'temperatureMinC',
+      'apparentTemperatureMaxC',
+      'apparentTemperatureMinC',
+      'condition',
+      'precipitationProbabilityMaxPercent',
+      'precipitationSumMm',
+      'windSpeedMaxKmh',
+    ]);
   });
 
   it.each([
@@ -46,7 +55,7 @@ describe('forecast HTTP boundary', () => {
     {
       ...forecastResponse,
       daily: forecastResponse.daily.map((day, index) =>
-        index === 0 ? { ...day, uvRisk: 'low' } : day,
+        index === 0 ? { ...day, precipitationSumMm: -1 } : day,
       ),
     },
     { ...forecastResponse, attribution: { ...forecastResponse.attribution, license: 'other' } },

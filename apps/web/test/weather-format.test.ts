@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  dayLabel,
-  localClock,
-  metric,
-  retrievedTime,
-  uvRiskLabel,
-} from '../src/format/weather-format';
+import { dayLabel, localClock, metric, retrievedTime } from '../src/format/weather-format';
 
 describe('Portuguese weather formatting', () => {
   it('keeps offset-less local time and converts retrieval time to the selected timezone', () => {
@@ -20,7 +14,5 @@ describe('Portuguese weather formatting', () => {
   it('does not turn unavailable values into zero', () => {
     expect(metric(null, '%')).toBe('Indisponível');
     expect(metric(8.4, 'mm')).toBe('8,4 mm');
-    expect(uvRiskLabel(null)).toBe('Indisponível');
-    expect(uvRiskLabel('very_high')).toBe('Muito alto');
   });
 });

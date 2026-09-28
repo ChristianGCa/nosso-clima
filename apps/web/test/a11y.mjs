@@ -61,8 +61,6 @@ function forecastResponse(category, label, isDay) {
       precipitationProbabilityMaxPercent: null,
       precipitationSumMm: 0,
       windSpeedMaxKmh: 25,
-      uvIndexMax: null,
-      uvRisk: null,
     })),
     attribution: {
       provider: 'Open-Meteo',
@@ -219,6 +217,13 @@ try {
     1,
   );
   assert.equal(await page.getByRole('heading', { name: 'Quinta-feira, 24/09' }).count(), 1);
+  assert.equal(
+    await page
+      .locator('.today-metrics')
+      .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length),
+    2,
+    'today metrics must fit in two mobile columns',
+  );
   await page.locator('.site-shell.has-image').waitFor();
   await scan(page, 'success mobile');
   await field.focus();

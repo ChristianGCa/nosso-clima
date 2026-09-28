@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { mapUvRisk, mapWmoCondition } from '../../src/forecast/wmo-condition.js';
+import { mapWmoCondition } from '../../src/forecast/wmo-condition.js';
 
 describe('WMO condition mapping', () => {
   it.each([
@@ -40,34 +40,6 @@ describe('WMO condition mapping', () => {
     'fails closed for unknown or malformed code %s',
     (code) => {
       expect(mapWmoCondition(code)).toBeUndefined();
-    },
-  );
-});
-
-describe('UV risk mapping', () => {
-  it.each([
-    [0, 'low'],
-    [2.999, 'low'],
-    [3, 'moderate'],
-    [5.999, 'moderate'],
-    [6, 'high'],
-    [7.999, 'high'],
-    [8, 'very_high'],
-    [10.999, 'very_high'],
-    [11, 'extreme'],
-    [42.5, 'extreme'],
-  ] as const)('maps UV %d to %s', (value, risk) => {
-    expect(mapUvRisk(value)).toBe(risk);
-  });
-
-  it('keeps an unavailable provider metric as null', () => {
-    expect(mapUvRisk(null)).toBeNull();
-  });
-
-  it.each([-0.001, -1, Number.NaN, Number.POSITIVE_INFINITY, '7', undefined])(
-    'fails closed for invalid UV %s',
-    (value) => {
-      expect(mapUvRisk(value)).toBeUndefined();
     },
   );
 });
