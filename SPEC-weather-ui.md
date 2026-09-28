@@ -33,7 +33,7 @@ The frontend calls the same configured API base URL for both routes and uses `UR
 | Search suggestions | `GET /api/v1/locations` from `SPEC-location-search.md` | Show `name`, optional `region`, and `country`; use the complete selected result for the forecast request. |
 | Current conditions | `GET /api/v1/forecast` from `SPEC-weather-forecast.md` | Show current temperature, apparent temperature, condition label, wind speed and local valid time. |
 | Seven-day forecast | `daily` from forecast response | Show local date and weekday for all seven days. Today shows max/min temperature and apparent temperature, the day's **most severe** condition, maximum rain chance, rain amount, maximum wind and UV value/risk. Each of the next six days shows only its condition, maximum rain chance, rain amount and max/min temperature. |
-| Attribution | Each response's `attribution` | Credit Open-Meteo, GeoNames for search results, linked CC BY 4.0 licence, and say Nosso Clima adapted the data. |
+| Attribution | Each response's `attribution` | Credit Open-Meteo, GeoNames for search results and the selected city, linked CC BY 4.0 licence, and say Nosso Clima adapted the data. |
 
 The idea document's phrase “condição predominante” is superseded by the approved forecast contract: `daily.weather_code` represents the most severe condition of the day. Do not compute a predominant condition or derive daily conditions from the current condition. Backend `condition.category`, `condition.labelPt` and `uvRisk` are authoritative for wording and visual grouping.
 
@@ -51,7 +51,7 @@ Use one decorative WebP background from the ten existing `backgrounds/` files, s
 
 Text and controls sit on opaque or sufficiently strong translucent surfaces, never directly on the photograph. Verify contrast on every day/night image and on the neutral state at mobile and desktop sizes; meet at least 4.5:1 for ordinary text and 3:1 for large text and interactive boundaries. The image is decorative and has no alternative text. Ensure focus indicators remain visible against every background. Respect reduced-motion preferences; motion cannot carry essential state.
 
-The city picker has a persistent visible label and keyboard operation: Tab reaches the field and suggestions, arrow keys move the active suggestion, Enter selects it, Escape closes the list, and focus is never trapped. The current active option and result count are exposed to assistive technology without announcing every keystroke. Loading and error messages use appropriate live announcements; retry and attribution links have discernible names. An empty result is distinguishable from a transport error. Color alone never identifies weather or UV risk.
+The city picker has a persistent accessible name without a separate visible label and supports keyboard operation: Tab reaches the field and suggestions, arrow keys move the active suggestion, Enter selects it, Escape closes the list, and focus is never trapped. Search feedback, suggestions and search attribution appear in a panel anchored below the field without changing the header height. The current active option and result count are exposed to assistive technology without announcing every keystroke. Loading and error messages use appropriate live announcements; retry and attribution links have discernible names. An empty result is distinguishable from a transport error. Color alone never identifies weather or UV risk.
 
 ## Tech Stack and Commands
 
@@ -142,6 +142,8 @@ type ForecastViewState =
 1. The UI starts searching at three Unicode code points after a 300 ms debounce; the API itself still accepts two-character searches.
 2. A new city selection clears the old forecast until the new response succeeds; typing alone leaves the current forecast visible.
 3. The daily condition remains the “Condição mais severa”; rain chance (%) and rain volume (mm) remain distinct values in both the detailed card and compact summaries.
-4. The existing WebP images may be used during local development. Their provenance and publication rights must be confirmed before public delivery; no ownership or licence is inferred from their presence in the repository.
+4. The existing WebP images may be used during local development. The owner stated on 2026-09-27 that they generated all ten in the Gemini app without uploading reference images. This records the stated origin; the public-use rights review remains part of `production-delivery`, and no ownership or licence is inferred from the files' presence in the repository.
 
 The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-09-24. The owner approved the completed local user flow at Checkpoint U-C on 2026-09-24.
+
+The owner revised the search presentation on 2026-09-27: omit the visible "Buscar cidade" label and keep the header height stable throughout search states.

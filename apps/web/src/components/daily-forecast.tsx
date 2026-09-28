@@ -1,8 +1,6 @@
 import type { Forecast } from '../api/forecast';
 import rainVolumeIcon from '../assets/icons/raindrop-measure.svg';
 import rainChanceIcon from '../assets/icons/umbrella.svg';
-import minimumIcon from '../assets/icons/thermometer-colder.svg';
-import maximumIcon from '../assets/icons/thermometer-warmer.svg';
 import { compactDayLabel, dayLabel, metric, uvRiskLabel } from '../format/weather-format';
 import { ConditionIcon } from './condition-icon';
 
@@ -14,14 +12,12 @@ function TemperatureRange({ maximum, minimum }: { maximum: number; minimum: numb
   return (
     <span className="temperature-range">
       <span className="metric-reading">
-        <MetricIcon source={maximumIcon} />
-        <span className="visually-hidden">Máxima: </span>
-        {metric(maximum, '°C')}
+        <span className="range-label">Máx.</span>
+        <span>{metric(maximum, '°C')}</span>
       </span>
       <span className="metric-reading">
-        <MetricIcon source={minimumIcon} />
-        <span className="visually-hidden">Mínima: </span>
-        {metric(minimum, '°C')}
+        <span className="range-label">Mín.</span>
+        <span>{metric(minimum, '°C')}</span>
       </span>
     </span>
   );
@@ -44,13 +40,13 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
             <div className="today-condition">
               <ConditionIcon category={today.condition.category} />
               <p>
-                <span>Condição mais severa</span>
+                <span className="visually-hidden">Condição mais severa</span>
                 <strong>{today.condition.labelPt}</strong>
               </p>
             </div>
             <dl className="today-metrics">
               <div>
-                <dt className="visually-hidden">Temperatura</dt>
+                <dt>Temperatura</dt>
                 <dd>
                   <TemperatureRange
                     maximum={today.temperatureMaxC}
@@ -85,11 +81,9 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
                 <dt>Vento máximo</dt>
                 <dd>{metric(today.windSpeedMaxKmh, 'km/h')}</dd>
               </div>
-              <div>
+              <div className="today-uv">
                 <dt>UV máximo</dt>
                 <dd>{metric(today.uvIndexMax, '')}</dd>
-              </div>
-              <div>
                 <dt>Risco UV</dt>
                 <dd>{uvRiskLabel(today.uvRisk)}</dd>
               </div>

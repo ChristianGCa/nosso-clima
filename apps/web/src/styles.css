@@ -83,8 +83,8 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1.25rem;
-  min-height: 3.75rem;
-  padding-block: 0.35rem;
+  min-height: 4.5rem;
+  padding-block: 0.5rem;
 }
 
 .brand {
@@ -117,19 +117,11 @@ a {
   width: min(100%, 28rem);
 }
 
-.search-label {
-  display: block;
-  margin-bottom: 0.12rem;
-  color: #ebf9ff;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-
 .search-field {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  min-height: 2.25rem;
+  min-height: 2.5rem;
   padding-inline: 0.8rem;
   border: 1px solid #80c6db;
   border-radius: 0.55rem;
@@ -163,19 +155,36 @@ a {
   opacity: 1;
 }
 
+.search-popover {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  width: min(28rem, calc(100vw - 1.5rem));
+  max-height: min(70svh, 24rem);
+  overflow-y: auto;
+  border: 1px solid #76bcce;
+  border-radius: 0.6rem;
+  background: #102a42;
+  box-shadow: 0 16px 36px rgb(0 0 0 / 0.32);
+}
+
+.search-popover.is-idle {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
 .search-feedback {
+  padding: 0.7rem 0.8rem;
   color: #cee1ed;
-  font-size: 0.75rem;
+  font-size: 0.82rem;
   line-height: 1.4;
 }
 
-.search-feedback {
-  min-height: 1.1rem;
-  margin-top: 0.15rem;
-}
-
-.search-feedback:empty {
-  display: none;
+.is-idle .search-feedback {
+  padding: 0;
 }
 
 .search-feedback button {
@@ -189,16 +198,8 @@ a {
 }
 
 .city-options {
-  position: absolute;
-  z-index: 4;
-  top: calc(100% + 0.4rem);
-  left: 0;
-  width: 100%;
   padding: 0.3rem;
-  border: 1px solid #76bcce;
-  border-radius: 0.6rem;
-  background: #102a42;
-  box-shadow: 0 16px 36px rgb(0 0 0 / 0.32);
+  border-top: 1px solid rgb(204 231 235 / 0.18);
 }
 
 .city-option {
@@ -225,7 +226,9 @@ a {
 }
 
 .search-attribution {
-  margin: 0.4rem 0 0;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  border-top: 1px solid rgb(204 231 235 / 0.18);
   color: #d2e5f0;
 }
 
@@ -296,33 +299,31 @@ a {
 }
 
 .current-inner {
-  padding: 1.4rem 1.6rem;
-  border: 1px solid rgb(228 241 245 / 0.22);
+  padding: 1.5rem 1.75rem;
+  border: 1px solid rgb(228 241 245 / 0.24);
   border-radius: 0.9rem;
-  background: linear-gradient(100deg, rgb(7 19 28 / 0.91), rgb(7 19 28 / 0.73));
-  box-shadow: 0 16px 48px rgb(0 0 0 / 0.18);
+  background: rgb(7 19 28 / 0.9);
 }
 
 .current-inner h1 {
   max-width: none;
-  margin-bottom: 1.1rem;
+  margin-bottom: 1.25rem;
+  font-size: clamp(1.55rem, 2.5vw, 2.25rem);
+  line-height: 1.2;
 }
 
 .current-conditions {
   display: grid;
-  grid-template-columns: 8rem minmax(0, 1fr) 13rem;
+  grid-template-columns: 5.5rem minmax(0, 1fr) 13.5rem;
   align-items: center;
-  gap: 1.3rem 2rem;
+  gap: 1.25rem;
 }
 
 .current-icon {
   display: grid;
   place-items: center;
-  width: 8rem;
-  height: 8rem;
-  border: 1px solid rgb(214 235 238 / 0.24);
-  border-radius: 1rem;
-  background: rgb(242 249 250 / 0.1);
+  width: 5.5rem;
+  height: 5.5rem;
 }
 
 .condition-icon {
@@ -331,22 +332,17 @@ a {
   height: 100%;
 }
 
-.current-icon .condition-icon {
-  width: 5.2rem;
-  height: 5.2rem;
-}
-
 .current-main h2 {
   margin: 0;
   color: #c5effa;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
 .temperature {
-  margin: 0.15rem 0 0;
+  margin: 0.2rem 0 0;
   color: #fff;
-  font-size: clamp(3rem, 5vw, 4.7rem);
+  font-size: clamp(3rem, 5vw, 4rem);
   font-weight: 800;
   letter-spacing: -0.04em;
   line-height: 1;
@@ -354,61 +350,61 @@ a {
 }
 
 .current-condition {
-  margin: 0.35rem 0 0.45rem;
+  margin: 0.25rem 0 0.5rem;
   color: #edfcff;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 700;
 }
 
 .valid-time,
 .retrieved-time {
   margin: 0;
-  color: #d0e7f2;
-  font-size: 0.78rem;
-  line-height: 1.4;
+  color: #c8dce8;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.retrieved-time {
+  margin-top: 0.2rem;
 }
 
 .current-metrics {
   display: grid;
   gap: 1rem;
   margin: 0;
-  padding-left: 1.4rem;
-  border-left: 1px solid rgb(180 245 255 / 0.45);
+  padding-left: 1.5rem;
+  border-left: 1px solid rgb(180 245 255 / 0.32);
 }
 
 .current-metrics dt {
   color: #c8e6f2;
-  font-size: 0.78rem;
+  font-size: 0.82rem;
 }
 
 .current-metrics dd {
   margin: 0.15rem 0 0;
   color: #fff;
-  font-size: 1.2rem;
+  font-size: 1.125rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
-.retrieved-time {
-  grid-column: 2 / -1;
-}
-
 .daily-section {
-  padding-block: 1.65rem 2rem;
+  padding-block: 1.5rem 2rem;
   border-top: 1px solid rgb(237 247 249 / 0.16);
-  background: rgb(10 21 28 / 0.52);
+  background: rgb(10 21 28 / 0.62);
 }
 
 .daily-inner h2 {
-  margin: 0 0 1rem;
+  margin: 0 0 0.9rem;
   color: #f5fbff;
-  font-size: 1.28rem;
+  font-size: 1.25rem;
   letter-spacing: -0.025em;
 }
 
 .daily-strip {
   display: grid;
-  grid-template-columns: minmax(15rem, 1.7fr) repeat(6, minmax(7.6rem, 1fr));
+  grid-template-columns: minmax(15rem, 1.8fr) repeat(6, minmax(0, 1fr));
   grid-auto-rows: 1fr;
   gap: 0.55rem;
   align-items: stretch;
@@ -418,62 +414,64 @@ a {
 .day-card {
   min-width: 0;
   padding: 0.9rem;
-  border: 1px solid rgb(204 231 235 / 0.25);
-  border-radius: 0.65rem;
-  background: rgb(9 24 33 / 0.74);
-  box-shadow: 0 9px 24px rgb(0 0 0 / 0.16);
+  border: 1px solid rgb(204 231 235 / 0.26);
+  border-radius: 0.75rem;
+  background: rgb(9 24 33 / 0.88);
 }
 
 .today-card {
-  background: rgb(8 22 31 / 0.78);
-  border-color: rgb(204 231 235 / 0.38);
+  display: flex;
+  flex-direction: column;
+  border-color: rgb(180 231 240 / 0.5);
+  background: rgb(8 25 36 / 0.94);
 }
 
 .today-card h3,
 .day-card h3 {
   margin: 0;
   color: #f4fbff;
-  font-size: 0.9rem;
-  line-height: 1.25;
+  font-size: 0.875rem;
+  line-height: 1.35;
 }
 
 .today-date {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 0.45rem;
+  gap: 0.4rem;
 }
 
 .today-badge {
-  padding: 0.2rem 0.4rem;
+  padding: 0.15rem 0.35rem;
   border: 1px solid rgb(168 227 235 / 0.45);
-  border-radius: 0.3rem;
+  border-radius: 0.25rem;
   background: rgb(121 196 207 / 0.18);
   color: #e3fbff;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.05em;
-  line-height: 1;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
 }
 
-.today-condition {
+.today-condition,
+.day-weather {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-block: 0.85rem 1rem;
+  gap: 0.45rem;
+  min-height: 4rem;
+  margin-top: 0.65rem;
 }
 
-.today-condition .condition-icon {
+.today-condition .condition-icon,
+.day-card .condition-icon {
   flex: none;
-  width: 4.75rem;
-  height: 4.75rem;
-  border-radius: 0.65rem;
-  background: #243b49;
+  width: 3.5rem;
+  height: 3.5rem;
 }
 
 .today-condition p {
   display: grid;
-  gap: 0.12rem;
+  gap: 0.15rem;
   margin: 0;
 }
 
@@ -482,122 +480,124 @@ a {
   font-size: 0.75rem;
 }
 
-.today-condition strong {
+.today-condition strong,
+.day-condition {
   color: #fff;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.day-condition {
+  margin: 0;
 }
 
 .today-metrics,
 .day-metrics {
   margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid rgb(204 231 235 / 0.28);
 }
 
 .today-metrics {
   display: grid;
+  flex: 1;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.65rem 0.5rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid rgb(204 231 235 / 0.3);
+  align-content: space-between;
+  gap: 0.8rem 0.35rem;
+  margin-top: 0.65rem;
+  text-align: center;
+}
+
+.today-uv dt:not(:first-child) {
+  margin-top: 0.35rem;
 }
 
 .today-metrics dt,
 .day-metrics dt {
   color: #c4dce5;
   font-size: 0.75rem;
-  line-height: 1.25;
+  line-height: 1.3;
 }
 
 .today-metrics dd,
 .day-metrics dd {
-  margin: 0.12rem 0 0;
+  margin: 0.1rem 0 0;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
-  line-height: 1.3;
+  line-height: 1.35;
   overflow-wrap: anywhere;
 }
 
 .temperature-range {
-  display: grid;
-  gap: 0.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.35rem 0.75rem;
 }
 
-.metric-reading,
+.today-metrics .temperature-range {
+  gap: 0.35rem 0.45rem;
+}
+
+.metric-reading {
+  display: grid;
+  gap: 0.1rem;
+  white-space: nowrap;
+}
+
+.range-label {
+  color: #c4dce5;
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+
 .icon-value {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: center;
+  gap: 0.3rem;
   white-space: nowrap;
 }
 
 .metric-icon {
   flex: none;
-  width: 1.9rem;
-  height: 1.9rem;
+  width: 1.4rem;
+  height: 1.4rem;
 }
 
 .day-card {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
 }
 
 .day-weather {
-  display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 0.3rem;
-  margin-top: 0.6rem;
-}
-
-.day-card .condition-icon {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 0.6rem;
-  background: #243b49;
-}
-
-.day-card .metric-icon {
-  width: 1.65rem;
-  height: 1.65rem;
-}
-
-.day-condition {
-  margin: 0;
-  color: #edfaff;
-  font-size: 0.9rem;
-  font-weight: 800;
-  line-height: 1.2;
+  align-items: center;
+  justify-content: center;
+  min-height: 6rem;
+  text-align: center;
 }
 
 .day-metrics {
   display: flex;
   flex: 1;
   flex-direction: column;
-  justify-content: space-between;
-  width: 100%;
+  gap: 0.9rem;
   margin-top: 0.65rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid rgb(204 231 235 / 0.3);
+  text-align: center;
 }
 
-.day-metrics > div {
-  padding-block: 0.55rem;
+.day-metrics > div:not(:first-child) {
+  padding-top: 0.6rem;
+  border-top: 1px solid rgb(204 231 235 / 0.16);
 }
 
-.day-metrics > div:first-child {
-  padding-top: 0;
+.day-metrics > div:nth-child(2) {
+  margin-top: auto;
 }
-
-.day-metrics > div:last-child {
-  padding-bottom: 0;
-}
-
-.day-metrics > div + div {
-  border-top: 1px solid rgb(204 231 235 / 0.22);
-}
-
 .site-footer {
   padding-block: 1.35rem;
   border-top: 1px solid rgb(231 244 246 / 0.18);
@@ -656,7 +656,7 @@ a {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
     gap: 0.75rem;
-    padding-block: 0.35rem;
+    padding-block: 0.5rem;
   }
 
   .city-search {
@@ -668,7 +668,7 @@ a {
   }
 
   .current-band {
-    padding-block: 1rem;
+    padding-block: 0.75rem;
   }
 
   .current-inner {
@@ -676,24 +676,18 @@ a {
   }
 
   .current-inner h1 {
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     font-size: 1.5rem;
   }
 
   .current-conditions {
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    gap: 0.65rem 0.85rem;
+    grid-template-columns: 4.5rem minmax(0, 1fr);
+    gap: 0.75rem;
   }
 
   .current-icon {
-    width: 5.5rem;
-    height: 5.5rem;
-    border-radius: 0.7rem;
-  }
-
-  .current-icon .condition-icon {
-    width: 3.7rem;
-    height: 3.7rem;
+    width: 4.5rem;
+    height: 4.5rem;
   }
 
   .temperature {
@@ -701,24 +695,21 @@ a {
   }
 
   .current-condition {
-    margin-block: 0.2rem;
+    margin-block: 0.2rem 0.35rem;
     font-size: 1rem;
   }
 
   .current-metrics {
     grid-column: 1 / -1;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    padding: 0.75rem 0 0;
-    border-top: 1px solid rgb(180 245 255 / 0.45);
+    gap: 0.75rem;
+    padding: 0.65rem 0 0;
+    border-top: 1px solid rgb(180 245 255 / 0.32);
     border-left: 0;
   }
 
   .current-metrics dd {
     font-size: 1rem;
-  }
-
-  .retrieved-time {
-    grid-column: 1 / -1;
   }
 
   .daily-section {
@@ -727,39 +718,51 @@ a {
 
   .daily-strip {
     grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+  }
+
+  .today-card,
+  .day-card {
+    padding: 0.75rem;
   }
 
   .day-card {
     display: grid;
-    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
     grid-template-rows: min-content 1fr;
-    align-items: stretch;
-    gap: 0.45rem 0.65rem;
-    padding: 0.7rem;
+    gap: 0.35rem 0.6rem;
   }
 
   .day-card h3 {
-    grid-column: 1 / -1;
+    grid-column: 1;
   }
 
   .day-weather {
+    flex-direction: row;
+    align-items: center;
+    min-height: 3.5rem;
     grid-column: 1;
     grid-row: 2;
     margin-top: 0;
   }
 
-  .day-weather .condition-icon {
-    width: 4rem;
-    height: 4rem;
-  }
-
   .day-metrics {
     grid-column: 2;
-    grid-row: 2;
+    grid-row: 1 / 3;
+    gap: 0.35rem;
     margin: 0;
-    padding: 0 0 0 0.6rem;
+    padding: 0 0 0 0.7rem;
     border-top: 0;
-    border-left: 1px solid rgb(204 231 235 / 0.3);
+    border-left: 1px solid rgb(204 231 235 / 0.28);
+  }
+
+  .day-metrics > div:not(:first-child) {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .day-metrics > div:nth-child(2) {
+    margin-top: 0;
   }
 
   .footer-inner {
@@ -770,16 +773,16 @@ a {
 
 @media (max-width: 380px) {
   .day-card {
-    gap: 0.35rem 0.5rem;
-    padding: 0.55rem;
+    gap: 0.3rem 0.4rem;
+    padding: 0.65rem;
   }
 
   .day-weather .condition-icon {
-    width: 3.75rem;
-    height: 3.75rem;
+    width: 3rem;
+    height: 3rem;
   }
 
   .day-metrics {
-    padding-left: 0.45rem;
+    padding-left: 0.5rem;
   }
 }

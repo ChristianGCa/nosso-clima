@@ -39,11 +39,30 @@ export function App() {
               Licença dos ícones
             </a>
           </div>
-          {forecast.state.status === 'ready' && (
+          {forecast.state.status !== 'idle' && (
             <p className="attribution forecast-attribution">
-              Previsão por <a href={forecast.state.forecast.attribution.providerUrl}>Open-Meteo</a>.
-              Dados adaptados pelo Nosso Clima sob{' '}
-              <a href={forecast.state.forecast.attribution.licenseUrl}>CC BY 4.0</a>.
+              Dados por{' '}
+              <a
+                href={
+                  forecast.state.status === 'ready'
+                    ? forecast.state.forecast.attribution.providerUrl
+                    : 'https://open-meteo.com/'
+                }
+              >
+                Open-Meteo
+              </a>
+              , com localidades de <a href="https://www.geonames.org/">GeoNames</a>. Dados adaptados
+              pelo Nosso Clima sob{' '}
+              <a
+                href={
+                  forecast.state.status === 'ready'
+                    ? forecast.state.forecast.attribution.licenseUrl
+                    : 'https://creativecommons.org/licenses/by/4.0/'
+                }
+              >
+                CC BY 4.0
+              </a>
+              .
             </p>
           )}
         </div>

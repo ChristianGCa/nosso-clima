@@ -161,6 +161,9 @@ try {
 
   await page.goto(origin);
   await scan(page, 'neutral mobile');
+  const headerHeight = await page
+    .locator('.site-header')
+    .evaluate((element) => element.getBoundingClientRect().height);
   if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
     await page.screenshot({ path: '/tmp/nosso-clima-neutral.png', fullPage: true });
   }
@@ -168,8 +171,26 @@ try {
   assert.equal(assetRequests.length, 0, 'first load must fetch no weather image');
   const field = page.getByRole('combobox', { name: 'Buscar cidade' });
   await field.fill('São');
+  await page.getByText('Buscando cidades…').waitFor();
+  assert.equal(
+    await page
+      .locator('.site-header')
+      .evaluate((element) => element.getBoundingClientRect().height),
+    headerHeight,
+    'search loading must not resize the header',
+  );
   await page.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }).waitFor();
+  assert.equal(
+    await page
+      .locator('.site-header')
+      .evaluate((element) => element.getBoundingClientRect().height),
+    headerHeight,
+    'search results and attribution must not resize the header',
+  );
   await scan(page, 'suggestions mobile');
+  if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
+    await page.screenshot({ path: '/tmp/nosso-clima-search-mobile.png', fullPage: true });
+  }
   await field.focus();
   await field.press('Tab');
   assert.equal(

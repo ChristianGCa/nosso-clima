@@ -1,5 +1,7 @@
-Meteocons static SVG weather icons, version 0.1.0
+Meteocons static SVG icons for weather conditions and metrics (fill style), version 0.1.0
 https://github.com/basmilius/meteocons
+
+Local SVG copies add Portuguese titles. The metric icon viewBoxes are cropped; the artwork is unchanged.
 
 MIT License
 

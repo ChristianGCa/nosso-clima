@@ -16,6 +16,10 @@ export function CurrentConditions({ forecast }: { forecast: Forecast }) {
         <p className="valid-time">
           Condições válidas às {localClock(current.validAtLocal)} (horário local)
         </p>
+        <p className="retrieved-time">
+          Dados consultados às {retrievedTime(forecast.retrievedAtUtc, forecast.timezone)} (horário
+          local)
+        </p>
       </div>
       <dl className="current-metrics">
         <div>
@@ -27,10 +31,6 @@ export function CurrentConditions({ forecast }: { forecast: Forecast }) {
           <dd>{metric(current.windSpeedKmh, 'km/h')}</dd>
         </div>
       </dl>
-      <p className="retrieved-time">
-        Dados consultados às {retrievedTime(forecast.retrievedAtUtc, forecast.timezone)} (horário
-        local)
-      </p>
     </section>
   );
 }

@@ -56,6 +56,9 @@ describe('city-to-forecast flow', () => {
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
     expect(screen.getAllByText('Condição mais severa')).toHaveLength(7);
     expect(screen.getByText(/Dados adaptados pelo Nosso Clima sob/)).toBeTruthy();
+    expect(
+      within(screen.getByRole('contentinfo')).getByRole('link', { name: 'GeoNames' }),
+    ).toBeTruthy();
   });
 
   it('keeps the selected forecast while editing and clears it on a new selection', async () => {
@@ -154,6 +157,9 @@ describe('city-to-forecast flow', () => {
     fireEvent.click(screen.getByRole('option'));
     await resolveUpdates();
     expect(screen.getByText(/Muitas consultas agora/)).toBeTruthy();
+    expect(
+      within(screen.getByRole('contentinfo')).getByRole('link', { name: 'GeoNames' }),
+    ).toBeTruthy();
     expect(screen.getByText('Referência de suporte: test-request-1')).toBeTruthy();
     expect(forecastCalls).toBe(1);
     fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }));
