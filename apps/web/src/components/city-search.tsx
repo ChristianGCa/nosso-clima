@@ -40,10 +40,18 @@ export function CitySearch({ onSelect }: CitySearchProps) {
   return (
     <div className="city-search">
       <label className="search-label" htmlFor="city-search">
-        Qual cidade você quer consultar?
+        Buscar cidade
       </label>
       <div className="search-field">
-        <span aria-hidden="true">⌕</span>
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" focusable="false">
+          <circle cx="10.8" cy="10.8" r="6.3" stroke="currentColor" strokeWidth="1.8" />
+          <path
+            d="m15.5 15.5 4.2 4.2"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          />
+        </svg>
         <input
           id="city-search"
           type="search"
@@ -53,7 +61,7 @@ export function CitySearch({ onSelect }: CitySearchProps) {
           aria-controls="city-options"
           aria-activedescendant={active >= 0 && open ? `city-option-${active}` : undefined}
           autoComplete="off"
-          placeholder="Digite o nome da cidade"
+          placeholder="Nome da cidade"
           value={search.query}
           onChange={(event) => {
             search.edit(event.target.value);
@@ -62,7 +70,6 @@ export function CitySearch({ onSelect }: CitySearchProps) {
           onKeyDown={onKeyDown}
         />
       </div>
-      <p className="search-hint">Digite ao menos 3 letras e escolha uma cidade da lista.</p>
       <div className="search-feedback" role="status" aria-live="polite">
         {search.state.status === 'loading' && 'Buscando cidades…'}
         {search.state.status === 'ready' &&

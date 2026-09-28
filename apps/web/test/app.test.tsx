@@ -11,8 +11,8 @@ describe('neutral first screen', () => {
       'textContent',
       'O clima da sua cidade, sem mistério.',
     );
-    expect(screen.getByRole('combobox', { name: 'Qual cidade você quer consultar?' })).toBeTruthy();
-    expect(screen.getByText('Seu céu começa aqui.')).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Buscar cidade' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Previsão de 7 dias' })).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });

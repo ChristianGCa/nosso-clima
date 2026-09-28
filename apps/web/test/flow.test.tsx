@@ -22,7 +22,7 @@ async function resolveUpdates() {
 }
 
 function input(): HTMLElement {
-  return screen.getByRole('combobox', { name: 'Qual cidade você quer consultar?' });
+  return screen.getByRole('combobox', { name: 'Buscar cidade' });
 }
 
 describe('city-to-forecast flow', () => {

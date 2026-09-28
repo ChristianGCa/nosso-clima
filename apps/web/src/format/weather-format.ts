@@ -31,6 +31,15 @@ export function dayLabel(date: string): string {
   return `${weekday.charAt(0).toUpperCase()}${weekday.slice(1)}, ${dayMonth}`;
 }
 
+export function compactDayLabel(date: string): string {
+  return new Intl.DateTimeFormat('pt-BR', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T12:00:00Z`));
+}
+
 const uvNames = {
   low: 'Baixo',
   moderate: 'Moderado',

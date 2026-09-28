@@ -8,60 +8,56 @@ type Props = { state: ForecastState; onRetry: () => void };
 export function ForecastStatus({ state, onRetry }: Props) {
   if (state.status === 'idle') {
     return (
-      <aside className="empty-panel" aria-label="Comece sua consulta">
-        <div className="empty-icon" aria-hidden="true">
-          ☼
+      <section className="state-panel state-panel--idle">
+        <div className="state-inner">
+          <h1>O clima da sua cidade, sem mistério.</h1>
+          <p>Escolha uma cidade na busca acima para ver a previsão.</p>
         </div>
-        <h2>Seu céu começa aqui.</h2>
-        <p>
-          Escolha uma cidade para descobrir a previsão local, com horários e medidas fáceis de
-          entender.
-        </p>
-      </aside>
+      </section>
     );
   }
 
   if (state.status === 'loading') {
     return (
-      <section className="forecast-panel" role="status" aria-live="polite" aria-busy="true">
-        <h2>{locationLabel(state.location)}</h2>
-        <p>Carregando previsão…</p>
+      <section className="state-panel" role="status" aria-live="polite" aria-busy="true">
+        <div className="state-inner">
+          <h1>{locationLabel(state.location)}</h1>
+          <p>Carregando previsão…</p>
+        </div>
       </section>
     );
   }
 
   if (state.status === 'error') {
     return (
-      <section className="forecast-panel" role="alert">
-        <h2>{locationLabel(state.location)}</h2>
-        <p>
-          {state.failure.kind === 'rate_limited'
-            ? 'Muitas consultas agora. Tente novamente em instantes.'
-            : 'A previsão está temporariamente indisponível.'}
-        </p>
-        <button className="action-button" type="button" onClick={onRetry}>
-          Tentar novamente
-        </button>
-        {state.failure.requestId && (
-          <p className="support-id">Referência de suporte: {state.failure.requestId}</p>
-        )}
+      <section className="state-panel" role="alert">
+        <div className="state-inner">
+          <h1>{locationLabel(state.location)}</h1>
+          <p>
+            {state.failure.kind === 'rate_limited'
+              ? 'Muitas consultas agora. Tente novamente em instantes.'
+              : 'A previsão está temporariamente indisponível.'}
+          </p>
+          <button className="action-button" type="button" onClick={onRetry}>
+            Tentar novamente
+          </button>
+          {state.failure.requestId && (
+            <p className="support-id">Referência de suporte: {state.failure.requestId}</p>
+          )}
+        </div>
       </section>
     );
   }
 
   return (
-    <section
-      className="weather-result"
-      aria-label={`Previsão para ${locationLabel(state.location)}`}
-    >
-      <h2>{locationLabel(state.location)}</h2>
-      <CurrentConditions forecast={state.forecast} />
+    <div className="weather-result">
+      <div className="current-band">
+        <div className="current-inner">
+          <h1>{locationLabel(state.location)}</h1>
+          <CurrentConditions forecast={state.forecast} />
+        </div>
+      </div>
       <DailyForecast daily={state.forecast.daily} />
-      <p className="attribution forecast-attribution">
-        Previsão por <a href={state.forecast.attribution.providerUrl}>Open-Meteo</a>. Dados
-        adaptados pelo Nosso Clima sob <a href={state.forecast.attribution.licenseUrl}>CC BY 4.0</a>
-        .
-      </p>
-    </section>
+    </div>
   );
 }

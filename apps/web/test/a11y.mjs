@@ -166,7 +166,7 @@ try {
   }
   assert.equal(apiRequests.length, 0, 'first load must make no API request');
   assert.equal(assetRequests.length, 0, 'first load must fetch no weather image');
-  const field = page.getByRole('combobox', { name: 'Qual cidade você quer consultar?' });
+  const field = page.getByRole('combobox', { name: 'Buscar cidade' });
   await field.fill('São');
   await page.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }).waitFor();
   await scan(page, 'suggestions mobile');
@@ -223,6 +223,9 @@ try {
       .evaluate((element) => getComputedStyle(element).backgroundImage);
     assert.ok(background.includes(expected), `wrong image for ${expected}`);
     await scan(page, expected);
+    if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1' && index === 4) {
+      await page.screenshot({ path: '/tmp/nosso-clima-rain-mobile.png', fullPage: true });
+    }
   }
   assert.equal(new Set(assetRequests).size, 10, 'each weather background should be requested once');
   assert.equal(

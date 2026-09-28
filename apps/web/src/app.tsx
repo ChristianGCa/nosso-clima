@@ -12,26 +12,42 @@ export function App() {
       style={background ? { backgroundImage: `url("${background}")` } : undefined}
     >
       <header className="site-header">
-        <a className="brand" href="/" aria-label="Nosso Clima, início">
-          <span className="brand-mark" aria-hidden="true">
-            ◒
-          </span>
-          <span>nosso clima</span>
-        </a>
-        <span className="header-note">O tempo perto de você</span>
-      </header>
-      <main className={`main-content${forecast.state.status === 'ready' ? ' has-forecast' : ''}`}>
-        <section className="intro" aria-labelledby="page-title">
-          <p className="eyebrow">PREVISÃO DO TEMPO</p>
-          <h1 id="page-title">O clima da sua cidade, sem mistério.</h1>
-          <p className="intro-copy">
-            Encontre uma cidade para ver as condições de agora e os próximos sete dias.
-          </p>
+        <div className="header-inner">
+          <a className="brand" href="/" aria-label="Nosso Clima, início">
+            <span className="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none" focusable="false">
+                <title>Marca do Nosso Clima</title>
+                <circle cx="16" cy="16" r="11" stroke="currentColor" strokeWidth="2" />
+                <path d="M5 19h22M8 24h16" stroke="currentColor" strokeWidth="2" />
+                <circle cx="16" cy="12" r="3" fill="currentColor" />
+              </svg>
+            </span>
+            <span>nosso clima</span>
+          </a>
           <CitySearch onSelect={forecast.choose} />
-        </section>
+        </div>
+      </header>
+      <main className={`main-content${forecast.state.status === 'ready' ? '' : ' has-state'}`}>
         <ForecastStatus state={forecast.state} onRetry={forecast.retry} />
       </main>
-      <footer className="site-footer">Nosso Clima · informações para planejar o seu dia</footer>
+      <footer className="site-footer">
+        <div className="footer-inner">
+          <div className="footer-about">
+            <strong>Nosso Clima</strong>
+            <p>Condições atuais e previsão para sete dias.</p>
+            <a className="icon-license" href="/third-party-licenses.txt">
+              Licença dos ícones
+            </a>
+          </div>
+          {forecast.state.status === 'ready' && (
+            <p className="attribution forecast-attribution">
+              Previsão por <a href={forecast.state.forecast.attribution.providerUrl}>Open-Meteo</a>.
+              Dados adaptados pelo Nosso Clima sob{' '}
+              <a href={forecast.state.forecast.attribution.licenseUrl}>CC BY 4.0</a>.
+            </p>
+          )}
+        </div>
+      </footer>
     </div>
   );
 }
