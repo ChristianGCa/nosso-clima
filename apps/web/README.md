@@ -14,3 +14,5 @@ Vite proxies `/api` to `http://127.0.0.1:3000`. For a build that calls a differe
 Run the local checks with `npm run check --workspace @nosso-clima/web`, `npm run test:coverage --workspace @nosso-clima/web`, and `npm run check:boundaries`. The browser accessibility gate requires Playwright's Chromium (`npx playwright install chromium` on a fresh machine), then `npm run test:a11y`.
 
 The ten bundled background files are approved for local development. Their publication rights and provider licensing must be verified by `production-delivery` before a public release.
+
+The footer contains a local explanation of data use, project information, and the distinct data and icon licences. The repository URL is intentionally unset in `src/components/site-information.tsx` until the owner provides a public address; the site shows non-clickable text meanwhile. The project code has no licence selected. This local explanation does not replace the release-time privacy notice, which needs the selected host's logging/retention and a public contact route.

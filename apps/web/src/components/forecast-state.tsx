@@ -12,6 +12,10 @@ export function ForecastStatus({ state, onRetry }: Props) {
         <div className="state-inner">
           <h1>O clima da sua cidade, sem mistério.</h1>
           <p>Escolha uma cidade na busca acima para ver a previsão.</p>
+          <p className="state-privacy-note">
+            Sua última cidade escolhida fica salva neste navegador.{' '}
+            <a href="#seus-dados">Como usamos seus dados</a>
+          </p>
         </div>
       </section>
     );

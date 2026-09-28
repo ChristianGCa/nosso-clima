@@ -159,6 +159,10 @@ try {
 
   await page.goto(origin);
   await scan(page, 'neutral mobile');
+  await page.getByRole('link', { name: 'Como usamos seus dados' }).click();
+  assert.equal(new URL(page.url()).hash, '#seus-dados');
+  await page.getByRole('heading', { name: 'Seus dados' }).waitFor();
+  await page.getByRole('link', { name: 'Voltar à busca' }).click();
   const headerHeight = await page
     .locator('.site-header')
     .evaluate((element) => element.getBoundingClientRect().height);

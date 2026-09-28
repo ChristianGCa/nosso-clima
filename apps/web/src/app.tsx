@@ -1,5 +1,6 @@
 import { CitySearch } from './components/city-search';
 import { ForecastStatus } from './components/forecast-state';
+import { SiteInformation } from './components/site-information';
 import { useForecast } from './hooks/use-forecast';
 import { useWeatherBackground } from './hooks/use-weather-background';
 
@@ -11,7 +12,7 @@ export function App() {
       className={`site-shell${background ? ' has-image' : ''}`}
       style={background ? { backgroundImage: `url("${background}")` } : undefined}
     >
-      <header className="site-header">
+      <header className="site-header" id="inicio">
         <div className="header-inner">
           <a className="brand" href="/" aria-label="Nosso Clima, início">
             <span className="brand-mark" aria-hidden="true">
@@ -35,9 +36,6 @@ export function App() {
           <div className="footer-about">
             <strong>Nosso Clima</strong>
             <p>Condições atuais e previsão para sete dias.</p>
-            <a className="icon-license" href="/third-party-licenses.txt">
-              Licença dos ícones
-            </a>
           </div>
           {forecast.state.status !== 'idle' && (
             <p className="attribution forecast-attribution">
@@ -66,6 +64,7 @@ export function App() {
             </p>
           )}
         </div>
+        <SiteInformation />
       </footer>
     </div>
   );

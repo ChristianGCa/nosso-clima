@@ -13,6 +13,18 @@ describe('neutral first screen', () => {
     );
     expect(screen.getByRole('combobox', { name: 'Buscar cidade' })).toBeTruthy();
     expect(screen.queryByRole('heading', { name: 'Previsão de 7 dias' })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Como usamos seus dados' }).getAttribute('href')).toBe(
+      '#seus-dados',
+    );
+    expect(screen.getByRole('heading', { name: 'Seus dados' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Sobre o projeto' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Licenças e créditos' })).toBeTruthy();
+    expect(screen.getByText('Link do repositório em breve.')).toBeTruthy();
+    expect(screen.queryByRole('link', { name: /repositório/i })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Licença MIT dos ícones' }).getAttribute('href')).toBe(
+      '/third-party-licenses.txt',
+    );
+    expect(screen.getByText(/O código do Nosso Clima ainda não tem licença definida/)).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });
