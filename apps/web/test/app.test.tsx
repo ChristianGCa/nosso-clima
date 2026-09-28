@@ -13,7 +13,7 @@ describe('neutral first screen', () => {
     );
     expect(screen.getByRole('combobox', { name: 'Buscar cidade' })).toBeTruthy();
     const brandImage = screen
-      .getByRole('link', { name: 'Nosso Clima, início' })
+      .getByRole('link', { name: 'NossoClima, início' })
       .querySelector('img');
     expect(brandImage?.getAttribute('src')).toBeTruthy();
     expect(brandImage?.getAttribute('alt')).toBe('');
@@ -29,7 +29,7 @@ describe('neutral first screen', () => {
     expect(screen.getByRole('link', { name: 'Licença MIT dos ícones' }).getAttribute('href')).toBe(
       '/third-party-licenses.txt',
     );
-    expect(screen.getByText(/O código do Nosso Clima ainda não tem licença definida/)).toBeTruthy();
+    expect(screen.getByText(/O código do NossoClima ainda não tem licença definida/)).toBeTruthy();
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });

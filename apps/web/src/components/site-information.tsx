@@ -13,7 +13,7 @@ export function SiteInformation() {
         <section id="seus-dados" aria-labelledby="seus-dados-titulo">
           <h2 id="seus-dados-titulo">Seus dados</h2>
           <p>
-            Ao buscar uma cidade, o termo pesquisado passa pelo Nosso Clima e é enviado à
+            Ao buscar uma cidade, o termo pesquisado passa pelo NossoClima e é enviado à
             geocodificação da Open-Meteo. Ao escolher uma cidade, as coordenadas e o fuso horário
             dessa cidade são enviados para obter a previsão. Quando você volta ao site, consultamos
             novamente a previsão dessa cidade.
@@ -35,7 +35,7 @@ export function SiteInformation() {
         <section id="sobre-o-projeto" aria-labelledby="sobre-o-projeto-titulo">
           <h2 id="sobre-o-projeto-titulo">Sobre o projeto</h2>
           <p>
-            O Nosso Clima apresenta condições atuais e uma previsão de sete dias em linguagem
+            O NossoClima apresenta condições atuais e uma previsão de sete dias em linguagem
             simples. Os dados meteorológicos e as localidades são fornecidos pela Open-Meteo e
             adaptados para esta interface.
           </p>
@@ -48,14 +48,14 @@ export function SiteInformation() {
         <section id="licencas-e-creditos" aria-labelledby="licencas-e-creditos-titulo">
           <h2 id="licencas-e-creditos-titulo">Licenças e créditos</h2>
           <p>
-            Dados de Open-Meteo e localidades baseadas em GeoNames, adaptados pelo Nosso Clima sob{' '}
+            Dados de Open-Meteo e localidades baseadas em GeoNames, adaptados pelo NossoClima sob{' '}
             <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>.
           </p>
           <p>
             Ícones Meteocons de Bas Milius:{' '}
             <a href="/third-party-licenses.txt">Licença MIT dos ícones</a>.
           </p>
-          <p>O código do Nosso Clima ainda não tem licença definida.</p>
+          <p>O código do NossoClima ainda não tem licença definida.</p>
           <p>Os direitos de publicação das imagens de fundo ainda estão em análise.</p>
         </section>
       </div>

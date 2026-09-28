@@ -160,7 +160,7 @@ try {
   await page.goto(origin);
   assert.equal(
     await page
-      .getByRole('link', { name: 'Nosso Clima, início' })
+      .getByRole('link', { name: 'NossoClima, início' })
       .locator('img')
       .evaluate((element) => element.complete && element.naturalWidth > 0),
     true,

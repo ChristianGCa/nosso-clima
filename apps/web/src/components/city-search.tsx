@@ -123,7 +123,7 @@ export function CitySearch({ onSelect }: CitySearchProps) {
           <p className="attribution search-attribution">
             Busca por <a href={search.state.result.attribution.providerUrl}>Open-Meteo</a> e{' '}
             <a href={search.state.result.attribution.sourceUrl}>GeoNames</a>. Dados adaptados pelo
-            Nosso Clima sob <a href={search.state.result.attribution.licenseUrl}>CC BY 4.0</a>.
+            NossoClima sob <a href={search.state.result.attribution.licenseUrl}>CC BY 4.0</a>.
           </p>
         )}
       </div>

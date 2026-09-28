@@ -15,7 +15,7 @@ export function App() {
     >
       <header className="site-header" id="inicio">
         <div className="header-inner">
-          <a className="brand" href="/" aria-label="Nosso Clima, início">
+          <a className="brand" href="/" aria-label="NossoClima, início">
             <img className="brand-logo" src={logoEscuro} alt="" />
           </a>
           <CitySearch onSelect={forecast.choose} />
@@ -27,7 +27,7 @@ export function App() {
       <footer className="site-footer">
         <div className="footer-inner">
           <div className="footer-about">
-            <strong>Nosso Clima</strong>
+            <strong>NossoClima</strong>
             <p>Condições atuais e previsão para sete dias.</p>
           </div>
           {forecast.state.status !== 'idle' && (
@@ -43,7 +43,7 @@ export function App() {
                 Open-Meteo
               </a>
               , com localidades de <a href="https://www.geonames.org/">GeoNames</a>. Dados adaptados
-              pelo Nosso Clima sob{' '}
+              pelo NossoClima sob{' '}
               <a
                 href={
                   forecast.state.status === 'ready'

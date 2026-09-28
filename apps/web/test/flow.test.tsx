@@ -100,7 +100,7 @@ describe('city-to-forecast flow', () => {
         ?.querySelectorAll('dt'),
     ).toHaveLength(5);
     expect(screen.getAllByText('Condição mais severa')).toHaveLength(7);
-    expect(screen.getByText(/Dados adaptados pelo Nosso Clima sob/)).toBeTruthy();
+    expect(screen.getByText(/Dados adaptados pelo NossoClima sob/)).toBeTruthy();
     expect(
       within(screen.getByRole('contentinfo')).getByRole('link', { name: 'GeoNames' }),
     ).toBeTruthy();

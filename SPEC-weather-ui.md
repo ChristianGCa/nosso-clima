@@ -33,7 +33,7 @@ The frontend calls the same configured API base URL for both routes and uses `UR
 | Search suggestions | `GET /api/v1/locations` from `SPEC-location-search.md` | Show `name`, optional `region`, and `country`; use the complete selected result for the forecast request. |
 | Current conditions | `GET /api/v1/forecast` from `SPEC-weather-forecast.md` | Show current temperature, apparent temperature, condition label, wind speed and local valid time. |
 | Seven-day forecast | `daily` from forecast response | Show local date and weekday for all seven days. Today shows max/min temperature and apparent temperature, the day's **most severe** condition, maximum rain chance, rain amount and maximum wind. Each of the next six days shows only its condition, maximum rain chance, rain amount and max/min temperature. |
-| Attribution | Each response's `attribution` | Credit Open-Meteo, GeoNames for search results and the selected city, linked CC BY 4.0 licence, and say Nosso Clima adapted the data. |
+| Attribution | Each response's `attribution` | Credit Open-Meteo, GeoNames for search results and the selected city, linked CC BY 4.0 licence, and say NossoClima adapted the data. |
 
 The idea document's phrase “condição predominante” is superseded by the approved forecast contract: `daily.weather_code` represents the most severe condition of the day. Do not compute a predominant condition or derive daily conditions from the current condition. Backend `condition.category` and `condition.labelPt` are authoritative for wording and visual grouping.
 

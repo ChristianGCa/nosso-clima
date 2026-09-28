@@ -2,7 +2,7 @@
 
 Last reviewed: 2026-09-21 by the project owner
 
-This file defines the minimum quality bar for Nosso Clima. A failing constraint blocks delivery when its activation module has been implemented. Constraints may be tightened without special approval; weakening or bypassing one requires explicit approval and a documented exception.
+This file defines the minimum quality bar for NossoClima. A failing constraint blocks delivery when its activation module has been implemented. Constraints may be tightened without special approval; weakening or bypassing one requires explicit approval and a documented exception.
 
 ## Floor
 

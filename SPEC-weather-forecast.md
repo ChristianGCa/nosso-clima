@@ -67,7 +67,7 @@ Accept: application/json
 
 The example abbreviates `daily`; a real success has **exactly seven** records, starting with the selected place's current local date and ordered by consecutive local calendar dates. `retrievedAtUtc` is the time this process successfully retrieved and validated the payload, not a claimed weather-model update time. Cache hits retain the original timestamp. `validAtLocal` is Open-Meteo's current-value time and is always paired with `timezone`; frontend code must not treat the offset-less value as UTC. Temperatures are °C, wind speeds km/h, precipitation mm, and probability percent. An individual daily `precipitationProbabilityMaxPercent` may be `null` when the provider reports it unavailable. The UI marks it as unavailable without hiding the remaining forecast or interpreting it as zero. The result never includes the request coordinates, upstream grid-cell coordinates or raw payload.
 
-The fixed attribution is included on every success. `weather-ui` must show provider/license credit and indicate that Nosso Clima adapted the data. Styling, contrast and background selection belong to the UI spec.
+The fixed attribution is included on every success. `weather-ui` must show provider/license credit and indicate that NossoClima adapted the data. Styling, contrast and background selection belong to the UI spec.
 
 ### Condition semantics
 

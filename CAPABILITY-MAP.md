@@ -1,4 +1,4 @@
-# Capability Map: Nosso Clima
+# Capability Map: NossoClima
 
 | Module id | Responsabilidade | Depende de |
 |---|---|---|

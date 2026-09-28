@@ -1,6 +1,6 @@
 {
-  "name": "Nosso Clima",
-  "short_name": "Nosso Clima",
+  "name": "NossoClima",
+  "short_name": "NossoClima",
   "start_url": "/",
   "scope": "/",
   "display": "browser",
