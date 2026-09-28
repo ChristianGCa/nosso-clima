@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { Location } from '../api/locations';
 import { getForecast, type Forecast } from '../api/forecast';
 import { unavailableFrom, type RequestFailure } from '../api/http';
+import { loadLastLocation, saveLastLocation } from '../storage/last-location';
 
 export type ForecastState =
   | { status: 'idle' }
@@ -10,8 +11,10 @@ export type ForecastState =
   | { status: 'error'; location: Location; failure: RequestFailure };
 
 export function useForecast() {
-  const [selected, setSelected] = useState<Location | null>(null);
-  const [state, setState] = useState<ForecastState>({ status: 'idle' });
+  const [selected, setSelected] = useState<Location | null>(loadLastLocation);
+  const [state, setState] = useState<ForecastState>(() =>
+    selected ? { status: 'loading', location: selected } : { status: 'idle' },
+  );
   const requestId = useRef(0);
 
   useEffect(() => {
@@ -38,6 +41,7 @@ export function useForecast() {
     requestId.current += 1;
     setState({ status: 'loading', location });
     setSelected(location);
+    saveLastLocation(location);
   }
 
   return {

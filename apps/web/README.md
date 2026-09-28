@@ -1,6 +1,6 @@
 # Nosso Clima web
 
-This workspace implements the approved `weather-ui` spec. It consumes the existing API routes, starts without a selected city or network request, and uses local WebP backgrounds only after a forecast succeeds.
+This workspace implements the approved `weather-ui` spec. It consumes the existing API routes and starts without a network request on a first visit. After a person selects a city, the browser stores that one city locally and requests a fresh forecast for it on later visits. Clearing site data removes the saved city. Local WebP backgrounds appear only after a forecast succeeds.
 
 From the repository root, start the API and web app in separate terminals:
 

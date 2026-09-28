@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/app';
+import { LAST_LOCATION_STORAGE_KEY } from '../src/storage/last-location';
 import { forecastResponse, jsonResponse, locationResponse } from './fixtures';
 
 afterEach(() => {
@@ -26,6 +27,44 @@ function input(): HTMLElement {
 }
 
 describe('city-to-forecast flow', () => {
+  it('restores the last selected city and fetches fresh weather without searching again', async () => {
+    vi.useFakeTimers();
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(async (path) =>
+        String(path).includes('/locations')
+          ? jsonResponse(locationResponse)
+          : jsonResponse(forecastResponse),
+      );
+    const firstVisit = render(<App />);
+    fireEvent.change(input(), { target: { value: 'São' } });
+    await advanceSearch();
+    fireEvent.click(screen.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }));
+    await resolveUpdates();
+    expect(JSON.parse(localStorage.getItem(LAST_LOCATION_STORAGE_KEY) ?? '').location.name).toBe(
+      'São Paulo',
+    );
+    firstVisit.unmount();
+    fetchSpy.mockClear();
+
+    render(<App />);
+    await resolveUpdates();
+    expect(screen.getByRole('heading', { name: 'São Paulo, São Paulo, Brasil' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    expect(String(fetchSpy.mock.calls[0]?.[0])).toContain('/forecast?');
+  });
+
+  it('starts neutrally when the saved city is invalid', () => {
+    localStorage.setItem(LAST_LOCATION_STORAGE_KEY, '{bad json');
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    render(<App />);
+    expect(
+      screen.getByRole('heading', { name: 'O clima da sua cidade, sem mistério.' }),
+    ).toBeTruthy();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
   it('waits for three Unicode characters and 300 ms, then selects by keyboard', async () => {
     vi.useFakeTimers();
     const fetchSpy = vi
@@ -96,6 +135,9 @@ describe('city-to-forecast flow', () => {
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
     await advanceSearch();
     fireEvent.click(screen.getByRole('option', { name: 'Santos, São Paulo, Brasil' }));
+    expect(JSON.parse(localStorage.getItem(LAST_LOCATION_STORAGE_KEY) ?? '').location.name).toBe(
+      'Santos',
+    );
     expect(screen.queryByRole('heading', { name: 'Previsão de 7 dias' })).toBeNull();
     expect(screen.getByText('Carregando previsão…')).toBeTruthy();
     await act(async () => {

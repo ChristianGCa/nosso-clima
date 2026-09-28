@@ -942,7 +942,7 @@ Plan: `tasks/plan.md`, Production Delivery section
 
 - [ ] Both local servers have bounded startup, unique ports and cleanup on success/failure; no test leaves a listener or browser behind.
 - [ ] The fixture transport rejects unexpected upstream URLs, records call counts and returns controlled success, empty and failure variants without contacting Open-Meteo.
-- [ ] `npm run test:e2e` runs a minimal neutral-page smoke against the built web and real API HTTP listener, with zero initial provider calls.
+- [ ] `npm run test:e2e` runs a minimal first-visit neutral-page smoke against the built web and real API HTTP listener, with zero initial provider calls.
 
 **Verification:** `npm run test:e2e`; focused harness failure/cleanup test; `npm run check`; offline request-count assertion.
 
@@ -958,7 +958,7 @@ Plan: `tasks/plan.md`, Production Delivery section
 
 **Acceptance criteria:**
 
-- [ ] Search, explicit selection, current conditions, seven daily cards and both source credits pass through real web/API HTTP calls; first load remains neutral and makes no upstream call.
+- [ ] Search, explicit selection, current conditions, seven daily cards and both source credits pass through real web/API HTTP calls; the first visit without saved data remains neutral, and reopening restores the last city with a fresh forecast and no geocoding call.
 - [ ] Empty search, upstream failure with manual retry, keyboard selection and stale-city response protection produce the expected visible states and never show old weather for a new city.
 - [ ] The suite is deterministic, offline, within the five-minute browser budget and leaves existing root/web/API checks green.
 
@@ -1020,7 +1020,7 @@ Plan: `tasks/plan.md`, Production Delivery section
 
 ## Task P6: Review provider terms and combined usage budget
 
-**Description:** Record current official Open-Meteo geocoding/forecast terms, pricing, attribution and effective request accounting, then model the two endpoints together for the intended traffic and one API process.
+**Description:** Record current official Open-Meteo geocoding/forecast terms, pricing, attribution and effective request accounting, then model the two endpoints together for the intended traffic and one API process, including automatic forecast calls on return visits.
 
 **Acceptance criteria:**
 
@@ -1038,11 +1038,12 @@ Plan: `tasks/plan.md`, Production Delivery section
 
 ## Task P7: Prepare and expose the privacy notice
 
-**Description:** Draft the public notice for search-text and selected-coordinate transfers, applicable provider retention and local logging/retention behavior, then make it reachable from the web app for the selected deployment.
+**Description:** Draft the public notice for search-text and selected-coordinate transfers (including forecast calls on return visits), the last selected city retained in browser-local storage, applicable provider retention and local logging/retention behavior, then make it reachable from the web app for the selected deployment.
 
 **Acceptance criteria:**
 
 - [ ] Notice accurately describes both third-party transfers, purposes and current provider retention material, with dated sources and the selected host's actual log behavior.
+- [ ] Notice explains that one selected city remains in browser-local storage until replaced or site data is cleared, and that a later visit automatically requests its forecast.
 - [ ] Web users can open the notice from a visible, keyboard-accessible link; the link target works in the built static deployment.
 - [ ] No prohibited search term, coordinate, IP or raw provider payload is newly logged, and the owner reviews the notice before release.
 

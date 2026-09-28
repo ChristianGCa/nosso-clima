@@ -9,7 +9,7 @@
 
 Return current conditions and seven local calendar days for one explicitly selected place. The backend translates Open-Meteo's response into a small, validated, Portuguese-friendly contract so the frontend does not interpret provider fields, units or WMO codes. A person should see temperature, apparent temperature, wind, rain chance and amount, the local time, and when the data was retrieved without confusing a forecast with a measurement.
 
-This module does not search for places, choose a city on the user's behalf, render backgrounds, draw a UI, persist weather history, send alerts, or promise that a forecast is an observed fact. The forecast endpoint accepts coordinates and the IANA timezone from the selected `location-search` result because the MVP has no durable location store. On first load, `weather-ui` shows a neutral state and makes no forecast request until a person explicitly selects a city; there is no default city.
+This module does not search for places, choose a city on the user's behalf, render backgrounds, draw a UI, persist weather history, send alerts, or promise that a forecast is an observed fact. The forecast endpoint accepts coordinates and the IANA timezone from the selected `location-search` result. `weather-ui` makes no forecast request on a first visit without a saved city; after explicit selection, a later visit may request a fresh forecast for that browser's last selected city. There is no global default city.
 
 The owner confirmed the cache TTL, neutral first load, daily-condition source and unavailable-metric policy on 2026-09-23, then explicitly approved this spec. The W1–W7 plan was approved with the subsequent three-decimal rounding, canonical-timezone, real-fixture and TTL-boundary amendments. The 2026-09-28 request removes UV maximum and derived risk from the outbound request and public contract.
 
@@ -230,7 +230,7 @@ export type ForecastLocation = Readonly<{
 The owner confirmed on 2026-09-23:
 
 1. **TTL:** 10 minutes for current conditions and all seven daily records in one cache entry. The public-deployment aggregate usage budget must account for this TTL.
-2. **First load:** Neutral `weather-ui` state until explicit city selection; no default city and no initial forecast request.
+2. **First visit:** Neutral `weather-ui` state until explicit city selection; no default city. A returning browser may request a fresh forecast for its last selected city under the revised `weather-ui` spec.
 3. **Daily condition:** Use Open-Meteo's `daily.weather_code` as the day's most severe condition. Do not compute predominance from hourly codes.
 4. **Missing probability:** Keep the forecast when the provider supplies `null` for rain probability on an individual day. Return `null` and let the UI mark it unavailable.
 5. **Coordinates:** Round valid latitude and longitude to three decimal places before the upstream request and cache key (owner clarification after plan review).

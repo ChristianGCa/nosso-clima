@@ -264,6 +264,18 @@ try {
   if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
     await page.screenshot({ path: '/tmp/nosso-clima-desktop.png', fullPage: true });
   }
+  const priorForecastCalls = forecastCalls;
+  const priorLocationCalls = apiRequests.filter((url) => url.includes('/locations?')).length;
+  await page.reload();
+  await page.getByRole('heading', { name: 'São Paulo, São Paulo, Brasil' }).waitFor();
+  await page.getByRole('heading', { name: 'Previsão de 7 dias' }).waitFor();
+  assert.equal(forecastCalls, priorForecastCalls + 1, 'reload must refresh the saved city');
+  assert.equal(
+    apiRequests.filter((url) => url.includes('/locations?')).length,
+    priorLocationCalls,
+    'reload must not geocode the saved city',
+  );
+  await scan(page, 'restored city desktop');
   await browser.close();
 } finally {
   await browser?.close();

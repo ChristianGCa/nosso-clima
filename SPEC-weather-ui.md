@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Complete; Checkpoint U-C approved by owner on 2026-09-24; revised by owner request on 2026-09-28 to remove UV maximum and risk
+- **Status:** Complete; Checkpoint U-C approved by owner on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -9,18 +9,18 @@
 
 Build a responsive Portuguese-language site where a person searches for a city, explicitly selects one result, and understands its current conditions and seven-day forecast. The interface must make the city, local times, units, uncertainty and unavailable metrics clear without requiring weather expertise. It consumes the two approved backend HTTP contracts and does not interpret raw Open-Meteo responses or WMO codes.
 
-The first screen is neutral: no default city, geolocation request, saved selection or forecast request. The person may type a place name and choose a result that shows city, region when available, and country. A new selection loads that place's forecast. The site does not add accounts, history, maps, alerts, hourly weather, unit switching or weather advice.
+The first visit is neutral: no default city, geolocation request or forecast request. The person may type a place name and choose a result that shows city, region when available, and country. A new selection loads that place's forecast. On a later visit in the same browser, load a fresh forecast for the last explicitly selected city. The site does not add accounts, search history, maps, alerts, hourly weather, unit switching or weather advice.
 
 ## User Flow and States
 
-1. Show the app title, a labelled city search field, short guidance, and a neutral background. Do not request either API on first load.
+1. With no valid saved city, show the app title, a labelled city search field, short guidance, and a neutral background. Do not request either API. With a valid saved city, immediately show its name and loading state and request its fresh forecast without a geocoding call.
 2. After the trimmed input reaches three Unicode code points, wait 300 ms after the last edit, then request `GET /api/v1/locations?query=...`. A shorter input clears suggestions and makes no request. The backend may accept two-character searches; the three-character threshold is a UI choice.
 3. Show at most five results with city, region if present, and country. Never silently choose the first result. A zero-result response has a distinct message from a loading or error state.
-4. Selecting a result closes suggestions and requests `GET /api/v1/forecast` using only that result's `latitude`, `longitude` and `timezone`. Clear the prior forecast and return to a neutral background while a newly selected city's forecast loads; never display one city's forecast beneath another city's name.
+4. Selecting a result closes suggestions, saves that selected city in browser-local storage, and requests `GET /api/v1/forecast` using only that result's `latitude`, `longitude` and `timezone`. Clear the prior forecast and return to a neutral background while a newly selected city's forecast loads; never display one city's forecast beneath another city's name. Editing search text or retrying a forecast does not replace the saved city.
 5. On success, show the selected place, current conditions, one detailed card for today and six compact daily summaries. The person can search again while a forecast is visible; editing search text alone does not change the selected place or its forecast.
 6. On forecast failure, keep the selected place visible with a concise error and an explicit retry action. Do not automatically retry or show stale data from a different city. A search failure leaves an already displayed forecast in place.
 
-Every request has an `AbortController`. On a new query or selected place, abort the old request and also ignore any late result that belongs to an older request, since abort is not proof that a response cannot arrive. Unmounting the view aborts outstanding work. Treat non-2xx, malformed JSON and unexpected response shapes as an unavailable state; never render unchecked values. No client cache or persistence is required for the MVP.
+Every request has an `AbortController`. On a new query or selected place, abort the old request and also ignore any late result that belongs to an older request, since abort is not proof that a response cannot arrive. Unmounting the view aborts outstanding work. Treat non-2xx, malformed JSON and unexpected response shapes as an unavailable state; never render unchecked values. Save only the last selected location, never search text or forecast data. Treat browser storage as untrusted input: reject oversized, malformed or invalid saved records before rendering or sending coordinates. Storage errors must leave search and forecast usable. The saved city remains until another city is selected or the browser's site data is cleared.
 
 For rate limiting, show a specific friendly message for `429 RATE_LIMITED` and allow a later manual retry. For `503 SERVICE_UNAVAILABLE`, network failure or malformed data, show a generic temporary-unavailability message. Do not display provider bodies, raw server diagnostics or coordinates in an error. Other errors use a generic failure state. Preserve the backend's request ID only as a support reference in the error state, if present.
 
@@ -101,7 +101,7 @@ type ForecastViewState =
 ## Testing Strategy
 
 - Unit tests cover place labels, timezone-safe current and daily dates, metric formatting, nullable fields, category/day-night image mapping, malformed HTTP data and bounded error messages.
-- Component tests with mocked requests cover neutral first load with zero calls, debounce/threshold, result selection, keyboard behavior, empty/error/429 states, stale search and forecast responses, explicit retry, source credit and distinct city transitions.
+- Component tests with mocked requests cover a neutral first visit with zero calls, saved-city restoration with a fresh forecast and no search call, invalid or unavailable storage, debounce/threshold, result selection, keyboard behavior, empty/error/429 states, stale search and forecast responses, explicit retry, source credit and distinct city transitions.
 - Browser verification checks 360 px and desktop layouts, all ten backgrounds, focus visibility, keyboard navigation, screen-reader announcements, no horizontal overflow, and zero critical or serious axe findings. Contrast is checked against actual rendered surfaces because automated axe checks cannot fully prove photographic contrast.
 - Tests never call the live provider and use fake timers rather than wall-clock sleep. `production-delivery` adds the end-to-end real-browser flow and performance gate once the local UI works.
 
@@ -109,7 +109,7 @@ type ForecastViewState =
 
 ### Always
 
-- Keep the initial screen neutral and require explicit city selection before forecast work.
+- Keep the initial screen neutral when no valid city was previously selected; only a prior explicit selection may initiate a forecast on reopening.
 - Use only the approved location and forecast HTTP contracts; format their values without changing their meaning.
 - Preserve attribution, privacy, keyboard access, readable contrast and safe unavailable states.
 - Keep query, coordinates and weather values out of browser logs and analytics.
@@ -117,7 +117,7 @@ type ForecastViewState =
 ### Ask first
 
 - Change API fields, add a backend endpoint, change the seven-day horizon or select a default city.
-- Add persistence, geolocation, analytics, a new provider, a state-management library or automatic retries.
+- Add any persistence beyond the single last selected city, geolocation, analytics, a new provider, a state-management library or automatic retries.
 - Change the three-character threshold, 300 ms debounce, day/night background rule or source-credit wording after approval.
 
 ### Never
@@ -128,7 +128,8 @@ type ForecastViewState =
 
 ## Success Criteria
 
-- [x] First load makes no location or forecast request and shows a useful neutral state.
+- [x] A first visit without a saved city makes no location or forecast request and shows a useful neutral state.
+- [x] Reopening with a valid saved city shows its name and requests a fresh forecast without geocoding; corrupt or blocked storage falls back safely to the neutral state.
 - [x] A keyboard or pointer user can search, distinguish homonymous places, explicitly select one, and load its seven-day forecast.
 - [x] Search, selection, loading, empty, 429, provider failure, malformed response and retry states are understandable and never show a mismatched city's data.
 - [x] Current and daily metrics use the approved labels, units, local dates, distinct valid/retrieval times, null policy and “most severe” daily-condition meaning.
@@ -147,3 +148,5 @@ type ForecastViewState =
 The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-09-24. The owner approved the completed local user flow at Checkpoint U-C on 2026-09-24.
 
 The owner revised the search presentation on 2026-09-27: omit the visible "Buscar cidade" label and keep the header height stable throughout search states.
+
+The owner requested last-city restoration on 2026-09-28. This explicitly supersedes the previous prohibition on client persistence and initial forecast requests for returning visitors. The browser stores one selected location only; `production-delivery` must include this local retention and the automatic forecast transfer in the public privacy notice and provider usage budget.
