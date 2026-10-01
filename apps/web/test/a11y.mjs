@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import AxeBuilder from '@axe-core/playwright';
 import { chromium } from 'playwright';
+import { checkContrast } from './contrast.mjs';
 
 const webRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const origin = 'http://127.0.0.1:4175';
@@ -178,6 +179,9 @@ try {
     assert.equal(response.status(), 200, `${asset} must be served`);
   }
   await scan(page, 'neutral mobile');
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await scan(page, 'neutral desktop');
+  await page.setViewportSize({ width: 360, height: 800 });
   await page.getByRole('link', { name: 'Como usamos seus dados' }).click();
   assert.equal(new URL(page.url()).hash, '#seus-dados');
   await page.getByRole('heading', { name: 'Seus dados' }).waitFor();
@@ -250,6 +254,7 @@ try {
   await page.locator('.site-shell.has-image').waitFor();
   await scan(page, 'success mobile');
   await field.focus();
+  await checkContrast(page, 'dia-limpo mobile');
   assert.equal(
     await page
       .locator('.search-field')
@@ -272,6 +277,8 @@ try {
       .evaluate((element) => getComputedStyle(element).backgroundImage);
     assert.ok(background.includes(expected), `wrong image for ${expected}`);
     await scan(page, expected);
+    await field.focus();
+    await checkContrast(page, `${expected} mobile`);
     if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1' && index === 4) {
       await page.screenshot({ path: '/tmp/nosso-clima-rain-mobile.png', fullPage: true });
     }
@@ -284,6 +291,20 @@ try {
   );
   await page.setViewportSize({ width: 1280, height: 800 });
   await scan(page, 'desktop');
+  for (let index = 0; index < 10; index += 1) {
+    await field.fill(`São desktop ${index}`);
+    await page.getByRole('option').waitFor();
+    await page.getByRole('option').click();
+    const expected = `${index % 2 === 0 ? 'dia' : 'noite'}-${conditions[Math.floor(index / 2)][index % 2 === 0 ? 2 : 3]}`;
+    await page.waitForFunction(
+      (name) =>
+        getComputedStyle(document.querySelector('.site-shell')).backgroundImage.includes(name),
+      expected,
+    );
+    await scan(page, `${expected} desktop`);
+    await field.focus();
+    await checkContrast(page, `${expected} desktop`);
+  }
   if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
     await page.screenshot({ path: '/tmp/nosso-clima-desktop.png', fullPage: true });
   }

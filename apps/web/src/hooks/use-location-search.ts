@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { searchLocations, type LocationSearch } from '../api/locations';
-import { unavailableFrom, type RequestFailure } from '../api/http';
+import { requestErrorFrom, type RequestFailure } from '../api/http';
 
 export type SearchState =
   | { status: 'idle' }
@@ -33,7 +33,7 @@ export function useLocationSearch() {
         })
         .catch((error: unknown) => {
           if (requestId.current === id)
-            setState({ status: 'error', failure: unavailableFrom(error).failure });
+            setState({ status: 'error', failure: requestErrorFrom(error).failure });
         });
     }, 300);
     return () => {

@@ -1,6 +1,6 @@
 # Spec: Weather Forecast
 
-- **Status:** Approved by owner on 2026-09-23; revised by owner request on 2026-09-28 to remove UV maximum and risk
+- **Status:** Local implementation complete; Checkpoint W-C approved by owner on 2026-09-24; revised by owner request on 2026-09-28 to remove UV maximum and risk
 - **Module id:** `weather-forecast`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`

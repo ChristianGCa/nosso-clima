@@ -40,7 +40,9 @@ export function ForecastStatus({ state, onRetry }: Props) {
           <p>
             {state.failure.kind === 'rate_limited'
               ? 'Muitas consultas agora. Tente novamente em instantes.'
-              : 'A previsão está temporariamente indisponível.'}
+              : state.failure.kind === 'unavailable'
+                ? 'A previsão está temporariamente indisponível.'
+                : 'Não foi possível carregar a previsão. Tente novamente.'}
           </p>
           <button className="action-button" type="button" onClick={onRetry}>
             Tentar novamente

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Location } from '../api/locations';
 import { getForecast, type Forecast } from '../api/forecast';
-import { unavailableFrom, type RequestFailure } from '../api/http';
+import { requestErrorFrom, type RequestFailure } from '../api/http';
 import { loadLastLocation, saveLastLocation } from '../storage/last-location';
 
 export type ForecastState =
@@ -29,7 +29,7 @@ export function useForecast() {
       })
       .catch((error: unknown) => {
         if (requestId.current === id)
-          setState({ status: 'error', location, failure: unavailableFrom(error).failure });
+          setState({ status: 'error', location, failure: requestErrorFrom(error).failure });
       });
     return () => {
       requestId.current += 1;

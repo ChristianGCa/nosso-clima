@@ -1,10 +1,13 @@
-export type RequestFailure = Readonly<{ kind: 'rate_limited' | 'unavailable'; requestId?: string }>;
+export type RequestFailure = Readonly<{
+  kind: 'rate_limited' | 'unavailable' | 'request_failed';
+  requestId?: string;
+}>;
 
-export class ApiUnavailable extends Error {
+export class ApiRequestError extends Error {
   readonly failure: RequestFailure;
 
   constructor(failure: RequestFailure) {
-    super('Request unavailable');
+    super('Request failed');
     this.failure = failure;
   }
 }
@@ -27,12 +30,12 @@ export async function requestJson(
       headers: { accept: 'application/json' },
     });
   } catch {
-    throw new ApiUnavailable({ kind: 'unavailable' });
+    throw new ApiRequestError({ kind: 'unavailable' });
   }
   const supportId = requestId(response);
   if (!response.ok) {
-    let kind: RequestFailure['kind'] = 'unavailable';
-    if (response.status === 429) {
+    let kind: RequestFailure['kind'] = 'request_failed';
+    if (response.status === 429 || response.status === 503) {
       const body: unknown = await response.json().catch(() => null);
       if (
         typeof body === 'object' &&
@@ -41,14 +44,16 @@ export async function requestJson(
         typeof body.error === 'object' &&
         body.error !== null &&
         'code' in body.error &&
-        body.error.code === 'RATE_LIMITED'
-      )
-        kind = 'rate_limited';
+        ((response.status === 429 && body.error.code === 'RATE_LIMITED') ||
+          (response.status === 503 && body.error.code === 'SERVICE_UNAVAILABLE'))
+      ) {
+        kind = response.status === 429 ? 'rate_limited' : 'unavailable';
+      }
     }
-    throw new ApiUnavailable({ kind, ...(supportId ? { requestId: supportId } : {}) });
+    throw new ApiRequestError({ kind, ...(supportId ? { requestId: supportId } : {}) });
   }
   if (!/^application\/json\b/i.test(response.headers.get('content-type') ?? '')) {
-    throw new ApiUnavailable({
+    throw new ApiRequestError({
       kind: 'unavailable',
       ...(supportId ? { requestId: supportId } : {}),
     });
@@ -56,13 +61,13 @@ export async function requestJson(
   try {
     return (await response.json()) as unknown;
   } catch {
-    throw new ApiUnavailable({
+    throw new ApiRequestError({
       kind: 'unavailable',
       ...(supportId ? { requestId: supportId } : {}),
     });
   }
 }
 
-export function unavailableFrom(error: unknown): ApiUnavailable {
-  return error instanceof ApiUnavailable ? error : new ApiUnavailable({ kind: 'unavailable' });
+export function requestErrorFrom(error: unknown): ApiRequestError {
+  return error instanceof ApiRequestError ? error : new ApiRequestError({ kind: 'unavailable' });
 }

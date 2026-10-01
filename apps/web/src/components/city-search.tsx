@@ -22,10 +22,13 @@ export function CitySearch({ onSelect }: CitySearchProps) {
         : `${locations.length} ${locations.length === 1 ? 'cidade encontrada' : 'cidades encontradas'}.`;
   }
   if (search.state.status === 'error') {
+    const kind = search.state.failure.kind;
     statusText =
-      search.state.failure.kind === 'rate_limited'
+      kind === 'rate_limited'
         ? 'Muitas buscas agora. Tente novamente em instantes.'
-        : 'A busca está temporariamente indisponível.';
+        : kind === 'unavailable'
+          ? 'A busca está temporariamente indisponível.'
+          : 'Não foi possível buscar cidades. Tente novamente.';
   }
 
   function choose(location: Location) {

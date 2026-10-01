@@ -520,16 +520,18 @@ Plan: `tasks/plan.md`, Weather Forecast section
 - [x] W7 — Verify production composition and complete module gate
 - [x] Checkpoint W-C — Owner review
 
+The detailed W1–W6 boxes below are synchronized with the completed W-C handoff. Their testable behavior is present in the current API suite; the dated W7 evidence remains a historical run, not a claim about the current test count.
+
 ## Task W1: Define public contract and canonical request query
 
 **Description:** Add the TypeBox success schema and fixed attribution, plus pure helpers for exact raw-key validation, bounded coordinates, three-decimal rounding, canonical IANA timezone and canonical cache-key input. No route or fetch is added yet.
 
 **Acceptance criteria:**
 
-- [ ] Success schema matches the approved current-plus-seven-day shape and permits `null` only for daily precipitation probability.
-- [ ] Exactly one of each required key is accepted; unknown/repeated keys, invalid coordinates, numeric offsets and invalid timezone strings fail as safe validation errors.
-- [ ] Equivalent numeric spellings and coordinates rounding to the same three-decimal values share canonical coordinates; exact halfway cases round away from zero, negative zero becomes zero, and bounds are checked before rounding.
-- [ ] Accepted IANA aliases resolve to the runtime's canonical timezone for the outbound parameter, response and cache key, while offsets remain invalid.
+- [x] Success schema matches the approved current-plus-seven-day shape and permits `null` only for daily precipitation probability.
+- [x] Exactly one of each required key is accepted; unknown/repeated keys, invalid coordinates, numeric offsets and invalid timezone strings fail as safe validation errors.
+- [x] Equivalent numeric spellings and coordinates rounding to the same three-decimal values share canonical coordinates; exact halfway cases round away from zero, negative zero becomes zero, and bounds are checked before rounding.
+- [x] Accepted IANA aliases resolve to the runtime's canonical timezone for the outbound parameter, response and cache key, while offsets remain invalid.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- forecast-query`; API typecheck, lint and format check.
 
@@ -545,8 +547,8 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 **Acceptance criteria:**
 
-- [ ] Every listed WMO code maps to the documented category and label; unknown/non-integer codes fail closed.
-- [ ] Daily and current conditions use the same mapping, without computing an hourly predominant condition.
+- [x] Every listed WMO code maps to the documented category and label; unknown/non-integer codes fail closed.
+- [x] Daily and current conditions use the same mapping, without computing an hourly predominant condition.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- wmo-condition`; API typecheck, lint and format check.
 
@@ -562,9 +564,9 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 **Acceptance criteria:**
 
-- [ ] The HTTPS origin, path and fixed parameters are exact; input only fills validated coordinates and timezone values, with `redirect: 'error'` and no extra caller-controlled metadata.
-- [ ] One 5-second abort bounds both fetch and stream consumption; stalled operations, non-200/non-JSON responses, invalid JSON and decoded bodies over 65,536 bytes fail safely.
-- [ ] Failure kinds are bounded; tests use fake fetch/streams and a captured real response fixture, without live network or sleep during verification. Synthetic failure variants are clearly labeled.
+- [x] The HTTPS origin, path and fixed parameters are exact; input only fills validated coordinates and timezone values, with `redirect: 'error'` and no extra caller-controlled metadata.
+- [x] One 5-second abort bounds both fetch and stream consumption; stalled operations, non-200/non-JSON responses, invalid JSON and decoded bodies over 65,536 bytes fail safely.
+- [x] Failure kinds are bounded; tests use fake fetch/streams and a captured real response fixture, without live network or sleep during verification. Synthetic failure variants are clearly labeled.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-forecast`; API typecheck, lint and format check.
 
@@ -576,9 +578,9 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 ## Checkpoint W-A: Public contract and outbound transport
 
-- [ ] W1–W3 focused tests and `npm run check --workspace @nosso-clima/api` pass; the real response fixture has documented provenance and runs offline.
-- [ ] Raw query validation, WMO boundaries and transport failure branches have deterministic offline tests.
-- [ ] Review the request and outbound privacy boundary before normalization expands.
+- [x] W1–W3 focused tests and `npm run check --workspace @nosso-clima/api` pass; the real response fixture has documented provenance and runs offline.
+- [x] Raw query validation, WMO boundaries and transport failure branches have deterministic offline tests.
+- [x] Review the request and outbound privacy boundary before normalization expands.
 
 ## Task W4: Validate and normalize external forecast data
 
@@ -586,9 +588,9 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 **Acceptance criteria:**
 
-- [ ] Current values, unit metadata, timezone, each seven-entry daily array and seven consecutive local dates are validated; malformed consumed values fail as `invalid_response`.
-- [ ] Individual `null` daily rain probabilities are preserved; missing values or `null` elsewhere fail.
-- [ ] Daily condition uses `daily.weather_code` as the most severe condition; a real provider fixture normalizes to the expected shape, and no unconsumed provider field reaches the public result.
+- [x] Current values, unit metadata, timezone, each seven-entry daily array and seven consecutive local dates are validated; malformed consumed values fail as `invalid_response`.
+- [x] Individual `null` daily rain probabilities are preserved; missing values or `null` elsewhere fail.
+- [x] Daily condition uses `daily.weather_code` as the most severe condition; a real provider fixture normalizes to the expected shape, and no unconsumed provider field reaches the public result.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-forecast`; `npm run check --workspace @nosso-clima/api`.
 
@@ -604,9 +606,9 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 **Acceptance criteria:**
 
-- [ ] Fake-time tests prove a validated success and `retrievedAtUtc` stay unchanged at 599,999 ms, expire at exactly 600,000 ms and refetch at or after that boundary; failures never cache, and a second cache lookup occurs inside the flight.
-- [ ] Equivalent concurrent locations coalesce while distinct locations remain independent; shared executor saturation yields safe 503 behavior.
-- [ ] Expected provider failures emit one request-correlated warning with fixed failure kind and optional numeric status, without private query, coordinate, timezone, URL or body data.
+- [x] Fake-time tests prove a validated success and `retrievedAtUtc` stay unchanged at 599,999 ms, expire at exactly 600,000 ms and refetch at or after that boundary; failures never cache, and a second cache lookup occurs inside the flight.
+- [x] Equivalent concurrent locations coalesce while distinct locations remain independent; shared executor saturation yields safe 503 behavior.
+- [x] Expected provider failures emit one request-correlated warning with fixed failure kind and optional numeric status, without private query, coordinate, timezone, URL or body data.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- forecast-service`; API typecheck, lint and format check.
 
@@ -622,9 +624,9 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 **Acceptance criteria:**
 
-- [ ] Valid requests return the exact schema, attribution and request ID; `preValidation` rejects unknown/repeated keys, including an HTTP `foo=1` regression with zero fetches.
-- [ ] The route is available from plain `buildApp()`, claims `createCache('weather-forecast')` once and uses both 15/minute weather-group and 60/minute global limits.
-- [ ] Timeout/provider errors return safe 503, defects stay 500, concurrent misses coalesce and captured logs/public errors omit private data; existing platform/location tests remain green.
+- [x] Valid requests return the exact schema, attribution and request ID; `preValidation` rejects unknown/repeated keys, including an HTTP `foo=1` regression with zero fetches.
+- [x] The route is available from plain `buildApp()`, claims `createCache('weather-forecast')` once and uses both 15/minute weather-group and 60/minute global limits.
+- [x] Timeout/provider errors return safe 503, defects stay 500, concurrent misses coalesce and captured logs/public errors omit private data; existing platform/location tests remain green.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- forecast`; `npm run check --workspace @nosso-clima/api`.
 
@@ -636,9 +638,9 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 ## Checkpoint W-B: Injected end-to-end forecast flow
 
-- [ ] `npm run check --workspace @nosso-clima/api` passes with all location and platform regressions.
-- [ ] Exact HTTP schema, limiter layering, safe error envelopes and privacy/log assertions pass offline.
-- [ ] Review the complete injected route before process-level verification.
+- [x] `npm run check --workspace @nosso-clima/api` passes with all location and platform regressions.
+- [x] Exact HTTP schema, limiter layering, safe error envelopes and privacy/log assertions pass offline.
+- [x] Review the complete injected route before process-level verification.
 
 ## Task W7: Verify production composition and complete module gate
 
@@ -672,7 +674,7 @@ Plan: `tasks/plan.md`, Weather Forecast section
 
 # Tasks: Weather UI
 
-Status: Complete; Checkpoint U-C approved by owner on 2026-09-24
+Status: Local flow approved at Checkpoint U-C on 2026-09-24; 2026-10-01 corrective checks verified locally
 Module id: `weather-ui`
 Source spec: `SPEC-weather-ui.md` (approved 2026-09-24)
 Plan: `tasks/plan.md`, Weather UI section
@@ -851,7 +853,7 @@ Plan: `tasks/plan.md`, Weather UI section
 
 ## Task U9: Map backgrounds and build responsive surfaces
 
-**Description:** Move the ten existing WebP files into the web app and select one from current category and `isDay`. Add neutral/failure fallback, readable content surfaces and responsive styling.
+**Description:** Bundle ten WebP files in the web app while retaining ten originals under `backgrounds/`; the five bundled night files are optimized variants. Select one bundled file from current category and `isDay`. Add neutral/failure fallback, readable content surfaces and responsive styling.
 
 **Acceptance criteria:**
 
@@ -863,7 +865,7 @@ Plan: `tasks/plan.md`, Weather UI section
 
 **Dependencies:** U8.
 
-**Files likely touched:** `apps/web/src/assets/backgrounds/` (one mechanical move of ten files), `apps/web/src/backgrounds.ts`, `apps/web/src/styles.css`, `apps/web/src/app.tsx`, `apps/web/test/backgrounds.test.ts`.
+**Files likely touched:** `apps/web/src/assets/backgrounds/` (ten bundled files, with originals retained under `backgrounds/`), `apps/web/src/backgrounds.ts`, `apps/web/src/styles.css`, `apps/web/src/app.tsx`, `apps/web/test/backgrounds.test.ts`.
 
 **Estimated scope:** Medium behavior change plus one mechanical asset batch.
 
@@ -891,6 +893,14 @@ Plan: `tasks/plan.md`, Weather UI section
 - [x] Public deployment remains blocked until `production-delivery` verifies aggregate Open-Meteo usage, privacy, current licensing, image rights and mobile performance.
 - [x] Owner reviews the complete local user flow before this module is marked complete (approved 2026-09-24).
 
+## Corrective verification identified on 2026-10-01
+
+These findings do not alter the owner's 2026-09-24 approval record. The owner requested their correction on 2026-10-01; the matching approved behavior was repaired and verified locally.
+
+- [x] Reject a forecast response when its first daily date does not equal the local date in `current.validAtLocal`, or its timezone does not match the selected city's canonical timezone; regression cases prevent an incorrect day from being labelled “HOJE”.
+- [x] Preserve the specified generic failure state for HTTP errors other than `429 RATE_LIMITED` and `503 SERVICE_UNAVAILABLE`, with focused tests for non-temporary statuses.
+- [x] Record mobile and desktop contrast evidence for all ten bundled backgrounds against the computed text and control surfaces, including the 4.5:1 and 3:1 thresholds; see `docs/quality/contrast-2026-10-01.md` and the repeatable browser check.
+
 ---
 
 # Tasks: Production Delivery
@@ -911,7 +921,7 @@ Plan: `tasks/plan.md`, Production Delivery section
 - [ ] Checkpoint P-B — Complete local and hosted quality gates
 - [ ] P6 — Review provider terms and combined usage budget
 - [ ] P7 — Prepare and expose the privacy notice
-- [ ] P8 — Verify rights for all ten background images
+- [ ] P8 — Verify rights for bundled backgrounds, retained originals and logo
 - [ ] P9 — Document the selected production deployment
 - [ ] P10 — Rehearse release and rollback
 - [ ] Checkpoint P-C — Owner release review
@@ -1055,19 +1065,19 @@ Plan: `tasks/plan.md`, Production Delivery section
 
 **Estimated scope:** Medium (3 files).
 
-## Task P8: Verify rights for all ten background images
+## Task P8: Verify rights for bundled backgrounds, retained originals and logo
 
-**Description:** Inventory every WebP asset with its origin, creator, licence or written permission, public-use scope and any required credit. Keep the release blocked for any unknown entry.
+**Description:** Inventory the ten WebP assets actually bundled by the web app, trace each to its retained original under `backgrounds/`, document the five optimized night variants, and record the supplied logo's origin and public-use permission. Keep the release blocked for any unknown entry.
 
 **Acceptance criteria:**
 
-- [ ] All ten filenames have individual evidence and the required attribution is visible where applicable; unverified images are not cleared for public packaging.
+- [ ] All ten bundled filenames have individual evidence, are traced to their originals, and have the required attribution visible where applicable; unverified images are not cleared for public packaging.
 - [ ] The intended commercial or non-commercial use matches each permission. If any file cannot be cleared, the owner approves a separate replacement task within the `weather-ui` boundary.
-- [ ] The final inventory includes evidence locations and an owner review date, without embedding private licence documents or credentials in the repository.
+- [ ] The final inventory includes evidence locations, the supplied logo's public-use permission and an owner review date, without embedding private licence documents or credentials in the repository.
 
-**Verification:** Compare inventory to the ten committed assets; manually review each source/permission and rendered credit; inspect public build contents.
+**Verification:** Compare the inventory to the ten bundled files and ten retained originals, including hashes or other traceable variant evidence; manually review each source/permission, logo and rendered credit; inspect public build contents.
 
-**Dependencies:** Owner image provenance and commercial-status decision for final completion.
+**Dependencies:** Owner image and logo provenance and commercial-status decision for final completion.
 
 **Files likely touched:** `docs/deploy/image-rights.md`.
 

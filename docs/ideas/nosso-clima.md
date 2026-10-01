@@ -1,5 +1,7 @@
 # NossoClima
 
+Este documento registra a ideia inicial e suas hipóteses, não o contrato atual de implementação. Para decisões aprovadas e estado de entrega, consulte `CAPABILITY-MAP.md`, os arquivos `SPEC-*.md` e `tasks/todo.md`. Em particular, a condição diária passou a significar a mais severa, a primeira visita sem cidade salva é neutra e visitas posteriores restauram a última cidade escolhida.
+
 ## Problem Statement
 
 Como podemos permitir que pessoas comuns entendam rapidamente o clima atual e dos próximos sete dias, com informações claras sobre chuva, temperatura e vento, sem uma interface carregada ou ambígua?

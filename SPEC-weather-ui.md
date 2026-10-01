@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Complete; Checkpoint U-C approved by owner on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city
+- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city; 2026-10-01 corrective checks verified locally
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -20,13 +20,15 @@ The first visit is neutral: no default city, geolocation request or forecast req
 5. On success, show the selected place, current conditions, one detailed card for today and six compact daily summaries. The person can search again while a forecast is visible; editing search text alone does not change the selected place or its forecast.
 6. On forecast failure, keep the selected place visible with a concise error and an explicit retry action. Do not automatically retry or show stale data from a different city. A search failure leaves an already displayed forecast in place.
 
-Every request has an `AbortController`. On a new query or selected place, abort the old request and also ignore any late result that belongs to an older request, since abort is not proof that a response cannot arrive. Unmounting the view aborts outstanding work. Treat non-2xx, malformed JSON and unexpected response shapes as an unavailable state; never render unchecked values. Save only the last selected location, never search text or forecast data. Treat browser storage as untrusted input: reject oversized, malformed or invalid saved records before rendering or sending coordinates. Storage errors must leave search and forecast usable. The saved city remains until another city is selected or the browser's site data is cleared.
+Every request has an `AbortController`. On a new query or selected place, abort the old request and also ignore any late result that belongs to an older request, since abort is not proof that a response cannot arrive. Unmounting the view aborts outstanding work. Treat non-2xx, malformed JSON and unexpected response shapes as an error state; never render unchecked values. Save only the last selected location, never search text or forecast data. Treat browser storage as untrusted input: reject oversized, malformed or invalid saved records before rendering or sending coordinates. Storage errors must leave search and forecast usable. The saved city remains until another city is selected or the browser's site data is cleared.
 
 For rate limiting, show a specific friendly message for `429 RATE_LIMITED` and allow a later manual retry. For `503 SERVICE_UNAVAILABLE`, network failure or malformed data, show a generic temporary-unavailability message. Do not display provider bodies, raw server diagnostics or coordinates in an error. Other errors use a generic failure state. Preserve the backend's request ID only as a support reference in the error state, if present.
 
 ## Backend Contracts and Presentation
 
 The frontend calls the same configured API base URL for both routes and uses `URLSearchParams` for query values. The base URL comes from build configuration, never from a search term or server response. Development may use a Vite proxy; production origin and CORS configuration belong to `production-delivery`.
+
+The HTTP boundary also rejects a forecast whose first daily date is not the date in `current.validAtLocal`, or whose returned timezone differs from the explicitly selected city's timezone. Such a response uses the unavailable state instead of labelling a mismatched date “HOJE” or presenting a time for the wrong zone.
 
 | UI need | Provider contract | Presentation rule |
 |---|---|---|
@@ -47,7 +49,7 @@ Keep frontend response types and runtime checks within `apps/web`. Do not import
 
 The visual hierarchy is search first, current conditions second, seven-day forecast third, and source credit adjacent to the data it credits. The owner's 2026-09-27 wireframe defines the organization: a compact header with search, current conditions, a seven-day forecast, then attribution and brief site information. Its blue, cyan and red fills only separate sections in the sketch; they are not the product palette. Keep the selected weather photograph visible behind neutral, readable surfaces. Use distinct multicolor weather icons. Mark the first, detailed daily card visibly as “HOJE” and keep each later day's condition, icon and metrics together. Daily cards share the same height at each viewport width, with enough space and subtle dividers between temperatures, rain chance and rain volume. At 360 px the page has no horizontal overflow, search suggestions remain usable, and all seven days form a compact readable vertical list. Mobile layouts should minimize vertical scrolling without clipping weather data; wider layouts may show the seven days side by side with more detail for today. Loading, empty and error states reserve enough space to avoid disruptive layout shifts.
 
-Use one decorative WebP background from the ten existing `backgrounds/` files, selected solely by `current.condition.category` and `current.isDay`. The initial and loading states use a neutral solid or gradient background. Map the five categories to their matching `dia-*` or `noite-*` file; if an image fails to load, use the neutral background. Do not request all ten images on first load or use a daily condition to choose the current background. During implementation, place the files under the web app's asset directory without changing their names, and load only the active image in the browser.
+Use one decorative WebP background from the ten bundled files in `apps/web/src/assets/backgrounds/`, selected solely by `current.condition.category` and `current.isDay`. The originals remain under `backgrounds/`; five bundled night files are optimized variants. The initial and loading states use a neutral solid or gradient background. Map the five categories to their matching `dia-*` or `noite-*` file; if an image fails to load, use the neutral background. Do not request all ten images on first load or use a daily condition to choose the current background. Load only the active bundled image in the browser.
 
 Text and controls sit on opaque or sufficiently strong translucent surfaces, never directly on the photograph. Verify contrast on every day/night image and on the neutral state at mobile and desktop sizes; meet at least 4.5:1 for ordinary text and 3:1 for large text and interactive boundaries. The image is decorative and has no alternative text. Ensure focus indicators remain visible against every background. Respect reduced-motion preferences; motion cannot carry essential state.
 
@@ -55,9 +57,9 @@ The city picker has a persistent accessible name without a separate visible labe
 
 ## Tech Stack and Commands
 
-The proposed frontend is a separate `@nosso-clima/web` npm workspace using React, Vite and strict TypeScript, as recorded in `docs/ideas/nosso-clima.md`. Use native `fetch`, `AbortController` and `Intl`; no client state or HTTP library is proposed. Vitest and React Testing Library cover state and component behavior. A browser-based axe check supplies the active `npm run test:a11y` gate. Pin exact supported dependency versions in the lockfile during the approved bootstrap; this draft does not install dependencies.
+The frontend is a separate `@nosso-clima/web` npm workspace using React, Vite and strict TypeScript, as recorded in `docs/ideas/nosso-clima.md`. It uses native `fetch`, `AbortController` and `Intl` without a client state or HTTP library. Vitest and React Testing Library cover state and component behavior. A browser-based axe check supplies the active `npm run test:a11y` gate. Exact dependency versions are pinned in the committed lockfile.
 
-The web workspace must provide these commands when implemented:
+The web workspace provides these commands:
 
 ```bash
 npm run dev --workspace @nosso-clima/web
@@ -80,11 +82,11 @@ SPEC-weather-ui.md
 apps/web/package.json
 apps/web/index.html
 apps/web/src/                  application, components, local HTTP contracts and formatting
-apps/web/src/assets/backgrounds/ ten existing WebP files, moved from backgrounds/
+apps/web/src/assets/backgrounds/ ten bundled WebP files; originals remain in backgrounds/
 apps/web/test/                 unit and component tests with offline HTTP fixtures
 ```
 
-Exact component boundaries are chosen in the implementation plan after this spec is approved. The frontend and backend build independently. The boundary check must reject imports from `apps/web` into `apps/api/src` and the reverse.
+The five bundled night images are optimized variants and differ from the corresponding originals; the five day images match their originals. The frontend and backend build independently. The boundary check rejects imports from `apps/web` into `apps/api/src` and the reverse.
 
 ## Code Style
 
@@ -95,7 +97,14 @@ type ForecastViewState =
   | { status: 'idle' }
   | { status: 'loading'; location: SelectedLocation }
   | { status: 'ready'; location: SelectedLocation; forecast: Forecast }
-  | { status: 'error'; location: SelectedLocation; reason: 'rate_limited' | 'unavailable' };
+  | {
+      status: 'error';
+      location: SelectedLocation;
+      failure: {
+        kind: 'rate_limited' | 'unavailable' | 'request_failed';
+        requestId?: string;
+      };
+    };
 ```
 
 ## Testing Strategy
@@ -128,6 +137,8 @@ type ForecastViewState =
 
 ## Success Criteria
 
+The checked items record the local handoff approved on 2026-09-24 and subsequent owner-approved amendments through 2026-09-28. The later audit findings below reopen verification of specific claims without changing the approved behavior.
+
 - [x] A first visit without a saved city makes no location or forecast request and shows a useful neutral state.
 - [x] Reopening with a valid saved city shows its name and requests a fresh forecast without geocoding; corrupt or blocked storage falls back safely to the neutral state.
 - [x] A keyboard or pointer user can search, distinguish homonymous places, explicitly select one, and load its seven-day forecast.
@@ -137,6 +148,12 @@ type ForecastViewState =
 - [x] The app works from 360 px through desktop with keyboard access and zero critical or serious axe violations.
 - [x] Web typecheck, lint, format, tests, 80% coverage, production build, root check and boundary check pass within their active budgets.
 - [x] Public deployment still waits for `production-delivery` to verify aggregate API usage, privacy, current provider licensing, image rights and performance.
+
+## Corrective Verification (2026-10-01)
+
+- [x] The web forecast boundary rejects a response whose first daily date differs from `current.validAtLocal`'s local date, or whose timezone differs from the selected city's canonical timezone. Regression tests cover both cases.
+- [x] HTTP failures other than `429 RATE_LIMITED` and `503 SERVICE_UNAVAILABLE` use the generic failure state. Boundary and component tests cover unrelated statuses and keep provider diagnostics hidden.
+- [x] Mobile and desktop contrast was measured for all ten bundled backgrounds against computed text and control surfaces. The reproducible browser check and its numeric evidence are in `apps/web/test/contrast.mjs` and `docs/quality/contrast-2026-10-01.md`.
 
 ## Decisions for Owner Review
 

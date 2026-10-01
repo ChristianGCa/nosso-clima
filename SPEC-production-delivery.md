@@ -11,9 +11,9 @@ Make the completed local weather flow reproducible, testable in a real browser, 
 
 ## Planning Baseline
 
-1. The first deployment is non-commercial and uses one persistent API process; no shared cache or distributed rate limiter is introduced implicitly.
+1. Planning uses a non-commercial, single-process API deployment as a provisional scenario. The owner must confirm commercial status before deployment configuration is finalized; no shared cache or distributed rate limiter is introduced implicitly.
 2. The web app is built as static files and deployed separately from the API, with an explicit HTTPS API origin and a matching explicit CORS origin.
-3. The existing ten WebP files remain development assets until the owner provides provenance and publication rights for each file. If rights cannot be established, approved replacements are needed before a public launch.
+3. The ten WebP files bundled under `apps/web/src/assets/backgrounds/` remain development assets until the owner provides provenance and publication rights for each shipped file. The ten originals remain under `backgrounds/`; five bundled night files are optimized variants and differ from those originals. Trace each variant to its source. If rights cannot be established, approved replacements are needed before a public launch.
 4. No hosting provider, domain, public traffic ceiling, or Open-Meteo commercial status has been selected yet. Those choices must be recorded before deployment configuration is finalized.
 
 ## Scope and Requirements
@@ -40,7 +40,7 @@ Make the completed local weather flow reproducible, testable in a real browser, 
 - Produce an application-wide Open-Meteo call budget that counts geocoding and forecast traffic together, including the provider's effective cost of the requested variables, cache misses, restarts, and the proposed number of API instances. Document an enforceable traffic ceiling or aggregate control with evidence it remains inside the applicable provider limits. Per-IP limits alone do not satisfy this gate.
 - Publish a privacy notice that describes the user search text sent to the geocoding service, the selected coordinates/timezone sent to the forecast service including on later visits, the one selected city retained in browser-local storage until replaced or site data is cleared, the purpose of each transfer, applicable provider retention information, and the application's own log/retention behavior. Include automatic returning-visit forecast calls in the provider usage budget. Review the notice against the selected deployment and current provider documentation before launch.
 - The local `weather-ui` explanation of data use is a preview of this notice. Complete the public notice with the selected host's logging and retention, the responsible party and contact route, then review it before public release. The repository link and project software licence remain unset until the owner provides them; never publish a placeholder as a real link or imply a licence applies to the project's code.
-- Inventory all ten WebP files with origin, creator, licence or written permission, required credit, and permission for the intended public use. Verify attribution appears where required. Unverified files cannot be included in a public build; replacing them must preserve the approved UI behavior and image-category mapping.
+- Inventory the ten WebP files actually bundled by the web app with origin, creator, licence or written permission, required credit, and permission for the intended public use. Link each to its retained original under `backgrounds/` and document the optimization of the five night variants. Verify attribution appears where required. Unverified files cannot be included in a public build; replacing them must preserve the approved UI behavior and image-category mapping.
 - Record the owner-supplied project logo's origin and permission for public use along with the image-rights evidence before release.
 - Record the production hostname and edge topology, HTTPS, health-check path, CORS value, proxy-trust decision, origin access restrictions, rollback procedure, and a post-deploy smoke result. Public exposure is gated on all preceding evidence and the owner's final release approval.
 
@@ -118,6 +118,6 @@ gitleaks detect --redact --no-banner
 
 1. Is the intended public site strictly non-commercial, including no ads, sponsorship, or subscription? If not, a paid Open-Meteo plan is required before deployment design is finalized.
 2. Which host, domain, and expected peak/daily traffic should the deployment target? The traffic answer determines whether a demonstrably low ceiling is feasible or an aggregate control is required.
-3. What is the provenance and public-use permission for each of the ten WebP images? If unavailable, should replacement assets be commissioned or selected under a verified licence?
+3. What is the provenance and public-use permission for each of the ten bundled WebP images and its retained original, including the five optimized night variants, and for the supplied logo? If unavailable, should replacement assets be commissioned or selected under a verified licence?
 
 The owner approved this specification for planning on 2026-09-24. The implementation plan and task list still require review. Public deployment requires the open decisions, completed evidence gates, and a separate release approval.

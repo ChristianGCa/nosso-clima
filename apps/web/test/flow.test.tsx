@@ -189,6 +189,18 @@ describe('city-to-forecast flow', () => {
     expect(screen.queryByText('private')).toBeNull();
   });
 
+  it('shows a distinct generic search failure for unrelated HTTP errors', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      jsonResponse({ error: { code: 'NOT_FOUND', message: 'private detail' } }, 404),
+    );
+    render(<App />);
+    fireEvent.change(input(), { target: { value: 'São' } });
+    await advanceSearch();
+    expect(screen.getByText('Não foi possível buscar cidades. Tente novamente.')).toBeTruthy();
+    expect(screen.queryByText('private detail')).toBeNull();
+  });
+
   it('shows a forecast rate limit and retries only on request', async () => {
     vi.useFakeTimers();
     let forecastCalls = 0;
@@ -244,6 +256,22 @@ describe('city-to-forecast flow', () => {
     await resolveUpdates();
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
     expect(forecastCalls).toBe(3);
+  });
+
+  it('shows a distinct generic forecast failure for unrelated HTTP errors', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (path) =>
+      String(path).includes('/locations')
+        ? jsonResponse(locationResponse)
+        : jsonResponse({ error: { code: 'INTERNAL_ERROR', message: 'private detail' } }, 500),
+    );
+    render(<App />);
+    fireEvent.change(input(), { target: { value: 'São' } });
+    await advanceSearch();
+    fireEvent.click(screen.getByRole('option'));
+    await resolveUpdates();
+    expect(screen.getByText('Não foi possível carregar a previsão. Tente novamente.')).toBeTruthy();
+    expect(screen.queryByText('private detail')).toBeNull();
   });
 
   it('closes suggestions with Escape and exposes source credit while open', async () => {

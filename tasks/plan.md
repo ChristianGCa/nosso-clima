@@ -1,6 +1,6 @@
 # Implementation Plan: Backend Platform
 
-Status: Approved on 2026-09-21
+Status: Complete; corrective implementation reviewed and approved by owner on 2026-09-23
 Module id: `backend-platform`
 Source spec: `SPEC-backend-platform.md`
 Task list: `tasks/todo.md`
@@ -190,7 +190,7 @@ Implementation starts only after the owner approves this location-search plan an
 
 # Implementation Plan: Weather Forecast
 
-Status: Approved by owner with W1/W3/W4/W5 amendments on 2026-09-23
+Status: Complete; Checkpoint W-C approved by owner on 2026-09-24
 Module id: `weather-forecast`
 Source spec: `SPEC-weather-forecast.md` (approved 2026-09-23)
 Task list: `tasks/todo.md`, Weather Forecast section
@@ -264,7 +264,7 @@ Checkpoint W-C reviews every local success criterion with the owner. The public-
 | A nullable metric is silently converted to zero or a missing field is accepted | Misleading forecast | Keep `null` only for the approved daily metrics; derive and label null/missing-field variants from an actual response fixture |
 | A fixture drifts from the provider's real shape | Adapter tests offer false confidence | Record source URL, public-city coordinates and retrieval date; keep the real sample immutable and label synthetic mutations |
 | Weather and platform tests claim the same cache namespace | `buildApp()` fails or tests lose coverage | Register once in `app.ts`; adapt platform test namespace claims without dropping assertions |
-| Ten-minute cache plus fourteen variables increases provider usage | Aggregate free-tier quota is exceeded | Keep public deployment gated on an application-wide geocoding-plus-forecast budget |
+| Ten-minute cache plus thirteen requested weather variables increases provider usage | Aggregate free-tier quota is exceeded | Keep public deployment gated on an application-wide geocoding-plus-forecast budget that verifies the provider's effective request cost |
 
 ## Open Questions
 
@@ -278,14 +278,14 @@ The owner approved this weather-forecast plan and W1–W7 tasks, subject to the 
 
 # Implementation Plan: Weather UI
 
-Status: Complete; Checkpoint U-C approved by owner on 2026-09-24
+Status: Local flow approved at Checkpoint U-C on 2026-09-24; 2026-10-01 corrective checks verified locally
 Module id: `weather-ui`
 Source spec: `SPEC-weather-ui.md` (approved 2026-09-24)
 Task list: `tasks/todo.md`, Weather UI section
 
 ## Overview
 
-Create the `@nosso-clima/web` workspace and deliver one local flow: search for a city, explicitly select it, and read current conditions and seven daily cards. The UI consumes the two approved HTTP contracts, starts neutral, maintains accessible request states, and uses only the active decorative background. Public deployment and provider/image-rights review remain in `production-delivery`.
+Create the `@nosso-clima/web` workspace and deliver one local flow: search for a city, explicitly select it, and read current conditions and seven daily cards. The UI consumes the two approved HTTP contracts, starts neutral when no city was saved, maintains accessible request states, and uses only the active decorative background. Public deployment and provider/image-rights review remain in `production-delivery`.
 
 ## Dependency Graph
 
@@ -310,10 +310,10 @@ U6 also needs U4; U8 consumes the U4 forecast model. Attribution is rendered whe
 ## Architecture Decisions
 
 - **Separate application boundary.** `apps/web` is an independent React/Vite/TypeScript workspace. It has web-local response types and runtime parsing from `unknown`; it imports no `apps/api/src` code. A root boundary command checks both application import directions. Development routes `/api` through a fixed Vite proxy; production API origin configuration waits for `production-delivery`.
-- **Small native request layer.** Use `fetch`, `URLSearchParams` and `AbortController` without an HTTP or state library. Keep search and forecast requests in separate state machines, abort superseded requests, and reject late responses by request identity. No initial request, automatic retry, persistence or client cache.
+- **Small native request layer.** Use `fetch`, `URLSearchParams` and `AbortController` without an HTTP or state library. Keep search and forecast requests in separate state machines, abort superseded requests, and reject late responses by request identity. A first visit without a saved city makes no request. After explicit selection, retain only that city in browser-local storage and request a fresh forecast on later visits; do not add automatic retries or a client forecast cache. The owner approved this amendment on 2026-09-28.
 - **Explicit city identity.** Only a selected `Location` from the search contract may start a forecast request. Selecting another city clears the prior forecast before loading. Typing new search text leaves the current selected forecast visible until a new result is selected.
 - **Presentation follows provider contracts.** Web formatters preserve the offset-less local current time, convert `retrievedAtUtc` in the forecast timezone, compute weekdays from civil dates, keep nullable metrics unavailable, and label daily conditions as the day's most severe. No WMO remapping or backend contract change.
-- **Readable imagery.** Move the ten existing WebP files into the web asset directory during U9. A typed map chooses exactly one file from current category and `isDay`; neutral/loading/error states have a neutral fallback. Cards and controls own their contrast so photographs never carry essential text directly. Assets are for local development until publication rights are verified.
+- **Readable imagery.** Bundle ten WebP files under the web asset directory during U9 and retain the ten originals in `backgrounds/`. The five bundled night files are optimized variants of the corresponding originals. A typed map chooses exactly one bundled file from current category and `isDay`; neutral/loading/error states have a neutral fallback. Cards and controls own their contrast so photographs never carry essential text directly. Assets are for local development until publication rights are verified for the originals and shipped variants.
 - **Enforced accessibility and quality.** Unit/component tests use offline fixtures and fake time. U10 implements a browser axe command and checks keyboard behavior, 360 px/desktop layouts and all image states. The root boundary gate, web coverage floor and existing API gates stay active; end-to-end and performance release gates belong to `production-delivery`.
 
 ## Phases and Checkpoints
@@ -405,7 +405,7 @@ P6–P8 may be researched after Checkpoint P-A without changing provider code. P
 - **Small E2E suite.** Keep reusable process/fixture setup separate from user journeys. Cover a neutral first visit, saved-city restoration, search/select, current and seven days, no result, upstream failure/retry, keyboard flow, attribution and stale-city protection. Avoid duplicating parser-unit matrices already owned by source modules.
 - **Measured mobile gate.** Use the installed Playwright Chromium and its DevTools protocol for a fixed 360×800 viewport, CPU/network throttling and browser `PerformanceObserver` entries. Assert navigation LCP and page-lifetime CLS through a successful selection; log the measurement profile and numbers. Run the built app so Vite development transforms do not distort results.
 - **CI and security.** Propose a GitHub Actions workflow using pinned Node/npm, `npm ci`, workspace/root gates, browser setup, E2E, performance, audit and a pinned Gitleaks installation or action with redacted output. Since the repository has no remote configured, local commands prove the workflow content, while a hosted CI run remains a completion gate once a GitHub remote exists. A different CI host requires a plan amendment.
-- **Evidence before publication.** Keep a dated provider-terms review and combined usage calculation, privacy notice, ten-file rights inventory, deployment runbook and rollback record under `docs/deploy/`. Unknowns stay marked as blockers; no inferred image licence or invented traffic forecast fills a missing owner decision.
+- **Evidence before publication.** Keep a dated provider-terms review and combined usage calculation, privacy notice, rights inventory for the ten bundled WebP files and their originals, logo permission, deployment runbook and rollback record under `docs/deploy/`. Unknowns stay marked as blockers; no inferred image licence or invented traffic forecast fills a missing owner decision.
 - **Single-process baseline.** Preserve `TRUST_PROXY=false` and current API platform limits until a selected host supplies specific trusted proxy ranges or a reviewed edge design. Multi-instance deployment changes the platform's process-local assumptions and requires its own approved amendment.
 
 ## Phases and Checkpoints
@@ -429,7 +429,7 @@ Checkpoint P-B runs the complete local pipeline from a clean checkout. Hosted CI
 
 - P6 records current official Open-Meteo terms and a combined geocoding/forecast usage model. The owner-provided traffic and commercial status determine whether the free endpoint is viable or a paid plan is required.
 - P7 documents data transfers, return-visit forecast calls, browser-local retention of the last selected city, provider retention and application logging/retention in a public privacy notice, reviewed against the selected host and current provider material.
-- P8 inventories rights and required credit for each WebP file. Missing evidence remains a blocker; any replacement-image project requires explicit approval under the `weather-ui` boundary.
+- P8 inventories rights and required credit for each of the ten bundled WebP files, traces optimized variants to their originals, and records the supplied logo's public-use permission. Missing evidence remains a blocker; any replacement-image project requires explicit approval under the `weather-ui` boundary.
 - P9 writes the host-specific API/static-web deployment procedure, HTTPS/CORS/proxy/edge settings, health check, smoke and rollback steps after the host/domain are chosen.
 - P10 rehearses deployment and rollback, collects the full gate output and creates a release decision record without making the site public.
 
@@ -456,7 +456,7 @@ Checkpoint P-C is the owner's review of completed release evidence. The actual p
 
 ## Open Decisions
 
-- Owner: confirm commercial status, host/domain, expected peak and daily traffic, and evidence or replacement direction for all ten images. None is inferred from approval of the specification.
+- Owner: confirm commercial status, host/domain, expected peak and daily traffic, and evidence or replacement direction for the ten bundled images, their originals and the supplied logo. None is inferred from approval of the specification.
 - The proposed CI host is GitHub Actions; there is currently no configured remote. The owner can select another CI host before P5, in which case the plan is updated before implementation.
 - P9/P10 and public launch depend on these answers. P1–P8 can produce local checks or draft evidence, but P6–P8 cannot be marked complete if required facts remain unknown.
 

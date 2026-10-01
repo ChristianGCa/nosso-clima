@@ -45,6 +45,13 @@ describe('forecast HTTP boundary', () => {
     },
     {
       ...forecastResponse,
+      daily: forecastResponse.daily.map((day, index) => ({
+        ...day,
+        date: new Date(Date.UTC(2026, 8, 25 + index)).toISOString().slice(0, 10),
+      })),
+    },
+    {
+      ...forecastResponse,
       current: { ...forecastResponse.current, validAtLocal: '2026-09-24T25:30' },
     },
     { ...forecastResponse, retrievedAtUtc: '2026-02-30T18:32:00.000Z' },
@@ -63,6 +70,15 @@ describe('forecast HTTP boundary', () => {
     expect(() => parseForecast(body)).toThrow();
   });
 
+  it('rejects a response for a timezone other than the selected city', async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      jsonResponse({ ...forecastResponse, timezone: 'America/Manaus' }),
+    );
+    await expect(
+      getForecast(locationResponse.locations[0], new AbortController().signal, fetchImpl),
+    ).rejects.toMatchObject({ failure: { kind: 'unavailable' } });
+  });
+
   it('classifies a 429 and a 503 without exposing remote messages', async () => {
     const location = locationResponse.locations[0];
     const limited = vi.fn<typeof fetch>(async () =>
@@ -77,5 +93,14 @@ describe('forecast HTTP boundary', () => {
     await expect(
       getForecast(location, new AbortController().signal, unavailable),
     ).rejects.toMatchObject({ failure: { kind: 'unavailable' } });
+  });
+
+  it.each([400, 401, 404, 500])('classifies HTTP %i as a generic failure', async (status) => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      jsonResponse({ error: { code: 'OTHER', message: 'private detail' } }, status),
+    );
+    await expect(
+      getForecast(locationResponse.locations[0], new AbortController().signal, fetchImpl),
+    ).rejects.toMatchObject({ failure: { kind: 'request_failed', requestId: 'test-request-1' } });
   });
 });

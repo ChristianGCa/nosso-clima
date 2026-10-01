@@ -1,5 +1,5 @@
 import type { Location } from './locations';
-import { requestJson, unavailableFrom } from './http';
+import { requestJson, requestErrorFrom } from './http';
 import { boolean, civilDate, exact, finite, oneOf, record, text, timezone } from './validation';
 
 const categories = ['clear', 'cloudy', 'rain', 'snow', 'storm'] as const;
@@ -84,6 +84,7 @@ export function parseForecast(value: unknown): Forecast {
   civilDate(validAtLocal.slice(0, 10));
   if (!Array.isArray(root.daily) || root.daily.length !== 7) throw new Error('invalid data');
   const days = root.daily.map(daily);
+  if (days[0]?.date !== validAtLocal.slice(0, 10)) throw new Error('invalid data');
   for (let index = 1; index < days.length; index += 1) {
     if (
       Date.parse(`${days[index]?.date}T00:00:00Z`) -
@@ -126,8 +127,12 @@ export async function getForecast(
     timezone: location.timezone,
   });
   try {
-    return parseForecast(await requestJson(`/api/v1/forecast?${params}`, signal, fetchImpl));
+    const forecast = parseForecast(
+      await requestJson(`/api/v1/forecast?${params}`, signal, fetchImpl),
+    );
+    if (forecast.timezone !== location.timezone) throw new Error('invalid data');
+    return forecast;
   } catch (error) {
-    throw unavailableFrom(error);
+    throw requestErrorFrom(error);
   }
 }

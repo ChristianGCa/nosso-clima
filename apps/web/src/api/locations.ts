@@ -1,5 +1,5 @@
 import { exact, finite, record, text, timezone } from './validation';
-import { ApiUnavailable, requestJson, unavailableFrom } from './http';
+import { ApiRequestError, requestJson, requestErrorFrom } from './http';
 
 export type Location = Readonly<{
   id: number;
@@ -75,8 +75,8 @@ export async function searchLocations(
   try {
     return parseLocations(await requestJson(`/api/v1/locations?${params}`, signal, fetchImpl));
   } catch (error) {
-    throw unavailableFrom(error);
+    throw requestErrorFrom(error);
   }
 }
 
-export { ApiUnavailable };
+export { ApiRequestError };

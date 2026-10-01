@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { ApiUnavailable, parseLocations, searchLocations } from '../src/api/locations';
+import { ApiRequestError, parseLocations, searchLocations } from '../src/api/locations';
 import { jsonResponse, locationResponse } from './fixtures';
 
 afterEach(() => vi.unstubAllEnvs());
@@ -82,7 +82,7 @@ describe('location HTTP boundary', () => {
     const fetchImpl = vi.fn<typeof fetch>(async () => response.clone());
     await expect(
       searchLocations('Curitiba', new AbortController().signal, fetchImpl),
-    ).rejects.toBeInstanceOf(ApiUnavailable);
+    ).rejects.toBeInstanceOf(ApiRequestError);
   });
 
   it('makes network failure generic', async () => {
@@ -94,5 +94,23 @@ describe('location HTTP boundary', () => {
     ).rejects.toMatchObject({
       failure: { kind: 'unavailable' },
     });
+  });
+
+  it('classifies an unrelated HTTP status as a generic failure', async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      jsonResponse({ error: { code: 'NOT_FOUND', message: 'private detail' } }, 404),
+    );
+    await expect(
+      searchLocations('Curitiba', new AbortController().signal, fetchImpl),
+    ).rejects.toMatchObject({ failure: { kind: 'request_failed', requestId: 'test-request-1' } });
+  });
+
+  it.each([429, 503])('does not trust a mismatched error code for HTTP %i', async (status) => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      jsonResponse({ error: { code: 'OTHER' } }, status),
+    );
+    await expect(
+      searchLocations('Curitiba', new AbortController().signal, fetchImpl),
+    ).rejects.toMatchObject({ failure: { kind: 'request_failed' } });
   });
 });
