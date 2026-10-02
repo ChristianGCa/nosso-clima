@@ -1,20 +1,22 @@
 # Spec: Production Delivery
 
-- **Status:** Approved for planning by owner on 2026-09-24; deployment decisions remain open
+- **Status:** Approved for planning by owner on 2026-09-24; owner clarified use, traffic and asset origins on 2026-10-01; Cloudflare deployment amendment remains pending
 - **Module id:** `production-delivery`
 - **Depends on:** `location-search`, `weather-forecast`, `weather-ui`
 - **Source:** `CAPABILITY-MAP.md`, `CONSTRAINTS.md`, and the four completed module specs
 
 ## Objective
 
-Make the completed local weather flow reproducible, testable in a real browser, and ready for a separately deployed static web app and single-process Node API. A public launch is a distinct decision: it requires evidence for upstream usage, current terms, privacy, image rights, performance, and deployment security. Passing local tests alone does not authorize publication.
+Make the completed local weather flow reproducible and testable in a real browser. The original deployment target in this specification was a separately deployed static web app and single-process Node API. On 2026-10-01 the owner selected Cloudflare Free as the intended host; the Node-specific requirements below need an approved amendment before Cloudflare implementation. A public launch is a distinct decision: it requires evidence for upstream usage, current terms, privacy, image rights, performance, and deployment security. Passing local tests alone does not authorize publication.
 
 ## Planning Baseline
 
-1. Planning uses a non-commercial, single-process API deployment as a provisional scenario. The owner must confirm commercial status before deployment configuration is finalized; no shared cache or distributed rate limiter is introduced implicitly.
+1. The owner confirmed on 2026-10-01 that the intended site is non-commercial. The single-process API scenario is the original planning baseline, now superseded as a deployment target by Cloudflare Free; shared controls require an approved `backend-platform` amendment.
 2. The web app is built as static files and deployed separately from the API, with an explicit HTTPS API origin and a matching explicit CORS origin.
-3. The ten WebP files bundled under `apps/web/src/assets/backgrounds/` remain development assets until the owner provides provenance and publication rights for each shipped file. The ten originals remain under `backgrounds/`; five bundled night files are optimized variants and differ from those originals. Trace each variant to its source. If rights cannot be established, approved replacements are needed before a public launch.
-4. No hosting provider, domain, public traffic ceiling, or Open-Meteo commercial status has been selected yet. Those choices must be recorded before deployment configuration is finalized.
+3. The owner stated that all ten WebP backgrounds were generated in the Gemini app without reference-image uploads; the five bundled night files are optimized variants of the corresponding originals under `backgrounds/`. The owner also stated that the logo was generated with AI, without identifying its tool or source assets. These statements establish reported provenance, not completed publication-rights review; see `docs/deploy/image-rights.md`.
+4. Cloudflare Free is the intended host. The owner estimates about 100 users per day arriving at random times and making several consultations; this is a forecast, not a traffic ceiling or a defined peak. The production domain, enforceable provider-call budget and public release decision remain open.
+
+The Node process, `HOST`/`PORT`/`TRUST_PROXY` and `buildApp({ fetchImpl })` requirements below record the previously approved delivery baseline. They are not an implementation recipe for Cloudflare. Task P0 in `tasks/todo.md` must replace those topology-specific requirements in an owner-approved amendment before Worker code is changed; the quality, privacy, provider-usage and publication gates continue to apply.
 
 ## Scope and Requirements
 
@@ -95,7 +97,7 @@ gitleaks detect --redact --no-banner
 
 ### Require explicit owner decision before implementation or release
 
-- Choose hosting, domain, topology, traffic ceiling, and commercial status; approve a paid Open-Meteo plan if needed.
+- Record the owner's Cloudflare Free and non-commercial choices; decide the domain, approved runtime topology and enforceable traffic ceiling before implementation or release. A future commercial change requires paid Open-Meteo plan approval.
 - Change shared platform controls, provider endpoints, public contracts, CORS/proxy policy, image assets, or add external telemetry.
 - Publish the site or its existing WebP assets. Release approval follows a reviewable deployment package and completed evidence gates.
 
@@ -116,8 +118,8 @@ gitleaks detect --redact --no-banner
 
 ## Open Decisions for Owner Review
 
-1. Is the intended public site strictly non-commercial, including no ads, sponsorship, or subscription? If not, a paid Open-Meteo plan is required before deployment design is finalized.
-2. Which host, domain, and expected peak/daily traffic should the deployment target? The traffic answer determines whether a demonstrably low ceiling is feasible or an aggregate control is required.
-3. What is the provenance and public-use permission for each of the ten bundled WebP images and its retained original, including the five optimized night variants, and for the supplied logo? If unavailable, should replacement assets be commissioned or selected under a verified licence?
+1. **Resolved for the intended release:** the owner confirmed non-commercial use on 2026-10-01. Recheck the actual site's ads, sponsorship, subscriptions and current Open-Meteo terms at release; a future commercial change requires a paid-plan review.
+2. **Partly resolved:** Cloudflare Free was selected and traffic is estimated at about 100 users per day at random times, with several consultations per user. The domain, peak request rate, calls per visit and enforceable aggregate ceiling remain to be specified and measured.
+3. **Partly resolved:** the owner reported that all ten backgrounds were generated in Gemini without uploaded reference images and the logo was generated with AI. The logo's exact tool/source assets, file-by-file lineage, applicable generation terms and permission for the intended public use still need the `production-delivery` rights review.
 
-The owner approved this specification for planning on 2026-09-24. The implementation plan and task list still require review. Public deployment requires the open decisions, completed evidence gates, and a separate release approval.
+The owner approved this specification for planning on 2026-09-24 and supplied the factual clarifications above on 2026-10-01. This does not approve the Cloudflare runtime amendment, the implementation plan or public deployment. The remaining decisions, evidence gates and a separate release approval still apply.

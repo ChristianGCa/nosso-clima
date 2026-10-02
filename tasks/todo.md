@@ -903,224 +903,164 @@ These findings do not alter the owner's 2026-09-24 approval record. The owner re
 
 ---
 
-# Tasks: Production Delivery
+# Tasks: Production Delivery — Cloudflare Free proposal
 
-Status: Draft for owner review; implementation not yet approved
-Module id: `production-delivery`
-Source spec: `SPEC-production-delivery.md` (approved for planning 2026-09-24)
+Status: Draft for owner review; implementation blocked by specification amendments
+Module id: `production-delivery`; source modules: `backend-platform`, `location-search`, `weather-forecast`, `weather-ui`
 Plan: `tasks/plan.md`, Production Delivery section
 
 ## Progress
 
-- [ ] P1 — Verify production configuration and independent builds
-- [ ] P2 — Build the offline cross-application HTTP harness
-- [ ] P3 — Test the complete browser journey
-- [ ] Checkpoint P-A — Offline release candidate
-- [ ] P4 — Enforce the mobile performance gate
-- [ ] P5 — Add CI and redacted secret scanning
-- [ ] Checkpoint P-B — Complete local and hosted quality gates
-- [ ] P6 — Review provider terms and combined usage budget
-- [ ] P7 — Prepare and expose the privacy notice
-- [ ] P8 — Verify rights for bundled backgrounds, retained originals and logo
-- [ ] P9 — Document the selected production deployment
-- [ ] P10 — Rehearse release and rollback
-- [ ] Checkpoint P-C — Owner release review
+- [ ] P0 — Approve Cloudflare spec amendments and module boundaries
+- [ ] P1 — Prove Worker feasibility within Free limits
+- [ ] P2 — Build Worker HTTP platform shell
+- [ ] P3 — Enforce one atomic provider quota in D1
+- [ ] P4 — Migrate location search to Worker
+- [ ] P5 — Migrate forecast to Worker
+- [ ] P6 — Adapt resilience and visitor rate limits
+- [ ] P7 — Prepare Pages build and origins
+- [ ] Checkpoint A — Worker/API and web parity
+- [ ] P8 — Test browser flow against workerd
+- [ ] P9 — Add performance and hosted CI gates
+- [ ] Checkpoint B — Measured release candidate
+- [ ] P10 — Complete provider, privacy, rights and runbook evidence
+- [ ] P11 — Rehearse staging and rollback
+- [ ] Checkpoint C — Owner release review
 
-## Task P1: Verify production configuration and independent builds
+## P0 — Approve Cloudflare spec amendments and module boundaries
 
-**Description:** Add a production web-origin preflight and tests while preserving local development and isolated fixture builds. Prove a clean lockfile install and separate API/web artifacts, including an API production-dependency startup path.
+**Description:** Draft owner-reviewable amendments to `SPEC-backend-platform.md` and `SPEC-production-delivery.md`, including Worker lifecycle, atomic aggregate quota, local cache/limits, Pages/Worker origins, logging and rollback. Update `CAPABILITY-MAP.md` only if responsibility changes. Preserve source-module API contracts.
 
-**Acceptance criteria:**
+**Acceptance:** Both specs explicitly replace the single-process deployment assumptions; define per-location rate-limit semantics, headers and privacy; retain every `CONSTRAINTS.md` floor; owner approves the amendments before code changes.
 
-- [ ] A public production build rejects missing, HTTP, loopback or mismatched API origin; a separately identified local E2E fixture build may use loopback HTTP and is never selected by deployment instructions.
-- [ ] API and web each build from `npm ci`; the compiled API starts with production dependencies and answers `/health` without web development packages.
-- [ ] Environment examples and a command transcript identify required production values, explicit allowed web origin, `TRUST_PROXY=false`, and independent outputs without exposing secrets.
+**Verification:** Compare the diff with all five specs, the capability map and constraints; record approval/date in the specs.
 
-**Verification:** Configuration negative tests; `npm ci`; `npm run build --workspace @nosso-clima/api`; `npm run build --workspace @nosso-clima/web`; compiled API health smoke; `npm run check:boundaries`.
+**Dependencies:** None. **Likely files:** `SPEC-backend-platform.md`, `SPEC-production-delivery.md`, `CAPABILITY-MAP.md`. **Scope:** Medium.
 
-**Dependencies:** Approved production-delivery plan and tasks.
+## P1 — Prove Worker feasibility within Free limits
 
-**Files likely touched:** `apps/web/vite.config.ts`, `apps/web/test/production-config.test.ts`, `apps/web/.env.example`, `apps/api/.env.example`, `scripts/verify-production-build.mjs`.
+**Description:** Pin a Cloudflare toolchain and make an isolated, non-deployed spike comparing Fastify compatibility with a Fetch-native entry point using representative route fixtures.
 
-**Estimated scope:** Medium (up to 5 files).
+**Acceptance:** Report real workerd/staging CPU, bundle size, memory/compatibility findings for health, geocoding and forecast; choose an adapter that fits 10 ms CPU on Free with margin, or record a blocking redesign decision. No production route changes or live Open-Meteo calls.
 
-## Task P2: Build the offline cross-application HTTP harness
+**Verification:** Local workerd request bench with offline fixtures, inspect Workers metrics in private staging, run `npm run check` and audit after dependency changes.
 
-**Description:** Start the compiled or in-process Fastify API through `buildApp({ fetchImpl })` and serve built web files for Playwright, with only upstream Open-Meteo responses replaced by deterministic fixtures. Keep the browser-to-API HTTP boundary real.
+**Dependencies:** P0 approval. **Likely files:** `apps/api/package.json`, `package-lock.json`, `docs/deploy/worker-feasibility.md`, spike fixture under `tests/worker/`. **Scope:** Medium.
 
-**Acceptance criteria:**
+## P2 — Build Worker HTTP platform shell
 
-- [ ] Both local servers have bounded startup, unique ports and cleanup on success/failure; no test leaves a listener or browser behind.
-- [ ] The fixture transport rejects unexpected upstream URLs, records call counts and returns controlled success, empty and failure variants without contacting Open-Meteo.
-- [ ] `npm run test:e2e` runs a minimal first-visit neutral-page smoke against the built web and real API HTTP listener, with zero initial provider calls.
+**Description:** Add the selected Worker entry point with typed bindings, `GET /health`, exact public error envelope, CORS, request ID, safe logs and bounded request handling, without provider routes.
 
-**Verification:** `npm run test:e2e`; focused harness failure/cleanup test; `npm run check`; offline request-count assertion.
+**Acceptance:** Invalid/unknown routes and preflights match the amended spec; no Node listener, signal hook or `process.env` assumption runs in the Worker; no raw query, IP, coordinates or secrets appear in application logs.
 
-**Dependencies:** P1.
+**Verification:** Workerd HTTP tests for health, CORS, malformed requests, public errors and logs; root check and focused coverage.
 
-**Files likely touched:** `tests/e2e/harness.mjs`, `tests/e2e/provider-fixtures.mjs`, `tests/e2e/neutral.spec.mjs`, `package.json`.
+**Dependencies:** P1. **Likely files:** `apps/api/src/worker.ts`, `apps/api/src/worker/http.ts`, `apps/api/src/worker/config.ts`, `apps/api/test/worker/platform.test.ts`. **Scope:** Medium.
 
-**Estimated scope:** Medium (4 files).
+## P3 — Enforce one atomic provider quota in D1
 
-## Task P3: Test the complete browser journey
+**Description:** Add D1 migration and one conditional reservation of weighted minute/hour/day credits shared by both integrations; store only aggregate counters.
 
-**Description:** Use the P2 harness to test the visible city-to-forecast flow and its most important failure paths in a real browser, avoiding duplicate unit-level parser matrices.
+**Acceptance:** Parallel calls cannot overspend any window; denied or failed reservations make zero provider calls; D1 outage returns the approved safe error; rollover, cost weight and storage Free limits are documented.
 
-**Acceptance criteria:**
+**Verification:** Workerd/D1 tests with simultaneous misses, boundary clock values and injected D1 failures; inspect database schema for personal data; calculate read/write rows per scenario.
 
-- [ ] Search, explicit selection, current conditions, seven daily cards and both source credits pass through real web/API HTTP calls; the first visit without saved data remains neutral, and reopening restores the last city with a fresh forecast and no geocoding call.
-- [ ] Empty search, upstream failure with manual retry, keyboard selection and stale-city response protection produce the expected visible states and never show old weather for a new city.
-- [ ] The suite is deterministic, offline, within the five-minute browser budget and leaves existing root/web/API checks green.
+**Dependencies:** P2 and a verified provisional Open-Meteo cost weight. **Likely files:** `apps/api/migrations/`, `apps/api/src/worker/quota.ts`, `apps/api/test/worker/quota.test.ts`, Worker configuration. **Scope:** Medium.
 
-**Verification:** `npm run test:e2e`; `npm run check`; `npm run test:a11y`; review browser network log for only loopback/API and static assets.
+## P4 — Migrate location search to Worker
 
-**Dependencies:** P2.
+**Description:** Route `/api/v1/locations` through existing validation, normalization, outbound transport and the P3 budget.
 
-**Files likely touched:** `tests/e2e/weather-flow.spec.mjs`, `tests/e2e/provider-fixtures.mjs`, `tests/e2e/harness.mjs`.
+**Acceptance:** Valid, empty and invalid searches preserve the public contract and credits; invalid input has zero provider calls; success/failure tests remain offline; legacy Node tests still pass.
 
-**Estimated scope:** Medium (3 files).
+**Verification:** Real Worker HTTP fixture tests and Node contract comparison; `npm run check`; API coverage.
 
-## Checkpoint P-A: Offline release candidate
+**Dependencies:** P3. **Likely files:** Worker location route/entry, `apps/api/test/worker/locations.test.ts`, shared service adapter and existing contract tests. **Scope:** Medium.
 
-- [ ] Clean install and independent API/web builds pass, including production-dependency API startup and a valid/invalid production-origin preflight.
-- [ ] `npm run test:e2e` covers the complete visible flow with a real API HTTP listener and zero live Open-Meteo requests.
-- [ ] `npm run check`, workspace gates, boundary check and browser axe remain green.
+## P5 — Migrate forecast to Worker
 
-## Task P4: Enforce the mobile performance gate
+**Description:** Route `/api/v1/forecast` through existing coordinate/timezone validation, seven-day normalization, outbound transport and the P3 budget.
 
-**Description:** Measure the production web build in Playwright Chromium under one documented mobile profile, recording navigation LCP and page-lifetime CLS through a successful city selection and active background load.
+**Acceptance:** Success, malformed input, upstream failure and attribution preserve the public contract; every real fetch has a reserved cost; Node regression tests stay green.
 
-**Acceptance criteria:**
+**Verification:** Real Worker HTTP fixture tests, contract comparison, API coverage and `npm run check`.
 
-- [ ] `npm run test:performance` prints the 360×800 viewport, device/network profile, measured LCP and CLS, and fails if LCP exceeds 2.5 s or CLS exceeds 0.1.
-- [ ] The measurement starts before navigation, includes the forecast transition for CLS, uses built assets and offline API fixtures, and closes resources reliably.
-- [ ] The command meets the five-minute budget and repeated runs on the project machine are stable without relaxing thresholds.
+**Dependencies:** P3; can follow P4 or proceed independently after shared entry stabilizes. **Likely files:** Worker forecast route/entry, `apps/api/test/worker/forecast.test.ts`, shared service adapter and contract tests. **Scope:** Medium.
 
-**Verification:** `npm run test:performance` on the built preview; inspect numeric output and a deliberately failing threshold fixture; `npm run check`.
+## P6 — Adapt resilience and visitor rate limits
 
-**Dependencies:** P3 and Checkpoint P-A.
+**Description:** Implement the approved 60/30/15 edge rate limits and isolate-local cache, single-flight and bounded outbound work with explicit disposable-state semantics.
 
-**Files likely touched:** `tests/performance/mobile.mjs`, `package.json`, `docs/deploy/performance-profile.md`.
+**Acceptance:** Normal, malformed and preflight traffic follows the approved limit contract; cold isolate and concurrent cross-location misses cannot bypass P3; cache never persists user query/coordinates or provider payload.
 
-**Estimated scope:** Medium (3 files).
+**Verification:** Workerd limit/burst tests, cold-start tests, log/privacy inspection and quota call-count assertions.
 
-## Task P5: Add CI and redacted secret scanning
+**Dependencies:** P4–P5. **Likely files:** Worker bindings/configuration, rate-limit adapter, service composition and `apps/api/test/worker/rate-limit.test.ts`. **Scope:** Medium.
 
-**Description:** Assemble one clean-checkout CI workflow for both applications and all active gates, using pinned tooling and redacted Gitleaks output. Hosted validation follows configuration of a repository remote.
+## P7 — Prepare Pages build and origins
 
-**Acceptance criteria:**
+**Description:** Deployable Vite static artifact for Pages with explicit HTTPS Worker origin, strict API CORS and separate local fixture configuration.
 
-- [ ] CI installs pinned Node/npm and browser tooling, then runs root/workspace checks, coverage, boundaries, axe, E2E, performance, independent builds, high-severity audit and redacted secret scan.
-- [ ] Gitleaks is installed from a pinned version or action; a seeded fake-secret check proves failure without printing the value, and no suppression is added.
-- [ ] Local equivalents pass within the applicable budgets; once a remote exists, the hosted workflow passes and its run URL is recorded before this task is marked complete.
+**Acceptance:** Production build rejects missing, insecure or loopback API URL; Pages and Worker build separately; no provider key enters browser assets; configured hostnames and file limits are documented.
 
-**Verification:** Workflow syntax review; clean `npm ci`; full local gate; `gitleaks detect --redact --no-banner`; hosted CI run when available.
+**Verification:** Build/config tests, inspect `dist`, local Pages preview against Worker fixture, CORS positive/negative checks.
 
-**Dependencies:** P4.
+**Dependencies:** P2. **Likely files:** `apps/web/vite.config.ts`, `apps/web/.env.example`, `apps/web/test/production-config.test.ts`, `docs/deploy/cloudflare-runbook.md`. **Scope:** Medium.
 
-**Files likely touched:** `.github/workflows/check.yml`, `package.json`, `docs/deploy/ci.md`.
+## Checkpoint A — Worker/API and web parity
 
-**Estimated scope:** Medium (3 files).
+- [ ] Worker and legacy Node API have equivalent public HTTP contract for fixture cases.
+- [ ] Pages and Worker build independently; workerd suite, root checks, boundaries and per-app 80% coverage pass.
+- [ ] No test reaches live Open-Meteo; provider quota and Free usage assumptions are reviewable.
 
-## Checkpoint P-B: Complete local and hosted quality gates
+## P8 — Test browser flow against workerd
 
-- [ ] `npm run check`, `npm run test:coverage`, `npm run test:a11y`, `npm run test:e2e`, `npm run test:performance`, `npm run check:boundaries`, audit, secret scan and both builds pass.
-- [ ] API and web each retain at least 80% coverage for lines, branches, functions and statements; no constraint is weakened.
-- [ ] Hosted CI evidence is linked when a remote is available; absent a remote, this checkpoint remains open.
+**Description:** Drive built web assets against a real local Worker HTTP listener with deterministic outbound Open-Meteo fixtures.
 
-## Task P6: Review provider terms and combined usage budget
+**Acceptance:** Cover neutral first visit, saved-city refresh, search/select, current and seven days, empty/failure/retry, keyboard, credits, stale-city protection and quota denial; no leaked listeners or live provider calls.
 
-**Description:** Record current official Open-Meteo geocoding/forecast terms, pricing, attribution and effective request accounting, then model the two endpoints together for the intended traffic and one API process, including automatic forecast calls on return visits.
+**Verification:** `npm run test:e2e`, browser network inspection and `npm run test:a11y`, within five-minute browser budget.
 
-**Acceptance criteria:**
+**Dependencies:** Checkpoint A. **Likely files:** `tests/e2e/harness.mjs`, fixture transport, browser specs and root `package.json`. **Scope:** Medium per journey slice; split specs as needed.
 
-- [ ] Dated links to current official sources, chosen plan and commercial-status decision are recorded; a paid endpoint and secret plan are required if the intended use is commercial.
-- [ ] A transparent minute/hour/day budget includes both endpoints, requested variable cost, cache misses, restarts and expected peak/daily users; a documented ceiling or enforceable aggregate control stays within the applicable limits.
-- [ ] Unknown traffic or commercial status remains an explicit release blocker, never a guessed approval; no source-module provider endpoint changes occur silently.
+## P9 — Add performance and hosted CI gates
 
-**Verification:** Recompute example scenarios from the documented formula; compare values and conditions to official current sources; owner reviews the chosen ceiling.
+**Description:** Run the existing mobile LCP/CLS requirements against the Cloudflare-style preview and wire all quality/security checks into pinned CI.
 
-**Dependencies:** Approved plan and owner commercial/traffic decisions for final completion.
+**Acceptance:** `npm run test:performance` enforces LCP <= 2.5 s and CLS <= 0.1 through forecast background load; CI runs all checks plus both builds, audit and redacted Gitleaks; staging records CPU and D1 usage; hosted run passes when a remote exists.
 
-**Files likely touched:** `docs/deploy/open-meteo-usage.md`.
+**Verification:** Repeated mobile measurement with recorded profile, full local gate, CI run URL and deliberately failing threshold/secret fixtures; respect time budgets.
 
-**Estimated scope:** Small (1 file).
+**Dependencies:** P8. **Likely files:** `tests/performance/mobile.mjs`, `.github/workflows/check.yml`, `package.json`, `docs/deploy/performance-profile.md`. **Scope:** Split CI and performance into separate implementation slices if more than five files.
 
-## Task P7: Prepare and expose the privacy notice
+## Checkpoint B — Measured release candidate
 
-**Description:** Draft the public notice for search-text and selected-coordinate transfers (including forecast calls on return visits), the last selected city retained in browser-local storage, applicable provider retention and local logging/retention behavior, then make it reachable from the web app for the selected deployment.
+- [ ] Root check, coverage, axe, E2E, performance, audit, secret scan and independent builds pass locally and in hosted CI.
+- [ ] Representative Worker requests fit 10 ms CPU with margin; D1 and Workers Free usage projections have evidence.
+- [ ] No constraint is weakened and failed checks remain visible.
 
-**Acceptance criteria:**
+## P10 — Complete provider, privacy, rights and runbook evidence
 
-- [ ] Notice accurately describes both third-party transfers, purposes and current provider retention material, with dated sources and the selected host's actual log behavior.
-- [ ] Notice explains that one selected city remains in browser-local storage until replaced or site data is cleared, and that a later visit automatically requests its forecast.
-- [ ] Web users can open the notice from a visible, keyboard-accessible link; the link target works in the built static deployment.
-- [ ] No prohibited search term, coordinate, IP or raw provider payload is newly logged, and the owner reviews the notice before release.
+**Description:** Recheck that the intended non-commercial use qualifies under current Open-Meteo terms, model the owner's approximate 100 users/day with measured calls and peaks, complete the public privacy notice and file-specific rights review for Gemini backgrounds and the AI-generated logo, then document Cloudflare configuration, monitoring and rollback.
 
-**Verification:** Browser link/keyboard check; compare notice to current official sources and deployment logging configuration; `npm run check --workspace @nosso-clima/web`.
+**Acceptance:** Aggregate cap covers geocoding and forecast with worst-case misses and return visits; notice reflects Pages/Workers log retention; all ten WebP files and logo have documented public-use review or approved replacements; exact origins, binding setup and rollback are recorded. Unknown peak rate, effective call cost or rights remain release blockers; the 100-user estimate alone does not close them.
 
-**Dependencies:** P6 for current provider review and selected host/log-retention facts for completion.
+**Verification:** Dated official URLs, recomputed budget, inspect built rights/credits, browser notice link, owner review of evidence.
 
-**Files likely touched:** `docs/deploy/privacy-notice.md`, `apps/web/src/app.tsx`, `apps/web/test/app.test.tsx`.
+**Dependencies:** Checkpoint B, measurement of call patterns and remaining logo/rights facts. **Likely files:** `docs/deploy/open-meteo-usage.md`, `docs/deploy/privacy-notice.md`, `docs/deploy/image-rights.md`, `docs/deploy/cloudflare-runbook.md`; web notice change is a separate `weather-ui`-owned slice. **Scope:** Four small evidence slices.
 
-**Estimated scope:** Medium (3 files).
+## P11 — Rehearse staging and rollback
 
-## Task P8: Verify rights for bundled backgrounds, retained originals and logo
+**Description:** Exercise private Pages and Worker deployment, smoke and rollback while keeping D1 schema compatible with the prior Worker version.
 
-**Description:** Inventory the ten WebP assets actually bundled by the web app, trace each to its retained original under `backgrounds/`, document the five optimized night variants, and record the supplied logo's origin and public-use permission. Keep the release blocked for any unknown entry.
+**Acceptance:** Health, CORS, both provider routes and source credits pass approved fixture/bounded smoke; metrics and logs contain no prohibited data; Pages and Worker roll back successfully; public site remains unpublished.
 
-**Acceptance criteria:**
+**Verification:** Follow runbook verbatim in staging and attach dated smoke, quota, CPU, performance and rollback results.
 
-- [ ] All ten bundled filenames have individual evidence, are traced to their originals, and have the required attribution visible where applicable; unverified images are not cleared for public packaging.
-- [ ] The intended commercial or non-commercial use matches each permission. If any file cannot be cleared, the owner approves a separate replacement task within the `weather-ui` boundary.
-- [ ] The final inventory includes evidence locations, the supplied logo's public-use permission and an owner review date, without embedding private licence documents or credentials in the repository.
+**Dependencies:** P10. **Likely files:** `docs/deploy/release-review.md`, `docs/deploy/cloudflare-runbook.md`. **Scope:** Small.
 
-**Verification:** Compare the inventory to the ten bundled files and ten retained originals, including hashes or other traceable variant evidence; manually review each source/permission, logo and rendered credit; inspect public build contents.
+## Checkpoint C — Owner release review
 
-**Dependencies:** Owner image and logo provenance and commercial-status decision for final completion.
-
-**Files likely touched:** `docs/deploy/image-rights.md`.
-
-**Estimated scope:** Small (1 file; replacements are a separate approved task).
-
-## Task P9: Document the selected production deployment
-
-**Description:** Turn the selected host/domain and completed provider/privacy/image evidence into exact web and single-process API deploy, health, smoke, edge and rollback procedures.
-
-**Acceptance criteria:**
-
-- [ ] Runbook gives exact independent build/start/configuration steps for HTTPS web and API origins, explicit CORS, health checks and rollback on the chosen host.
-- [ ] Direct API origin exposure, edge abuse controls and `TRUST_PROXY=false` or reviewed trusted ranges are documented; multi-instance deployment is excluded without platform amendment.
-- [ ] A dry run validates environment errors, public-origin matching and smoke commands without making the service public.
-
-**Verification:** Follow the runbook in a staging/private environment; inspect CORS and `/health`; practice rollback and record results.
-
-**Dependencies:** P5–P8 and owner host/domain decision.
-
-**Files likely touched:** `docs/deploy/runbook.md`, `apps/api/.env.example`, `apps/web/.env.example`.
-
-**Estimated scope:** Medium (3 files).
-
-## Task P10: Rehearse release and rollback
-
-**Description:** Collect all gate evidence, run the host-specific deployment and rollback rehearsal, and prepare a release decision record for the owner without publishing the site.
-
-**Acceptance criteria:**
-
-- [ ] Local and hosted CI gates, performance numbers, provider budget, privacy notice, image rights, security configuration and independent artifacts are linked in one release record.
-- [ ] A private/staging deploy passes web/API smoke, source attribution, health and rollback checks; no live provider request is made before its usage/privacy gates pass.
-- [ ] Every remaining blocker is explicit. The public site remains unpublished until the owner approves the complete release package.
-
-**Verification:** Execute `docs/deploy/runbook.md` in staging; re-run the full gate; inspect the dated evidence and rollback record with the owner.
-
-**Dependencies:** P9 and Checkpoint P-B.
-
-**Files likely touched:** `docs/deploy/release-review.md`, `docs/deploy/runbook.md`.
-
-**Estimated scope:** Small (2 files).
-
-## Checkpoint P-C: Owner release review
-
-- [ ] Every `SPEC-production-delivery.md` success criterion and active `CONSTRAINTS.md` floor has current evidence.
-- [ ] The owner reviews the host, traffic/commercial decision, provider usage, privacy notice, image rights, performance, security and rollback results.
-- [ ] Public deployment is separately approved only after all blockers are closed; otherwise this checkpoint remains open.
+- [ ] All active specs and `CONSTRAINTS.md` floors have current evidence.
+- [ ] Owner reviews hostnames, commercial status, traffic/quota, privacy, image rights, Free usage, security and rollback.
+- [ ] Public deploy requires separate explicit approval after all blockers close.

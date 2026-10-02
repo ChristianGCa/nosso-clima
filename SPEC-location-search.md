@@ -376,7 +376,7 @@ Use injected fake `fetch`, fake streams, and fake time. Tests must not use a liv
 
 No question blocks planning after human approval of this draft. Approval explicitly confirms the public route and fields, Portuguese localization, current-populated-place filter, five-result limit, 24-hour cache TTL, 5-second timeout, and 64 KiB response ceiling.
 
-The application's eventual commercial status remains unresolved and is intentionally a blocking decision for `production-delivery`, not an implicit assumption in this module.
+The owner confirmed non-commercial use for the intended release on 2026-10-01. `production-delivery` must still recheck actual use and current Open-Meteo terms at release and prove an aggregate geocoding-plus-forecast usage ceiling; a future commercial change requires the paid-endpoint process above.
 
 ## Official Sources
 
