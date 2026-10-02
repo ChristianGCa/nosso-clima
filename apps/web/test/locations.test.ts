@@ -1,8 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ApiRequestError, parseLocations, searchLocations } from '../src/api/locations';
+import { requestJson } from '../src/api/http';
 import { jsonResponse, locationResponse } from './fixtures';
 
-afterEach(() => vi.unstubAllEnvs());
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.useRealTimers();
+});
 
 describe('location HTTP boundary', () => {
   it('parses the consumed fields and sends only the query parameter', async () => {
@@ -94,6 +98,52 @@ describe('location HTTP boundary', () => {
     ).rejects.toMatchObject({
       failure: { kind: 'unavailable' },
     });
+  });
+
+  it('stops a stalled browser request after its timeout', async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn<typeof fetch>(
+      (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        }),
+    );
+    const request = requestJson(
+      '/api/v1/locations?query=Rio',
+      new AbortController().signal,
+      fetchImpl,
+    );
+    const failure = expect(request).rejects.toMatchObject({ failure: { kind: 'unavailable' } });
+
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await failure;
+    expect(fetchImpl.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+  });
+
+  it('stops a stalled response body within the same timeout', async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn<typeof fetch>(async (_url, init) => {
+      const response = new Response(null, { headers: { 'content-type': 'application/json' } });
+      vi.spyOn(response, 'json').mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+          }),
+      );
+      return response;
+    });
+    const request = requestJson(
+      '/api/v1/locations?query=Rio',
+      new AbortController().signal,
+      fetchImpl,
+    );
+    const failure = expect(request).rejects.toMatchObject({ failure: { kind: 'unavailable' } });
+
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    await failure;
+    expect(fetchImpl.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
   });
 
   it('classifies an unrelated HTTP status as a generic failure', async () => {

@@ -53,7 +53,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     bodyLimit: REQUEST_BODY_LIMIT_BYTES,
     requestIdHeader: false,
     genReqId: () => randomUUID(),
-    frameworkErrors(_error, request, reply) {
+    frameworkErrors(error, request, reply) {
       reply.header('x-request-id', request.id);
       return (async () => {
         try {
@@ -61,9 +61,17 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
             throw new Error('Global rate limiter is not ready');
           }
           await checkGlobalRateLimit(request, reply);
-          sendPublicError(reply, request, 'VALIDATION_ERROR', [
-            { field: 'request', reason: 'invalid' },
-          ]);
+          if (error.code === 'FST_ERR_BAD_URL' || error.code === 'FST_ERR_MAX_PARAM_LENGTH') {
+            sendPublicError(reply, request, 'VALIDATION_ERROR', [
+              { field: 'request', reason: 'invalid' },
+            ]);
+          } else {
+            request.log.error(
+              { event: 'unexpected_error', code: 'INTERNAL_ERROR', errorType: 'Error' },
+              'unexpected framework failure',
+            );
+            sendPublicError(reply, request, 'INTERNAL_ERROR');
+          }
         } catch (failure) {
           sendPublicError(
             reply,

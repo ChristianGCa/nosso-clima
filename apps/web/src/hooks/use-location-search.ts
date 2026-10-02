@@ -13,6 +13,7 @@ export function useLocationSearch() {
   const [state, setState] = useState<SearchState>({ status: 'idle' });
   const requestId = useRef(0);
   const selectedText = useRef<string | null>(null);
+  const cancelPending = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const id = ++requestId.current;
@@ -36,10 +37,15 @@ export function useLocationSearch() {
             setState({ status: 'error', failure: requestErrorFrom(error).failure });
         });
     }, 300);
-    return () => {
-      requestId.current += 1;
+    const cancel = () => {
       window.clearTimeout(timer);
       controller.abort();
+    };
+    cancelPending.current = cancel;
+    return () => {
+      requestId.current += 1;
+      cancel();
+      if (cancelPending.current === cancel) cancelPending.current = null;
     };
   }, [input]);
 
@@ -57,6 +63,7 @@ export function useLocationSearch() {
 
   function close() {
     requestId.current += 1;
+    cancelPending.current?.();
     setState({ status: 'idle' });
   }
 

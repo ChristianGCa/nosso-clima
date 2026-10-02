@@ -63,13 +63,12 @@ function isValidationFailure(error: unknown): boolean {
     return false;
   }
 
-  const possibleValidationError = error as {
-    validation?: unknown;
-    statusCode?: unknown;
-  };
-
+  const code = 'code' in error ? error.code : undefined;
   return (
-    possibleValidationError.validation !== undefined || possibleValidationError.statusCode === 400
+    code === 'FST_ERR_VALIDATION' ||
+    code === 'FST_ERR_CTP_INVALID_CONTENT_LENGTH' ||
+    code === 'FST_ERR_CTP_EMPTY_JSON_BODY' ||
+    code === 'FST_ERR_CTP_INVALID_JSON_BODY'
   );
 }
 

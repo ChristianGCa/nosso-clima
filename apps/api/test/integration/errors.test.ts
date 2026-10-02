@@ -166,6 +166,60 @@ describe('public error envelope', () => {
     expect(logText).toContain('errorType');
   });
 
+  it('does not turn an unexpected error with status 400 into a validation error', async () => {
+    app = buildApp({ registerRoutes: registerTestRoutes });
+
+    const response = await app.inject({ method: 'GET', url: '/test/unexpected-400' });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        requestId: response.headers['x-request-id'],
+      },
+    });
+  });
+
+  it('maps an unexpected framework routing failure to an internal error', async () => {
+    app = buildApp({
+      registerRoutes(testApp) {
+        const strategy = {
+          name: 'test-failure',
+          storage() {
+            const values = new Map<string, unknown>();
+            return {
+              get: (key: string) => values.get(key) ?? null,
+              set: (key: string, value: unknown) => {
+                values.set(key, value);
+              },
+            };
+          },
+          deriveConstraint(_request: unknown, _context: unknown, done: (error: Error) => void) {
+            done(new Error('private routing failure'));
+          },
+          validate: () => true,
+        } as unknown as Parameters<FastifyInstance['addConstraintStrategy']>[0];
+        testApp.addConstraintStrategy(strategy);
+        testApp.get('/test/framework-error', { constraints: { 'test-failure': 'active' } }, () => ({
+          ok: true,
+        }));
+      },
+    });
+
+    const response = await app.inject({ method: 'GET', url: '/test/framework-error' });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json()).toEqual({
+      error: {
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        requestId: response.headers['x-request-id'],
+      },
+    });
+    expect(response.body).not.toContain('private routing failure');
+  });
+
   it('sanitizes unexpected non-Error values', async () => {
     app = buildApp({ registerRoutes: registerTestRoutes });
 
@@ -219,6 +273,10 @@ function registerTestRoutes(testApp: FastifyInstance): void {
     const error = new Error('database-password at /srv/private/config.json');
     error.stack = 'stack with database-password at /srv/private/config.json';
     throw error;
+  });
+
+  testApp.get('/test/unexpected-400', () => {
+    throw Object.assign(new Error('private failure'), { statusCode: 400 });
   });
 
   testApp.post('/test/validated', () => ({ ok: true }));

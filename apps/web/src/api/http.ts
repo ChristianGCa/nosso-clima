@@ -12,6 +12,8 @@ export class ApiRequestError extends Error {
   }
 }
 
+const REQUEST_TIMEOUT_MS = 10_000;
+
 function requestId(response: Response): string | undefined {
   const value = response.headers.get('x-request-id');
   return value && /^[\w-]{1,100}$/.test(value) ? value : undefined;
@@ -22,49 +24,56 @@ export async function requestJson(
   signal: AbortSignal,
   fetchImpl: typeof fetch = fetch,
 ): Promise<unknown> {
-  let response: Response;
+  const timeoutController = new AbortController();
+  const timeout = setTimeout(() => timeoutController.abort(), REQUEST_TIMEOUT_MS);
+  const requestSignal = AbortSignal.any([signal, timeoutController.signal]);
   try {
-    const base = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
-    response = await fetchImpl(`${base}${path}`, {
-      signal,
-      headers: { accept: 'application/json' },
-    });
-  } catch {
-    throw new ApiRequestError({ kind: 'unavailable' });
-  }
-  const supportId = requestId(response);
-  if (!response.ok) {
-    let kind: RequestFailure['kind'] = 'request_failed';
-    if (response.status === 429 || response.status === 503) {
-      const body: unknown = await response.json().catch(() => null);
-      if (
-        typeof body === 'object' &&
-        body !== null &&
-        'error' in body &&
-        typeof body.error === 'object' &&
-        body.error !== null &&
-        'code' in body.error &&
-        ((response.status === 429 && body.error.code === 'RATE_LIMITED') ||
-          (response.status === 503 && body.error.code === 'SERVICE_UNAVAILABLE'))
-      ) {
-        kind = response.status === 429 ? 'rate_limited' : 'unavailable';
-      }
+    let response: Response;
+    try {
+      const base = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
+      response = await fetchImpl(`${base}${path}`, {
+        signal: requestSignal,
+        headers: { accept: 'application/json' },
+      });
+    } catch {
+      throw new ApiRequestError({ kind: 'unavailable' });
     }
-    throw new ApiRequestError({ kind, ...(supportId ? { requestId: supportId } : {}) });
-  }
-  if (!/^application\/json\b/i.test(response.headers.get('content-type') ?? '')) {
-    throw new ApiRequestError({
-      kind: 'unavailable',
-      ...(supportId ? { requestId: supportId } : {}),
-    });
-  }
-  try {
-    return (await response.json()) as unknown;
-  } catch {
-    throw new ApiRequestError({
-      kind: 'unavailable',
-      ...(supportId ? { requestId: supportId } : {}),
-    });
+    const supportId = requestId(response);
+    if (!response.ok) {
+      let kind: RequestFailure['kind'] = 'request_failed';
+      if (response.status === 429 || response.status === 503) {
+        const body: unknown = await response.json().catch(() => null);
+        if (
+          typeof body === 'object' &&
+          body !== null &&
+          'error' in body &&
+          typeof body.error === 'object' &&
+          body.error !== null &&
+          'code' in body.error &&
+          ((response.status === 429 && body.error.code === 'RATE_LIMITED') ||
+            (response.status === 503 && body.error.code === 'SERVICE_UNAVAILABLE'))
+        ) {
+          kind = response.status === 429 ? 'rate_limited' : 'unavailable';
+        }
+      }
+      throw new ApiRequestError({ kind, ...(supportId ? { requestId: supportId } : {}) });
+    }
+    if (!/^application\/json\b/i.test(response.headers.get('content-type') ?? '')) {
+      throw new ApiRequestError({
+        kind: 'unavailable',
+        ...(supportId ? { requestId: supportId } : {}),
+      });
+    }
+    try {
+      return (await response.json()) as unknown;
+    } catch {
+      throw new ApiRequestError({
+        kind: 'unavailable',
+        ...(supportId ? { requestId: supportId } : {}),
+      });
+    }
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

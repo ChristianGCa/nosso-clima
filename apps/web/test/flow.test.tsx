@@ -288,6 +288,33 @@ describe('city-to-forecast flow', () => {
     expect(screen.queryByRole('option')).toBeNull();
   });
 
+  it('cancels a pending search debounce when suggestions close', async () => {
+    vi.useFakeTimers();
+    const fetchSpy = vi.spyOn(globalThis, 'fetch');
+    render(<App />);
+
+    fireEvent.change(input(), { target: { value: 'São' } });
+    fireEvent.keyDown(input(), { key: 'Escape' });
+    await advanceSearch();
+
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('aborts an in-flight search when suggestions close', async () => {
+    vi.useFakeTimers();
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockImplementation(() => new Promise<Response>(() => {}));
+    render(<App />);
+
+    fireEvent.change(input(), { target: { value: 'São' } });
+    await advanceSearch();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(input(), { key: 'Escape' });
+
+    expect(fetchSpy.mock.calls[0]?.[1]?.signal?.aborted).toBe(true);
+  });
+
   it('ignores an older search response after the query changes', async () => {
     vi.useFakeTimers();
     let resolveOld: ((value: Response) => void) | undefined;
