@@ -371,76 +371,36 @@ The owner approved this plan and its U1–U10 tasks on 2026-09-24, then approved
 
 ---
 
-# Implementation Plan: Production Delivery — Cloudflare Free proposal
+# Implementation Plan: Production Delivery — single Worker proposal
 
-Status: Draft for owner review; implementation blocked by specification amendments
-Module id: `production-delivery`; source modules: `backend-platform`, `location-search`, `weather-forecast`, `weather-ui`
-Source: `SPEC-production-delivery.md` (approved only for planning), `docs/deploy/cloudflare-research-2026-10-01.md`
-Task list: `tasks/todo.md`, Production Delivery section
+Status: Single-Worker P0 draft blocked by the owner's zero visitor-IP transfer requirement; redesign required before P1
+Module id: production-delivery; source specs: SPEC-backend-platform.md and SPEC-production-delivery.md
+Task list: tasks/todo.md, Production Delivery section
 
-## Objective and assumptions
+## Goal and sequence
 
-Migrate the existing static React/Vite frontend to Cloudflare Pages and the API to a separate Cloudflare Worker on the Always Free tier, preserving the public `/api/v1/locations`, `/api/v1/forecast` and `/health` contracts. Pages and Worker can initially use their Cloudflare hostnames; a custom domain is optional but its final origins must be reviewed. The owner confirmed non-commercial use and estimated about 100 users per day at random times, each making several consultations. This estimate is not an enforceable traffic ceiling. The owner reported Gemini-generated backgrounds and an AI-generated logo; publication-rights review and public release approval remain open. The current Node app stays functional during migration and can be retired only after parity and approval.
+Deploy one Cloudflare Worker with a Fetch handler and Vite static assets on a free workers.dev URL containing nosso-clima. The browser and API share one origin. Static assets bypass script execution where possible. The owner accepted drafting this design and its residual Free-quota availability risk; the amended specs still require review and approval.
 
-This plan replaces the earlier Node-host deployment proposal. It does not approve a serverless implementation: `SPEC-backend-platform.md` and `SPEC-production-delivery.md` require amendments before P1 onward changes code.
+P0 approval → P1 isolated workerd/staging feasibility spike → P2 HTTP shell → P3 atomic D1 quota → P4 location → P5 forecast → P6 visitor limits/resilience → P7 static assets, origins and security headers → Checkpoint A → P8 browser E2E → P9 performance/CI → Checkpoint B → P10 release evidence → P11 private staging/rollback → Checkpoint C and separate public-release approval.
 
-## Decision and dependency graph
+P4 and P5 can proceed independently after P3. Tests use offline provider fixtures. P1 alone may make at most one manual geocoding and one forecast call from a private Worker, after terms/privacy review, to observe egress behavior.
 
-```text
-P0 approve platform/delivery spec amendments and capability boundaries
-  └─ P1 workerd feasibility spike: bundle, runtime behavior, CPU, deploy size
-      └─ P2 Worker HTTP foundation, parity with health/errors/config
-          └─ P3 atomic shared Open-Meteo budget in D1
-              ├─ P4 location path, offline provider fixture
-              └─ P5 forecast path, offline provider fixture
-                  └─ P6 rate limiting and ephemeral resilience parity
-P7 Pages static build and HTTPS origin/CORS configuration ───────┐
-P4 + P5 + P6 ──────────────────────────────────────────────────────┴─ P8 browser E2E in workerd
-P8 ─ P9 mobile performance and CI/secret gates ─ P10 release evidence ─ P11 private rehearsal/rollback
-```
+## Architecture and handoff decisions
 
-The two integrations can be delivered in either order after P3. Every slice is testable offline and must retain the existing Node path until the Worker flow is verified.
+- P1 pins Wrangler, workerd and Workers-pool test tooling, measures CPU below 10 ms with margin in workerd and staging, proves rate binding behavior, D1 reservation/rows and a coverage provider compatible with the unchanged 80% floors. A failing spike returns to P0 before production code.
+- The Worker Fetch adapter preserves public locations, forecast, health and error contracts while replacing Fastify/Node lifecycle, CORS and proxy configuration. The production browser uses relative API paths. A supplied VITE_API_BASE_URL is rejected in production.
+- D1 holds only aggregate minute/hour/day provider credits. Every real fetch reserves its confirmed weighted cost before outbound work; failure denies the fetch. Caches and concurrency control are isolate-local optimizations.
+- Worker rate-limit bindings provide the 60/30/15 abuse brake by Cloudflare location. The owner conditionally accepted omission of unverifiable Retry-After and x-ratelimit-* values and restricted use of CF-Connecting-IP, subject to security/privacy evidence.
+- P7 packages Vite assets with the Worker, configures selective API-first routing, CSP connect-src self, HSTS, referrer policy and immutable caching only on hashed assets. There is one deployable artifact, no Pages project.
+- P8 drives that exact compiled artifact in workerd with browser network assertions and deterministic provider fixtures. P9 measures both neutral and restored-city LCP plus CLS through background loading. Hosted CI and Gitleaks are mandatory gates; no remote exists yet, so hosted evidence cannot pass today.
+- P10 records official Open-Meteo terms and calculator weight, an aggregate budget below all three provider ceilings, LGPD notice, Cloudflare logs/retention, ten background and logo rights, exact hostname and release runbook. P11 rehearses a previous Worker version with additive D1 schema compatibility.
 
-## Architecture decisions to validate
+## Checkpoints
 
-- **Two deployable artifacts.** Build the existing Vite site for Pages and the API Worker independently; retain explicit HTTPS `VITE_API_BASE_URL` and allow only the Pages origin through CORS. `HOST`, `PORT` and process signal handling do not apply inside the Worker. The API `workers.dev` URL is an origin, not a private backend; direct access and abuse controls must be accounted for.
-- **Fetch-native API candidate.** Start with a thin `Request`/`Response` entry point. Reuse the current pure request validation, Open-Meteo clients, response normalization and attribution. P1 measures whether a Fastify compatibility adapter is viable; choose the simpler path that passes the 10 ms Free CPU ceiling under real workerd and staging traffic. Node compatibility alone does not establish viability. Keep browser-visible status, body, CORS and request ID parity.
-- **One aggregate provider budget.** D1 stores only global minute/hour/day counters. A conditional atomic reservation happens before each outbound provider request, covering both modules and failed attempts; cost weights and strict safety margins come from a dated Open-Meteo calculation. D1 failure fails closed to `SERVICE_UNAVAILABLE`. Prove concurrency and rollovers with workerd tests. The release cap must also keep D1 usage within Free limits.
-- **Edge versus local state.** In-memory LRU, `SingleFlight` and executor remain best-effort per isolate only; provider safety depends on D1. Three Cloudflare rate-limit bindings may approximate 60/30/15 per minute, but they are local to a Cloudflare location. Their precise semantics and response headers need owner-approved spec amendments. Do not persist search text, coordinates or forecast payloads in D1, KV or Cache API merely for a better hit ratio.
-- **Offline verification and release.** Use `@cloudflare/vitest-plugin` or a pinned workerd/Wrangler harness compatible with the installed Vitest, with intercepted outbound provider calls. Preserve the 80% coverage floor in both apps and add Worker code to a meaningful coverage gate. Pages preview and Worker staging need a private smoke; public exposure still waits for the current usage, privacy, image-rights and owner gates.
+A. API contracts and same-origin assets pass in workerd; Node/Fastify runtime is retired in the reviewed cutover, with source-module contract tests retained. Root checks and coverage remain green.
+B. E2E, mobile performance, axe, audit, Gitleaks, local and hosted CI, Free CPU, D1 and provider budget evidence all pass. No threshold is reduced.
+C. Private staging smoke and rollback pass; owner reviews the complete release package and separately approves or declines public publication.
 
-## Ordered tasks and checkpoints
+## Blocking dependencies
 
-1. **P0 — Draft and approve amendments.** Update the backend-platform and production-delivery specs for Worker lifecycle, D1 quota, locality of per-visitor limits, cache behavior, log retention, Pages/Worker topology and offline tests. Update `CAPABILITY-MAP.md` if module responsibilities change. Explicitly decide whether rate-limit headers/semantics or any public API behavior must change. No implementation before owner approval.
-2. **P1 — Feasibility spike.** Pin the deployment toolchain; bundle a minimal route and exercise current Fastify/Fetch alternatives in workerd. Capture CPU time, bundle size, memory, compatibility failures and local/staging response results; choose an HTTP adapter with evidence. Stop and revise the design if the Free budget cannot be met.
-3. **P2 — Worker platform shell.** Typed bindings/config, `/health`, request IDs, error envelope, CORS, safe logs and unknown route handling, with no live provider path. Verify raw invalid requests, preflight and source parity.
-4. **P3 — Global quota primitive.** Create one D1 schema and atomic reservation operation for both integrations. Test simultaneous requests, window reset, weighted cost, partial failure, D1 outage and refusal before fetch; avoid user data in storage.
-5. **P4–P5 — Migrate integrations separately.** Wire location search, then forecast through P3, reusing existing validation and provider adapters. Each task ends with one real Worker HTTP path, provider fixture, TTL/attribution/error parity and zero live calls. Keep the legacy API tests green.
-6. **P6 — Resilience and inbound rate limits.** Add approved edge bindings and bounded isolate-local cache/flight/executor behavior. Prove malformed/preflight traffic handling, locality implications and no bypass of the shared quota.
-7. **P7 — Pages build.** Enforce a production HTTPS API origin, configure Pages deployment and explicit CORS, and test both generated Cloudflare origins without deploying publicly.
-8. **Checkpoint A — API and web parity.** Node and Worker fixtures return equivalent public outputs, both apps build independently, workerd suite passes, and root checks/coverage remain green.
-9. **P8 — End-to-end browser suite.** Run the built Pages-style web against a real local Worker HTTP listener and offline provider fixtures. Cover first visit, saved city, search/select, seven days, empty/error/retry, keyboard, credits, stale selection and quota rejection.
-10. **P9 — Mobile performance and CI.** Add the existing specified LCP/CLS gates to the Cloudflare preview flow; run typecheck, lint, format, unit/integration, boundary, coverage, axe, E2E, independent builds, audit and redacted Gitleaks in CI. Record Workers CPU and D1 usage from staging; no threshold reduction.
-11. **Checkpoint B — Production-quality candidate.** All local and hosted gates pass; Free-tier CPU and quota reservations are measured under representative load. Fix or replan if limits fail.
-12. **P10 — Release evidence.** Recheck that actual use remains non-commercial under current Open-Meteo terms and calculate a weighted budget using the owner's approximate 100-user/day forecast plus measured calls and peaks. Complete the file-specific rights review for the reported Gemini backgrounds and AI logo, the privacy notice with Pages/Workers logging and retention, and the exact Cloudflare runbook and rollback.
-13. **P11 — Private rehearsal.** Deploy to non-public or access-controlled staging, test CORS, `/health`, both routes with fixtures or tightly bounded approved provider calls, inspect usage, and rehearse Pages and Worker rollback with the D1 schema held compatible.
-14. **Checkpoint C — Owner release review.** Publication remains blocked until every `SPEC-production-delivery.md` and `CONSTRAINTS.md` gate has evidence and the owner separately approves the final release package.
-
-## Main risks and decision points
-
-| Risk | Action |
-|---|---|
-| 10 ms Worker CPU or unsupported Node package | P1 measures on workerd and staging; prefer a thin Fetch handler; if still over limit, redesign or reconsider Free hosting before migration. |
-| D1 quota race, outage or exhausted Free rows | Use one atomic conditional reservation, conservative cost weights and fail-closed behavior; load-test and monitor read/write rows. |
-| Edge rate limit differs from existing per-IP semantics | Document locality and header behavior in an approved backend-platform amendment, with explicit contract tests. |
-| Cache loss or cross-location misses consume provider allowance | Count every outbound attempt through D1; model worst case without cache hits. |
-| Actual request peaks, provider-call weights and image publication rights unverified | Model misses and abuse, enforce a lower aggregate limit, and finish the file-specific rights review before release. Recheck non-commercial use and terms at release. |
-| Rollback leaves an incompatible D1 schema | Use additive migrations, retain prior Worker compatibility and rehearse rollback before release. |
-
-## Sources and open owner decisions
-
-Official sources and dated Free limits: `docs/deploy/cloudflare-research-2026-10-01.md`. Revalidate at P1 and P10. Owner decisions recorded on 2026-10-01: non-commercial site, about 100 users/day at random times with several consultations, Gemini-generated backgrounds and AI-generated logo. Still needed: measured or bounded calls per visit and peak rate, Pages/Worker hostnames or custom domain, exact logo-generation tool/source material, and file-specific public-use review in `docs/deploy/image-rights.md`. GitHub Actions remains the proposed CI host; the repository currently has no configured remote.
-
-## Approval gate
-
-The owner must approve P0's spec amendments and then this revised task list before P1 implementation. A later, separate approval is required to publish the site.
+No Cloudflare account/staging or Git remote is configured in this checkout. Worker CPU, D1 row costs, exact forecast weight, live egress status, published headers, CI execution and rollback cannot be claimed. P0 approval authorizes the spike, not release. See docs/deploy/release-audit-2026-10-03.md for dated findings and the active specs for exact acceptance criteria.

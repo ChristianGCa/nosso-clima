@@ -2,13 +2,15 @@
 
 | Module id | Responsabilidade | Depende de |
 |---|---|---|
-| `backend-platform` | Aplicação Fastify, configuração, CORS, erros padronizados, cache LRU, rate limit, controles compartilhados de chamadas externas, logs estruturados e endpoint de saúde | — |
+| `backend-platform` | Handler Fetch do Worker, configuração de bindings, erros padronizados, rate limit na borda, reserva agregada D1, cache LRU local ao isolate, controles de chamadas externas, logs seguros e saúde | — |
 | `location-search` | Consultar a geocodificação da Open-Meteo, validar a resposta, aplicar cache e retornar cidades normalizadas | `backend-platform` |
 | `weather-forecast` | Consultar condições atuais e previsão de sete dias, validar e normalizar os dados, aplicar cache e mapear códigos WMO | `backend-platform` |
 | `weather-ui` | Busca acessível, seleção e lembrança local da última cidade, condições atuais, cartões dos sete dias, fundos climáticos e estados de interface | `location-search`, `weather-forecast` |
-| `production-delivery` | Testes ponta a ponta, configuração de produção, builds independentes e documentação de deploy | `location-search`, `weather-forecast`, `weather-ui` |
+| `production-delivery` | Artefato único Worker com assets, cabeçalhos do site, testes ponta a ponta, performance, CI, privacidade, direitos e rollback | `location-search`, `weather-forecast`, `weather-ui` |
 
 ## Dependency Graph
+
+As responsabilidades de Worker acima pertencem à proposta P0 de 2026-10-03, agora **bloqueada** pela exigência de que a Open-Meteo nunca receba o IP do visitante. O código Node atual continua sendo a implementação existente. O mapa deve ser ajustado de novo após a escolha de uma topologia que cumpra essa exigência.
 
 ```text
 backend-platform

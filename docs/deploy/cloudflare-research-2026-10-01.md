@@ -1,6 +1,6 @@
 # Pesquisa de migração: Cloudflare Free
 
-Data da consulta: 2026-10-01. Este documento é insumo para o plano, não autorização de implementação ou publicação. Revalidar preços, limites e termos na execução e na liberação.
+Data da consulta: 2026-10-01. Este documento é insumo para o plano, não autorização de implementação ou publicação. A [auditoria de 2026-10-03](release-audit-2026-10-03.md) registra as decisões posteriores e o requisito de uma URL gratuita com `nosso-clima`; ela prevalece onde as premissas de topologia divergirem. Revalidar preços, limites e termos na execução e na liberação.
 
 ## Premissas informadas pelo proprietário
 

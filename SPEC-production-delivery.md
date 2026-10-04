@@ -1,69 +1,55 @@
-# Spec: Production Delivery
+# Spec: Production Delivery — single Worker amendment P0
 
-- **Status:** Approved for planning by owner on 2026-09-24; owner clarified use, traffic and asset origins on 2026-10-01; Cloudflare deployment amendment remains pending
+- **Status:** P0 proposal blocked by the owner's 2026-10-03 requirement that Open-Meteo never receive a visitor IP; no approval of this amended spec or public deployment
 - **Module id:** `production-delivery`
-- **Depends on:** `location-search`, `weather-forecast`, `weather-ui`
-- **Source:** `CAPABILITY-MAP.md`, `CONSTRAINTS.md`, and the four completed module specs
+- **Depends on:** `backend-platform`, `location-search`, `weather-forecast`, `weather-ui`
+- **Previous pre-P0 draft:** [archived for history](docs/history/production-delivery-pre-p0-2026-10-03.md)
 
-## Objective
+## Objective and decisions
 
-Make the completed local weather flow reproducible and testable in a real browser. The original deployment target in this specification was a separately deployed static web app and single-process Node API. On 2026-10-01 the owner selected Cloudflare Free as the intended host; the Node-specific requirements below need an approved amendment before Cloudflare implementation. A public launch is a distinct decision: it requires evidence for upstream usage, current terms, privacy, image rights, performance, and deployment security. Passing local tests alone does not authorize publication.
+Deliver the completed weather flow as **one Cloudflare Worker** serving Vite's built static assets and a Fetch-native same-origin API. The Worker name should contain `nosso-clima`, yielding a free `<worker>.<account-subdomain>.workers.dev` URL subject to availability. The owner will not buy a custom domain. The site has no ads, sponsorship, subscriptions or other monetization, confirmed on 2026-10-03. About 100 daily visitors making several consultations is a planning estimate, not a capacity ceiling. Public publication remains a separate owner decision after all evidence gates pass.
 
-## Planning Baseline
+The proposed topology eliminates the separate Pages/API deployment, production CORS and `VITE_API_BASE_URL`. It also removes the Node/Fastify production app after a tested cutover. The owned public route contracts remain in the location and forecast specs; shared controls remain in `SPEC-backend-platform.md`. This spec owns delivery, browser gates, privacy/rights evidence, CI and rollback. The old Node-specific requirements are superseded, not kept as a second deployment path.
 
-1. The owner confirmed on 2026-10-01 that the intended site is non-commercial. The single-process API scenario is the original planning baseline, now superseded as a deployment target by Cloudflare Free; shared controls require an approved `backend-platform` amendment.
-2. The web app is built as static files and deployed separately from the API, with an explicit HTTPS API origin and a matching explicit CORS origin.
-3. The owner stated that all ten WebP backgrounds were generated in the Gemini app without reference-image uploads; the five bundled night files are optimized variants of the corresponding originals under `backgrounds/`. The owner also stated that the logo was generated with AI, without identifying its tool or source assets. These statements establish reported provenance, not completed publication-rights review; see `docs/deploy/image-rights.md`.
-4. Cloudflare Free is the intended host. The owner estimates about 100 users per day arriving at random times and making several consultations; this is a forecast, not a traffic ceiling or a defined peak. The production domain, enforceable provider-call budget and public release decision remain open.
+**Blocking change to this draft:** the owner requires zero visitor-IP transfer to Open-Meteo. Cloudflare's [Worker subrequest header behavior](https://developers.cloudflare.com/fundamentals/reference/http-headers/) means this single-Worker proposal cannot yet guarantee that requirement. Do not approve or implement it as written. Redesign P0 around a verified no-forwarding path; treat the text below as a candidate's acceptance checklist, not an authorized deployment plan.
 
-The Node process, `HOST`/`PORT`/`TRUST_PROXY` and `buildApp({ fetchImpl })` requirements below record the previously approved delivery baseline. They are not an implementation recipe for Cloudflare. Task P0 in `tasks/todo.md` must replace those topology-specific requirements in an owner-approved amendment before Worker code is changed; the quality, privacy, provider-usage and publication gates continue to apply.
+## P1 feasibility before production implementation
 
-## Scope and Requirements
+- Pin Wrangler, workerd and the Workers Vitest pool for an **isolated spike**. Measure representative health, geocoding and forecast CPU with fixture responses locally and in private staging, including D1, cold paths and failures; each invocation must fit the Free 10 ms CPU limit with margin. Record bundle size, memory behavior and subrequests.
+- Prove the Worker rate-limit bindings implement an acceptable 60/30/15 abuse brake, including malformed paths and preflights. Confirm `CF-Connecting-IP` is edge-provided on the chosen route and that no alternate path accepts a spoofed copy. Measure the HMAC derivation of a pseudonymous binding key, secret rotation and failure closed; never pass the raw IP as the binding key. Bindings return success/failure only, so the proposed API omits unverifiable `Retry-After` and `x-ratelimit-*` values. Record how this affects the UI and any existing tests.
+- Demonstrate one atomic D1 reservation for combined geocoding/forecast weighted credits, concurrent misses, three windows, rollover and failure closed. Measure queries and rows read/written per scenario against 50 queries/invocation, 5 million reads/day and 100,000 writes/day.
+- Confirm forecast's effective weight for its 5 current plus 8 daily variables and seven days using the [official Open-Meteo calculator](https://open-meteo.com/en/pricing/). The provisional 1.3 estimate is **unverified**. Then make at most one manual geocoding and one manual forecast request from a private Worker to observe status/429 behavior of Cloudflare egress. Recheck current terms first, log no raw query/IP/coordinates and record count, date and result. Automated tests never contact Open-Meteo.
+- Check whether the Worker-to-provider subrequest can carry the visitor's IP in `CF-Connecting-IP` even when application code does not forward it. Use [Cloudflare's header rules](https://developers.cloudflare.com/fundamentals/reference/http-headers/) and a controlled staging echo test; record only whether visitor IP was forwarded, never its value. Classify the actual Open-Meteo route as far as evidence permits. Unless absence is proven, treat the visitor IP as possibly transferred to Open-Meteo in the privacy notice and LGPD assessment. If zero such transfer is a requirement and cannot be enforced, return to P0 for another topology.
+- Establish Workers-pool coverage with a supported provider such as Istanbul, retaining **80% lines, branches, functions and statements per application**. Native V8 coverage is [not supported by that pool](https://developers.cloudflare.com/workers/testing/vitest-integration/known-issues/). A failed feasibility item returns to P0 review before production route code.
 
-### Reproducible builds and configuration
+## Build, security and browser behavior
 
-- A clean checkout with the pinned Node/npm versions and lockfile can install dependencies and build the API and web workspaces independently. The web build must not import API runtime code, and the API build must not require web development dependencies.
-- Document exact install, check, build, start, environment, health-check, and rollback commands. Include separate web and API deployment steps and a smoke test against their configured origins.
-- The web build uses one explicit `VITE_API_BASE_URL` for production. Reject an empty, insecure, or mismatched production origin rather than silently relying on the development proxy. The API accepts only the deployed web origin through `CORS_ALLOWED_ORIGINS`; wildcard CORS is forbidden.
-- Keep `TRUST_PROXY=false` unless the chosen topology supplies a reviewed set of trusted proxy ranges. Document how the edge restricts direct API access and absorbs abusive traffic; do not claim process-local rate limiting is DDoS protection.
-- One API process is the initial deployment ceiling. Moving to multiple instances first requires a documented shared or edge enforcement design for usage and rate limits, with a corresponding `backend-platform` spec update.
+- A clean checkout with pinned Node 24/npm 12 and lockfile runs `npm ci`, root `npm run check`, `npm run test:coverage`, `npm run test:a11y` and `npm audit --audit-level=high`. Build the Worker and web source independently for quality checks, then package **one** deployable Worker plus Vite assets. No web-to-API runtime import or reverse import is allowed.
+- Production browser requests use relative `/api/v1/*`. The production build rejects a supplied `VITE_API_BASE_URL`, whether HTTP, HTTPS, loopback or divergent, instead of silently changing origin; local fixture configuration must be explicit and test-scoped. API responses emit no wildcard CORS. Test HTTPS, same-origin requests and rejection of a mismatched `Origin`.
+- Configure assets so matching static files bypass Worker code and `/api/*` plus `/health` run it first. Unknown API paths return JSON errors. Test unknown non-API paths and minimize script invocations by static requests where the platform permits; document any residual amplification path. Verify hashed Vite `/assets/*` files get long-lived `immutable` cache headers while HTML and unversioned files revalidate. Inspect the published artifact and preview response headers.
+- Serve a restrictive CSP with `connect-src 'self'`, a referrer policy and HTTPS HSTS. The CSP must permit the app's necessary assets and safe external **navigation** links while preventing browser fetches to Open-Meteo. Browser E2E inspects every request and fails on a fetch to another host. Do not put provider keys or secrets in client assets.
+- On `workers.dev` without an owned zone, custom zone WAF rules should not be assumed available. Cloudflare Free permits 100,000 Worker script requests/day; an abusive API flood can exhaust that allowance even with per-visitor limits. Static assets can remain accessible if routed without script execution. Record the residual availability risk, measured protections and Cloudflare's available DDoS behavior; never call a binding or process-local limiter complete DDoS protection.
 
-### End-to-end and quality gates
+## E2E, performance and CI gates
 
-- Add a small Playwright suite that runs the built web app in a browser against a real HTTP API process constructed with `buildApp({ fetchImpl })` and deterministic local provider fixtures. Neither tests nor CI call live Open-Meteo.
-- Cover neutral first visit without a saved city with zero upstream calls; saved-city restoration with a fresh forecast and no geocoding call; city search and explicit selection; current conditions and all seven daily cards; no results; a failed upstream request with a visible retry path; keyboard selection; and source attribution. Assert that a new selection cannot display stale weather from the prior city.
-- Keep the existing API and web unit/integration suites, 80% coverage floor in each application, architecture gate, dependency audit, and browser axe gate. The production CI pipeline runs them on a clean checkout and publishes failures clearly.
-- Implement `npm run test:performance` as a repeatable mobile preview measurement of the production build. It must assert navigation LCP ≤ 2.5 s and page-lifetime CLS ≤ 0.1 under a documented device/network profile; preserve the five-minute browser-check budget. Record LCP on the neutral initial load, then keep measuring CLS through a successful forecast transition that loads the active background image. Report the profile and results, not only a pass/fail line.
-- Run `gitleaks detect --redact --no-banner` in CI and before release. Findings must be redacted. No new suppression or exception may bypass `CONSTRAINTS.md`.
+- Add Playwright E2E against the **same compiled Worker and static artifact intended for publication**, under local workerd with deterministic outbound fixtures. Test neutral first visit with no provider work; restored city without geocoding; search/select; conditions and all seven cards; no results; upstream failure and retry; keyboard selection; attribution; stale-city prevention; rate/quota denial; and no third-party browser fetch. Do not use `buildApp({ fetchImpl })` or a separate Node HTTP process.
+- Add `npm run test:performance` against the packaged artifact with a documented mobile device/network profile. Enforce navigation LCP ≤ 2.5 s and page-lifetime CLS ≤ 0.1. Measure both neutral first visit and a returning visit whose forecast loads the active background; continue CLS through that transition. Record profile and values, not only pass/fail, within the existing five-minute browser budget.
+- Keep `CONSTRAINTS.md` floors intact: types, lint, format, all relevant tests, per-app coverage, architecture, axe, performance, audit and redacted `gitleaks detect --redact --no-banner`. Add local commands and hosted CI configuration once a host is chosen. The owner has no remote yet; hosted CI and repository URL are **blocking pending evidence**, not optional checks. Record a failing gate without deleting tests or reducing thresholds.
 
-### Public release evidence
+## Release evidence and privacy
 
-- Recheck the currently applicable Open-Meteo terms, pricing, attribution, and privacy information for both geocoding and forecast endpoints at release time. Record the reviewed URLs, date, chosen plan, and whether the intended site is commercial under those terms. If commercial, specify a paid endpoint and secret delivery before launch; never put a key in a Vite build or repository.
-- Produce an application-wide Open-Meteo call budget that counts geocoding and forecast traffic together, including the provider's effective cost of the requested variables, cache misses, restarts, and the proposed number of API instances. Document an enforceable traffic ceiling or aggregate control with evidence it remains inside the applicable provider limits. Per-IP limits alone do not satisfy this gate.
-- Publish a privacy notice that describes the user search text sent to the geocoding service, the selected coordinates/timezone sent to the forecast service including on later visits, the one selected city retained in browser-local storage until replaced or site data is cleared, the purpose of each transfer, applicable provider retention information, and the application's own log/retention behavior. Include automatic returning-visit forecast calls in the provider usage budget. Review the notice against the selected deployment and current provider documentation before launch.
-- The local `weather-ui` explanation of data use is a preview of this notice. Complete the public notice with the selected host's logging and retention, the responsible party and contact route, then review it before public release. The repository link and project software licence remain unset until the owner provides them; never publish a placeholder as a real link or imply a licence applies to the project's code.
-- Inventory the ten WebP files actually bundled by the web app with origin, creator, licence or written permission, required credit, and permission for the intended public use. Link each to its retained original under `backgrounds/` and document the optimization of the five night variants. Verify attribution appears where required. Unverified files cannot be included in a public build; replacing them must preserve the approved UI behavior and image-category mapping.
-- Record the owner-supplied project logo's origin and permission for public use along with the image-rights evidence before release.
-- Record the production hostname and edge topology, HTTPS, health-check path, CORS value, proxy-trust decision, origin access restrictions, rollback procedure, and a post-deploy smoke result. Public exposure is gated on all preceding evidence and the owner's final release approval.
+- Revalidate [Open-Meteo terms](https://open-meteo.com/en/terms/) and [pricing](https://open-meteo.com/en/pricing/) at release with URL/date and actual no-monetization confirmation. The Free limits are below 600 weighted calls/minute, 5,000/hour and 10,000/day as reviewed on 2026-10-03. Attribution and modification notices remain visible. A commercial change requires paid-plan review and secret handling before launch.
+- Produce an enforceable **aggregate** forecast-plus-geocoding budget: effective weight × cache misses, including searches, selections, returning visits, cold isolates/restarts and an adversarial peak. Show separate minute/hour/day ceilings with margin below provider limits and D1 Free capacity. Per-IP limits, estimated 100 daily visitors and cache hits alone cannot satisfy this gate.
+- Treat LGPD as applicable for release planning. The public notice identifies responsible party `ChristianGCa` and `christiangca.dev@gmail.com`, Cloudflare's receipt of every visitor IP, possible forwarding of that IP on Worker subrequests to Open-Meteo unless disproven, actual Worker/asset logging and retention, transfers to Cloudflare and Open-Meteo, search text sent for geocoding, selected coordinates/timezone sent for forecast including on return, one city saved in browser storage until replacement or clearing, purpose and user contact route. Confirm the selected Cloudflare configuration and provider retention before publication; the current Open-Meteo terms say free-service logs with coordinates are deleted after 90 days.
+- The code licence is MIT and must be served in the site; it does not apply to the backgrounds, logo, third-party icons or data. Do not display a repository URL until a remote exists. Review the ten **bundled** WebP variants and logo file by file for origin, public-use permission, required credit, visible marks/people/text and active/external SVG content. The owner declared Gemini backgrounds without uploaded references and instructed publication; the logo was generated in Claude personal Free from text only. Keep the originals and optimization chain recorded in `docs/deploy/image-rights.md`.
+- Record exact hostname, HTTPS, asset/API routes, bindings, limits, header observations, provider budget, privacy notice, rights, log settings, monitoring, smoke and rollback in a dated release review. A public launch requires the owner's separate final approval.
 
-## Tech Stack and Commands
+## Staging and rollback
 
-Use the current npm workspaces, TypeScript, Vitest, Playwright, and Vite. Add only the tooling needed for deterministic E2E, performance measurement, secret scanning, and CI; pin dependencies in the lockfile and review the audit. The implementation plan chooses a specific CI host and measurement tool after the owner accepts the deployment assumptions.
+- Rehearse private staging deployment and rollback of the **single Worker artifact**, including static files, API, rate bindings and D1. Apply D1 migrations by expand/contract so the prior deployed Worker version remains compatible until rollback is no longer needed. Exercise health, validation, provider fixture paths and one bounded live-provider smoke only after its terms/privacy/usage gates pass.
+- Verify staging CPU, D1 rows/queries, static cache/security headers, logs without personal data, browser E2E, LCP/CLS and return to the previous Worker version. Record version IDs, commands, dates and outcome; never call an untested rollback ready.
 
-Existing commands:
-
-```bash
-npm ci
-npm run check
-npm run test:coverage
-npm run test:a11y
-npm audit --audit-level=high
-npm run build --workspace @nosso-clima/api
-npm run build --workspace @nosso-clima/web
-npm run start --workspace @nosso-clima/api
-```
-
-Commands this module must add and document:
+## Commands to add
 
 ```bash
 npm run test:e2e
@@ -71,55 +57,16 @@ npm run test:performance
 gitleaks detect --redact --no-banner
 ```
 
-## Project Structure and Style
+The production build/deploy commands must be pinned and documented after P1 chooses the Worker toolchain. No deployment command runs automatically in CI before final release approval.
 
-- `apps/api/` remains the API runtime and its own unit/integration tests; its provider origins and response contracts stay owned by their existing modules.
-- `apps/web/` remains the static client; its components, imagery, and browser accessibility checks stay owned by `weather-ui`.
-- `tests/e2e/` owns the cross-application Playwright flow and local fixture server; `tests/performance/` owns the production-build mobile measurement.
-- `.github/workflows/` (if GitHub Actions is chosen) owns CI; `docs/deploy/` owns environment, provider-usage, rights, privacy, and rollback evidence.
-- Keep TypeScript strict, use explicit typed configuration, validate external and environment values at runtime, and preserve the existing Biome formatting. Fail startup/build with a clear configuration error if required production values are absent; never print secrets or raw user queries.
+## Approval boundary
 
-## Testing Strategy
+This text is a **draft P0 replacement** for owner review. Approval authorizes the isolated P1 spike; production implementation follows only if P1 passes or a revised design is approved. It does not approve public deployment. All active `CONSTRAINTS.md` checks remain binding.
 
-- E2E tests use real HTTP boundaries and a real browser while replacing only the external provider transport with deterministic fixtures. They verify outcomes visible to a user rather than repeating unit-level parser assertions.
-- Production configuration tests cover accepted HTTPS web/API origins, rejected wildcard/insecure origins, CORS behavior, and any topology-specific proxy setting. A compiled API smoke test verifies `/health` and one safe invalid request without external I/O.
-- The performance gate runs against built assets with a fixed mobile profile and records LCP/CLS. A failing metric remains blocking; optimization may change assets or loading behavior only within the approved `weather-ui` contract.
-- CI repeats the root and workspace checks, coverage, E2E, accessibility, performance, audit, secret scan, and independent builds. Browser and security checks use the existing five-minute task-end/CI budget; local non-browser checks keep the 90-second budget.
-- A deployment rehearsal verifies the documented steps and rollback using the selected host. Live-provider smoke requests, if any, are manual, bounded, and performed only after usage and privacy gates pass.
+## Official Cloudflare sources checked 2026-10-03
 
-## Boundaries
-
-### Always
-
-- Preserve the public API contracts, UI meanings, attribution, privacy-safe logs, fixed provider origins, request bounds, and all active `CONSTRAINTS.md` floors.
-- Keep E2E and performance fixtures offline and deterministic; record release evidence with dates and sources.
-- Keep the API and web separately buildable and deployable.
-
-### Require explicit owner decision before implementation or release
-
-- Record the owner's Cloudflare Free and non-commercial choices; decide the domain, approved runtime topology and enforceable traffic ceiling before implementation or release. A future commercial change requires paid Open-Meteo plan approval.
-- Change shared platform controls, provider endpoints, public contracts, CORS/proxy policy, image assets, or add external telemetry.
-- Publish the site or its existing WebP assets. Release approval follows a reviewable deployment package and completed evidence gates.
-
-### Never
-
-- Use live Open-Meteo calls in automated tests or expose provider credentials in client assets.
-- Publish images with unknown rights; claim that per-IP limits enforce an aggregate provider quota; trust arbitrary forwarding headers.
-- Weaken a constraint, omit a failed check, expose raw queries/coordinates in logs, or commit secrets to make a release pass.
-
-## Success Criteria
-
-- [ ] Clean-install CI builds API and web independently and passes typecheck, lint, format, unit/integration tests, per-application coverage, boundaries, axe, audit, and redacted secret scan.
-- [ ] `npm run test:e2e` passes the complete browser flow and failure/keyboard cases against an offline local provider fixture.
-- [ ] `npm run test:performance` passes mobile navigation LCP ≤ 2.5 s and page-lifetime CLS ≤ 0.1 on a documented profile, including the forecast transition.
-- [ ] Production API and web origins, CORS, HTTPS, edge access, proxy trust, health checks, and rollback are documented and rehearsed for the selected host.
-- [ ] The owner has reviewed current provider terms and a defensible combined Open-Meteo usage ceiling; privacy notice and all image rights are recorded and satisfied for the intended public use.
-- [ ] The owner reviews the complete release evidence before the public site is deployed.
-
-## Open Decisions for Owner Review
-
-1. **Resolved for the intended release:** the owner confirmed non-commercial use on 2026-10-01. Recheck the actual site's ads, sponsorship, subscriptions and current Open-Meteo terms at release; a future commercial change requires a paid-plan review.
-2. **Partly resolved:** Cloudflare Free was selected and traffic is estimated at about 100 users per day at random times, with several consultations per user. The domain, peak request rate, calls per visit and enforceable aggregate ceiling remain to be specified and measured.
-3. **Partly resolved:** the owner reported that all ten backgrounds were generated in Gemini without uploaded reference images and the logo was generated with AI. The logo's exact tool/source assets, file-by-file lineage, applicable generation terms and permission for the intended public use still need the `production-delivery` rights review.
-
-The owner approved this specification for planning on 2026-09-24 and supplied the factual clarifications above on 2026-10-01. This does not approve the Cloudflare runtime amendment, the implementation plan or public deployment. The remaining decisions, evidence gates and a separate release approval still apply.
+- [Workers URL naming](https://developers.cloudflare.com/workers/configuration/routing/workers-dev/)
+- [Workers limits](https://developers.cloudflare.com/workers/platform/limits/)
+- [Static assets](https://developers.cloudflare.com/workers/static-assets/) and [billing](https://developers.cloudflare.com/workers/static-assets/billing-and-limitations/)
+- [Static asset headers](https://developers.cloudflare.com/workers/static-assets/headers/)
+- [D1 limits](https://developers.cloudflare.com/d1/platform/limits/) and [pricing](https://developers.cloudflare.com/d1/platform/pricing/)
