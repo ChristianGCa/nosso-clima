@@ -61,6 +61,12 @@ A [Vercel documenta projetos por diretório](https://vercel.com/docs/monorepos) 
 Não imprimir valores no build, nos logs, no runbook ou no frontend. Variáveis do Marketplace não devem ser ligadas ao projeto web. Confirmar o nome real de cada env depois da prova P1; a tabela não exige que a implementação mantenha `CORS_ALLOWED_ORIGINS` com semântica de processo antigo.
 Na [configuração de ambiente da Vercel](https://vercel.com/docs/environment-variables), selecionar os escopos Preview e Production no projeto API. A [Upstash fornece a URL e o token REST](https://upstash.com/docs/redis/howto/connect-with-upstash-redis) na aba de conexão do banco. A entrada da API falha ao inicializar se qualquer valor obrigatório de Redis, HMAC ou política Open-Meteo estiver ausente ou inválido; não os adicionar ao projeto web. Os tetos máximos aceitos pelo código correspondem a menos de 600/5.000/10.000/300.000 chamadas ponderadas por minuto/hora/dia/mês; são guardrails, não valores recomendados para Production. A política final deve usar folga comprovada contra a [tabela de preços](https://open-meteo.com/en/pricing) e os [termos](https://open-meteo.com/en/terms) em P1b.
 
+### Cache Redis local preparado na P4
+
+O adapter de cache ainda será ligado às duas rotas na P6. Ele deriva chaves opacas com HMAC-SHA-256 de um segredo da API, mantém namespace e versão, valida os valores na leitura e gravação e aceita no máximo 24 KiB por entrada. A resposta Redis REST é limitada a 64 KiB. O TTL máximo é de 24 h para busca e 10 min para previsão; não há valor vencido nem erro em cache. O segredo de derivação será definido e validado como configuração obrigatória na integração P6, sem valor no repositório ou no projeto web.
+
+Misses concorrentes usam um lock Redis de 12 s com token, [`SET` com `NX`/`PX`](https://redis.io/docs/latest/commands/set/) e liberação condicional. Outras instâncias aguardam até 6,3 s em leituras espaçadas; depois podem carregar por conta própria. Cada chamada real ao provedor continuará exigindo a reserva da P3. Em P1b/P1c, medir a semântica e o custo do lock, das leituras repetidas e das escritas com TTL no Redis real antes de escolher a configuração final do Free.
+
 ## Sequência de Preview
 
 1. Após implementação e gates locais P2–P9, o proprietário cria projetos privados/protegidos e Upstash Free em região próxima à Function, sem ativar upgrade automático. Registrar nomes, regiões e limites, sem token.

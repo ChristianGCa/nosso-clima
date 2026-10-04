@@ -105,12 +105,20 @@ describe('Redis cache', () => {
     await expect(
       cache.set('coordinates-and-zone', {} as { retrievedAtUtc: string }, { ttlMs: 600_000 }),
     ).rejects.toThrow();
+    await cache.set(
+      'coordinates-and-zone',
+      { retrievedAtUtc: 'x'.repeat(5000) },
+      {
+        ttlMs: 600_000,
+      },
+    );
+    expect((await cache.get('coordinates-and-zone'))?.retrievedAtUtc).toHaveLength(5000);
     await expect(
-      cache.set('coordinates-and-zone', { retrievedAtUtc: 'x'.repeat(4097) }, { ttlMs: 600_000 }),
+      cache.set('coordinates-and-zone', { retrievedAtUtc: 'x'.repeat(24_577) }, { ttlMs: 600_000 }),
     ).rejects.toThrow();
   });
 
-  it('fails closed on malformed stored values, missing expiry and Redis errors', async () => {
+  it('fails closed on malformed stored values and Redis errors', async () => {
     const fixture = createRedisFixture();
     const cache = createLocationsCache(fixture.redis);
     await cache.set('city', ['Paris'], { ttlMs: 1000 });
@@ -126,5 +134,18 @@ describe('Redis cache', () => {
     await expect(broken.set('city', ['Paris'], { ttlMs: 1000 })).rejects.toEqual(
       new UpstashUnavailable(),
     );
+  });
+
+  it('rejects an invalid key-derivation secret before any Redis command', () => {
+    const fixture = createRedisFixture();
+    expect(() =>
+      createRedisCache({
+        redis: fixture.redis,
+        namespace: 'location-search',
+        secret: 'too-short',
+        isValue: (value): value is string => typeof value === 'string',
+      }),
+    ).toThrow('Invalid cache secret');
+    expect(fixture.evalCommand).not.toHaveBeenCalled();
   });
 });

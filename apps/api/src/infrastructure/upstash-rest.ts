@@ -1,6 +1,6 @@
 import { assertUpstashToken, parseUpstashEndpoint } from '../config/serverless-credentials.js';
 
-const RESPONSE_LIMIT_BYTES = 8_192;
+const RESPONSE_LIMIT_BYTES = 65_536;
 const REQUEST_TIMEOUT_MS = 2_000;
 
 export class UpstashUnavailable extends Error {

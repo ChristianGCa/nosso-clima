@@ -162,6 +162,18 @@ describe('Redis cache cross-instance loading', () => {
     await expect(broken.getOrLoad('other', 1000, failedLoad)).rejects.toEqual(
       new UpstashUnavailable(),
     );
+    const brokenLock = createCache(
+      {
+        eval: async (script) => {
+          if (script === READ_CACHE_SCRIPT) return null;
+          throw new UpstashUnavailable();
+        },
+      },
+      async () => {},
+    );
+    await expect(brokenLock.getOrLoad('other', 1000, failedLoad)).rejects.toEqual(
+      new UpstashUnavailable(),
+    );
     expect(failedLoad).not.toHaveBeenCalled();
   });
 });

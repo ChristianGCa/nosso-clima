@@ -1,16 +1,16 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-04:** os quatro módulos do fluxo local estão implementados. A próxima entrega é a adaptação para **Vercel + Upstash**, único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; `production-delivery` ainda não foi implementado. Cloudflare e Render não fazem parte do plano ativo.
+**Estado em 2026-10-04:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P4 estão implementadas localmente e P5–P11 continuam no plano ativo. Cloudflare e Render não fazem parte do plano ativo.
 
 ## Estado por módulo
 
 | Módulo | Implementado e aprovado localmente | Proposto para produção Vercel | Depende de |
 |---|---|---|---|
-| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, cache compartilhado, reserva agregada em quatro janelas, circuit breaker, HMAC temporário e limites compartilhados | — |
+| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada e circuit breaker ligados às rotas; infraestrutura de cache compartilhado pronta para P6; HMAC temporário e limites compartilhados pendentes de P5 | — |
 | `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Consumir cache Redis e saída com reserva da plataforma; preservar contrato e TTL | `backend-platform` |
 | `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Consumir cache Redis e saída com reserva da plataforma; preservar contrato e TTL | `backend-platform` |
 | `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos e estados da interface | Usar `/api/v1/*` na origem web e validar configuração de build; mudanças de entrega em P7 | `location-search`, `weather-forecast` |
-| `production-delivery` | Documentação e planejamento; sem implantação ou gates de produção concluídos | Dois projetos Vercel, rewrite web → API, WAF, headers/assets, E2E, performance, CI, privacidade, direitos, Preview e rollback | Todos os módulos acima |
+| `production-delivery` | Planejamento e runbook preliminar; sem implantação ou gates hospedados concluídos | Dois projetos Vercel, rewrite web → API, WAF, headers/assets, E2E, performance, CI, privacidade, direitos, Preview e rollback | Todos os módulos acima |
 
 As specs de busca, previsão e UI descrevem os contratos locais vigentes e identificam as alterações propostas. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração; seu contrato local detalhado permanece referenciado no [baseline Node](docs/history/backend-platform-node-baseline-2026-09-23.md). Os itens concluídos dos módulos locais não comprovam a migração para Vercel.
 
@@ -28,7 +28,7 @@ P0: aprovar specs e fronteiras → P2–P5: plataforma compartilhada local → P
 ## Regras de fronteira
 
 - Testes ficam no módulo cujo comportamento verificam; E2E, performance, CI e rollback pertencem a `production-delivery`.
-- HTTP, configuração, logs, erros comuns, cache, rate limits e concorrência pertencem a `backend-platform`. Na migração proposta, esse módulo também fornece Redis, reserva global em quatro janelas, circuit breaker, HMAC, pré-limite em memória e transporte externo seguro. Após a integração, nenhuma chamada Open-Meteo pode contornar a reserva; essa reserva ainda não existe no runtime local.
+- HTTP, configuração, logs, erros comuns, cache, rate limits e concorrência pertencem a `backend-platform`. Na migração proposta, esse módulo também fornece Redis, reserva global em quatro janelas, circuit breaker, HMAC, pré-limite em memória e transporte externo seguro. A entrada serverless já exige reserva antes de chamadas Open-Meteo; a entrada de desenvolvimento local mantém o contrato anterior.
 - URL, parâmetros, validação de cada provedor, contrato HTTP, mapeamento de dados e TTL de domínio pertencem a busca ou previsão. A proposta de persistência efêmera e seus critérios de ativação estão nas respectivas specs. Nenhum desses módulos implementa infraestrutura compartilhada própria.
 - Responsividade, acessibilidade, seleção de cidade e ativos visuais pertencem a `weather-ui`; o web não importa runtime da API nem recebe segredo Redis.
 - Dois projetos, rewrite, regra WAF e sua verificação em ambos os caminhos, origem/CORS final, privacidade, direitos de imagens e lançamento pertencem a `production-delivery`. Esse módulo coordena a migração sem absorver as responsabilidades de runtime da plataforma.

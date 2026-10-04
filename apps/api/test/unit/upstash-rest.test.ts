@@ -35,6 +35,16 @@ describe('Upstash REST EVAL transport', () => {
     expect(request?.init?.signal).toBeInstanceOf(AbortSignal);
   });
 
+  it('accepts a bounded cache result larger than the former 8 KiB response limit', async () => {
+    const value = 'x'.repeat(10_000);
+    const client = createUpstashRestClient({
+      endpoint,
+      token,
+      fetchImpl: async () => new Response(JSON.stringify({ result: value })),
+    });
+    await expect(client.eval('return 1', [], [])).resolves.toBe(value);
+  });
+
   it.each([
     [
       'Redis error',
@@ -43,7 +53,7 @@ describe('Upstash REST EVAL transport', () => {
     ['unauthorized', new Response('private token detail', { status: 401 })],
     ['invalid JSON', new Response('{', { status: 200 })],
     ['missing result', new Response(JSON.stringify({ ok: true }), { status: 200 })],
-    ['oversize response', new Response('x'.repeat(8193), { status: 200 })],
+    ['oversize response', new Response('x'.repeat(65_537), { status: 200 })],
   ])('fails closed on %s without leaking response data', async (_case, response) => {
     const client = createUpstashRestClient({ endpoint, token, fetchImpl: async () => response });
     await expect(client.eval('return 1', [], [])).rejects.toEqual(new UpstashUnavailable());
