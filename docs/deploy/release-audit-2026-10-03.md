@@ -1,5 +1,7 @@
 # Auditoria de preparação para publicação — 2026-10-03
 
+**Histórico, não executar:** este diagnóstico antecede a decisão do proprietário de descartar Cloudflare em 2026-10-04. O único plano ativo de deploy é [Vercel + Upstash](../../tasks/vercel-plan.md). As recomendações de Worker e D1 abaixo não são tarefas vigentes.
+
 **Resultado: publicação e proposta P0 de Worker único bloqueadas.** O proprietário determinou em 2026-10-03 que a Open-Meteo nunca receba o IP do visitante. Este registro distingue fatos observados, fontes oficiais e testes ainda não executados. Nenhum resultado local substitui uma nova emenda P0 aprovada, staging ou a revisão final do proprietário.
 
 ## Decisões informadas pelo proprietário

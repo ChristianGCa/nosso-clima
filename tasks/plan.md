@@ -371,36 +371,6 @@ The owner approved this plan and its U1–U10 tasks on 2026-09-24, then approved
 
 ---
 
-# Implementation Plan: Production Delivery — single Worker proposal
+# Implementation Plan: Production Delivery — Vercel + Upstash
 
-Status: Single-Worker P0 draft blocked by the owner's zero visitor-IP transfer requirement; redesign required before P1
-Module id: production-delivery; source specs: SPEC-backend-platform.md and SPEC-production-delivery.md
-Task list: tasks/todo.md, Production Delivery section
-
-## Goal and sequence
-
-Deploy one Cloudflare Worker with a Fetch handler and Vite static assets on a free workers.dev URL containing nosso-clima. The browser and API share one origin. Static assets bypass script execution where possible. The owner accepted drafting this design and its residual Free-quota availability risk; the amended specs still require review and approval.
-
-P0 approval → P1 isolated workerd/staging feasibility spike → P2 HTTP shell → P3 atomic D1 quota → P4 location → P5 forecast → P6 visitor limits/resilience → P7 static assets, origins and security headers → Checkpoint A → P8 browser E2E → P9 performance/CI → Checkpoint B → P10 release evidence → P11 private staging/rollback → Checkpoint C and separate public-release approval.
-
-P4 and P5 can proceed independently after P3. Tests use offline provider fixtures. P1 alone may make at most one manual geocoding and one forecast call from a private Worker, after terms/privacy review, to observe egress behavior.
-
-## Architecture and handoff decisions
-
-- P1 pins Wrangler, workerd and Workers-pool test tooling, measures CPU below 10 ms with margin in workerd and staging, proves rate binding behavior, D1 reservation/rows and a coverage provider compatible with the unchanged 80% floors. A failing spike returns to P0 before production code.
-- The Worker Fetch adapter preserves public locations, forecast, health and error contracts while replacing Fastify/Node lifecycle, CORS and proxy configuration. The production browser uses relative API paths. A supplied VITE_API_BASE_URL is rejected in production.
-- D1 holds only aggregate minute/hour/day provider credits. Every real fetch reserves its confirmed weighted cost before outbound work; failure denies the fetch. Caches and concurrency control are isolate-local optimizations.
-- Worker rate-limit bindings provide the 60/30/15 abuse brake by Cloudflare location. The owner conditionally accepted omission of unverifiable Retry-After and x-ratelimit-* values and restricted use of CF-Connecting-IP, subject to security/privacy evidence.
-- P7 packages Vite assets with the Worker, configures selective API-first routing, CSP connect-src self, HSTS, referrer policy and immutable caching only on hashed assets. There is one deployable artifact, no Pages project.
-- P8 drives that exact compiled artifact in workerd with browser network assertions and deterministic provider fixtures. P9 measures both neutral and restored-city LCP plus CLS through background loading. Hosted CI and Gitleaks are mandatory gates; no remote exists yet, so hosted evidence cannot pass today.
-- P10 records official Open-Meteo terms and calculator weight, an aggregate budget below all three provider ceilings, LGPD notice, Cloudflare logs/retention, ten background and logo rights, exact hostname and release runbook. P11 rehearses a previous Worker version with additive D1 schema compatibility.
-
-## Checkpoints
-
-A. API contracts and same-origin assets pass in workerd; Node/Fastify runtime is retired in the reviewed cutover, with source-module contract tests retained. Root checks and coverage remain green.
-B. E2E, mobile performance, axe, audit, Gitleaks, local and hosted CI, Free CPU, D1 and provider budget evidence all pass. No threshold is reduced.
-C. Private staging smoke and rollback pass; owner reviews the complete release package and separately approves or declines public publication.
-
-## Blocking dependencies
-
-No Cloudflare account/staging or Git remote is configured in this checkout. Worker CPU, D1 row costs, exact forecast weight, live egress status, published headers, CI execution and rollback cannot be claimed. P0 approval authorizes the spike, not release. See docs/deploy/release-audit-2026-10-03.md for dated findings and the active specs for exact acceptance criteria.
+Único plano ativo de deploy: [Vercel + Upstash](vercel-plan.md). A proposta Cloudflare foi descartada.

@@ -1,6 +1,8 @@
 # Pesquisa de migração: Cloudflare Free
 
-Data da consulta: 2026-10-01. Este documento é insumo para o plano, não autorização de implementação ou publicação. A [auditoria de 2026-10-03](release-audit-2026-10-03.md) registra as decisões posteriores e o requisito de uma URL gratuita com `nosso-clima`; ela prevalece onde as premissas de topologia divergirem. Revalidar preços, limites e termos na execução e na liberação.
+**Histórico, não executar:** a alternativa Cloudflare foi descartada pelo proprietário em 2026-10-04. O único plano ativo de deploy é [Vercel + Upstash](../../tasks/vercel-plan.md). As premissas e próximos passos abaixo são um registro datado, não instruções vigentes.
+
+Data da consulta: 2026-10-01. Este documento registra uma avaliação anterior, sem autorização de implementação ou publicação. A [auditoria de 2026-10-03](release-audit-2026-10-03.md) também é histórica; a decisão posterior por Vercel + Upstash prevalece. Preços, limites e termos aplicáveis devem ser conferidos no plano ativo.
 
 ## Premissas informadas pelo proprietário
 

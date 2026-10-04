@@ -5,6 +5,12 @@
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
 
+## Proposta de alteração para deploy Vercel (ainda não implementável)
+
+O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para previsão validada, com TTL máximo de 10 minutos, sem IP ou identificador do visitante. A chave opaca é derivada com segredo da API das coordenadas arredondadas para três casas e do fuso canônico; o valor preserva a resposta pública, inclusive `retrievedAtUtc`, durante o TTL. Não há histórico, dado vencido nem cache de falhas. Cache e reserva agregada são infraestrutura de `backend-platform`; parâmetros Open-Meteo, sete dias, contrato HTTP, validação e créditos abaixo não mudam.
+
+Esta é uma **alteração proposta**, dependente da aprovação P0 de `SPEC-backend-platform.md` e `SPEC-production-delivery.md`. Até essa aprovação, as regras abaixo sobre cache local e não persistência continuam sendo a base da implementação existente. Após aprovação, somente a persistência efêmera descrita acima na Upstash substitui essas regras; a proibição de logs, telemetria, histórico e armazenamento sem TTL permanece. Não alterar este módulo para Redis antes da aprovação e dos testes de viabilidade P1.
+
 ## Objective
 
 Return current conditions and seven local calendar days for one explicitly selected place. The backend translates Open-Meteo's response into a small, validated, Portuguese-friendly contract so the frontend does not interpret provider fields, units or WMO codes. A person should see temperature, apparent temperature, wind, rain chance and amount, the local time, and when the data was retrieved without confusing a forecast with a measurement.

@@ -5,6 +5,12 @@
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
 
+## Proposta de alteração para deploy Vercel (ainda não implementável)
+
+O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para resultados normalizados de busca, inclusive vazios, com TTL máximo de 24 horas, sem IP ou identificador do visitante. A busca canônica passa a gerar uma chave opaca derivada com segredo da API; a chave não expõe o texto diretamente. O valor pode conter nomes e coordenadas dos resultados, pois são necessários ao contrato de busca. Falhas continuam fora do cache. O cache e a reserva agregada pertencem a `backend-platform`, não a este módulo; o contrato HTTP, canonicalização, timeout, filtro e créditos abaixo permanecem iguais.
+
+Esta é uma **alteração proposta**, dependente da aprovação P0 de `SPEC-backend-platform.md` e `SPEC-production-delivery.md`. Até essa aprovação, as regras abaixo sobre cache local e não persistência continuam sendo a base da implementação existente. Após aprovação, somente a persistência efêmera descrita acima na Upstash substitui essas regras; a proibição de logs, telemetria, histórico e armazenamento sem TTL permanece. Não alterar este módulo para Redis antes da aprovação e dos testes de viabilidade P1.
+
 ## Objective
 
 Build the backend capability that accepts a city search, queries Open-Meteo's geocoding API, validates the untrusted response, and returns a small stable list of normalized populated places. A person must be able to distinguish homonymous places by city, first-level administrative region, and country before explicitly selecting one for a forecast.
