@@ -3,7 +3,7 @@ import {
   type ForecastLocation,
   type ForecastResponse,
 } from './forecast-contract.js';
-import { mapWmoCondition } from './wmo-condition.js';
+import { mapWmoCondition, type WmoCondition } from './wmo-condition.js';
 
 export type ForecastFailureKind =
   | 'timeout'
@@ -29,8 +29,9 @@ export class ForecastFailure extends Error {
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const MAX_BODY_BYTES = 65_536;
 const CURRENT_VARIABLES = 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day';
+const HOURLY_VARIABLES = 'weather_code';
 const DAILY_VARIABLES =
-  'weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max';
+  'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max';
 
 export async function fetchForecastJson(
   location: ForecastLocation,
@@ -42,6 +43,7 @@ export async function fetchForecastJson(
   url.searchParams.set('timezone', location.timezone);
   url.searchParams.set('forecast_days', '7');
   url.searchParams.set('current', CURRENT_VARIABLES);
+  url.searchParams.set('hourly', HOURLY_VARIABLES);
   url.searchParams.set('daily', DAILY_VARIABLES);
   url.searchParams.set('temperature_unit', 'celsius');
   url.searchParams.set('wind_speed_unit', 'kmh');
@@ -119,6 +121,8 @@ export function normalizeForecastResponse(
 
   const current = readObject(payload, 'current');
   const currentUnits = readObject(payload, 'current_units');
+  const hourly = readObject(payload, 'hourly');
+  const hourlyUnits = readObject(payload, 'hourly_units');
   const daily = readObject(payload, 'daily');
   const dailyUnits = readObject(payload, 'daily_units');
   validateUnits(currentUnits, {
@@ -129,9 +133,9 @@ export function normalizeForecastResponse(
     wind_speed_10m: 'km/h',
     is_day: '',
   });
+  validateUnits(hourlyUnits, { time: 'iso8601', weather_code: 'wmo code' });
   validateUnits(dailyUnits, {
     time: 'iso8601',
-    weather_code: 'wmo code',
     temperature_2m_max: '°C',
     temperature_2m_min: '°C',
     apparent_temperature_max: '°C',
@@ -151,7 +155,7 @@ export function normalizeForecastResponse(
   if (!areConsecutiveDates(dates) || dates[0] !== currentTime.slice(0, 10)) {
     return invalidResponse();
   }
-  const weatherCodes = readSevenValues(daily, 'weather_code');
+  const dailyConditions = readPredominantConditions(hourly, dates);
   const temperatureMax = readSevenValues(daily, 'temperature_2m_max');
   const temperatureMin = readSevenValues(daily, 'temperature_2m_min');
   const apparentTemperatureMax = readSevenValues(daily, 'apparent_temperature_max');
@@ -161,7 +165,7 @@ export function normalizeForecastResponse(
   const windSpeedMax = readSevenValues(daily, 'wind_speed_10m_max');
 
   const normalizedDaily = dates.map((date, index) => {
-    const condition = mapWmoCondition(weatherCodes[index]);
+    const condition = dailyConditions[index];
     if (condition === undefined) return invalidResponse();
     const probability = readNullableNumberValue(precipitationProbability[index], 0, 100);
     const precipitation = readNonnegativeNumberValue(precipitationSum[index]);
@@ -192,6 +196,55 @@ export function normalizeForecastResponse(
     daily: normalizedDaily,
     attribution: FORECAST_ATTRIBUTION,
   };
+}
+
+function readPredominantConditions(hourly: ObjectValue, dates: readonly string[]): WmoCondition[] {
+  const times = readValue(hourly, 'time');
+  const codes = readValue(hourly, 'weather_code');
+  if (
+    !Array.isArray(times) ||
+    !Array.isArray(codes) ||
+    times.length !== 24 * 7 ||
+    codes.length !== 24 * 7
+  ) {
+    return invalidResponse();
+  }
+
+  return dates.map((date, dayIndex) => {
+    const conditions: WmoCondition[] = [];
+    for (let hour = 0; hour < 24; hour += 1) {
+      const index = dayIndex * 24 + hour;
+      if (times[index] !== `${date}T${String(hour).padStart(2, '0')}:00`) {
+        return invalidResponse();
+      }
+      const condition = mapWmoCondition(codes[index]);
+      if (condition === undefined) return invalidResponse();
+      conditions.push(condition);
+    }
+    const categoryCounts = new Map<WmoCondition['category'], number>();
+    for (const condition of conditions) {
+      categoryCounts.set(condition.category, (categoryCounts.get(condition.category) ?? 0) + 1);
+    }
+    let category = conditions[0]?.category;
+    for (const [candidate, count] of categoryCounts) {
+      if (category === undefined || count > (categoryCounts.get(category) ?? 0))
+        category = candidate;
+    }
+    if (category === undefined) return invalidResponse();
+
+    const codeCounts = new Map<number, number>();
+    for (const condition of conditions) {
+      if (condition.category === category) {
+        codeCounts.set(condition.code, (codeCounts.get(condition.code) ?? 0) + 1);
+      }
+    }
+    let code = conditions.find((condition) => condition.category === category)?.code;
+    for (const [candidate, count] of codeCounts) {
+      if (code === undefined || count > (codeCounts.get(code) ?? 0)) code = candidate;
+    }
+    const result = mapWmoCondition(code);
+    return result ?? invalidResponse();
+  });
 }
 
 async function withAbort<Value>(operation: Promise<Value>, signal: AbortSignal): Promise<Value> {

@@ -99,7 +99,16 @@ describe('city-to-forecast flow', () => {
         .closest('article')
         ?.querySelectorAll('dt'),
     ).toHaveLength(5);
-    expect(screen.getAllByText('Condição mais severa')).toHaveLength(7);
+    expect(screen.getAllByText('Condição predominante')).toHaveLength(7);
+    expect(
+      Array.from(document.querySelectorAll('.today-metrics dt'), (term) => term.textContent),
+    ).toEqual([
+      'Temperatura',
+      'Sensação térmica',
+      'Vento máximo',
+      'Chance de chuva',
+      'Volume de chuva',
+    ]);
     expect(screen.getByText(/Dados adaptados pelo NossoClima sob/)).toBeTruthy();
     expect(
       within(screen.getByRole('contentinfo')).getByRole('link', { name: 'GeoNames' }),

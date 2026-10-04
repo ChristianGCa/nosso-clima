@@ -590,7 +590,7 @@ The detailed W1–W6 boxes below are synchronized with the completed W-C handoff
 
 - [x] Current values, unit metadata, timezone, each seven-entry daily array and seven consecutive local dates are validated; malformed consumed values fail as `invalid_response`.
 - [x] Individual `null` daily rain probabilities are preserved; missing values or `null` elsewhere fail.
-- [x] Daily condition uses `daily.weather_code` as the most severe condition; a real provider fixture normalizes to the expected shape, and no unconsumed provider field reaches the public result.
+- [x] Historical W-C behavior used `daily.weather_code` as the most severe condition. The 2026-10-04 amendment below replaces that behavior; the retained real provider fixture is extended with clearly synthetic hourly data for offline tests.
 
 **Verification:** `npm test --workspace @nosso-clima/api -- open-meteo-forecast`; `npm run check --workspace @nosso-clima/api`.
 
@@ -841,7 +841,7 @@ Plan: `tasks/plan.md`, Weather UI section
 
 - [x] Seven ordered dates and weekdays remain correct across browser/selected-city timezone differences.
 - [x] Max/min temperature and apparent temperature, maximum wind, chance and amount all show correct units.
-- [x] `null` rain chance displays “Indisponível”, never zero; condition wording says “mais severa”, never “predominante”.
+- [x] `null` rain chance displays “Indisponível”, never zero. The 2026-10-04 amendment below replaces the previous “mais severa” wording.
 
 **Verification:** `npm test --workspace @nosso-clima/web -- daily`; web check; mobile/desktop card inspection.
 
@@ -902,6 +902,13 @@ These findings do not alter the owner's 2026-09-24 approval record. The owner re
 - [x] Record mobile and desktop contrast evidence for all ten bundled backgrounds against the computed text and control surfaces, including the 4.5:1 and 3:1 thresholds; see `docs/quality/contrast-2026-10-01.md` and the repeatable browser check.
 
 ---
+
+# Amendment 2026-10-04 — Predominant forecast and card refinement
+
+- [x] Derive each daily condition from the most frequent hourly WMO category, with deterministic ties, while preserving the public response shape and safe validation.
+- [x] Put maximum wind before rain chance and rain volume in the HOJE card; name all daily conditions predominant for assistive technology.
+- [x] Increase daily-card date titles and make daily/current cards more translucent; verify 360 px layout, axe and contrast on all ten backgrounds.
+- [ ] Recalculate the amended hourly forecast request's Open-Meteo weight in P1 before production delivery.
 
 # Tasks: Production Delivery — Vercel + Upstash
 

@@ -1,6 +1,6 @@
 # NossoClima
 
-Este documento registra a ideia inicial e suas hipóteses, não o contrato atual de implementação. Para decisões aprovadas e estado de entrega, consulte `CAPABILITY-MAP.md`, os arquivos `SPEC-*.md` e `tasks/todo.md`. Em particular, a condição diária passou a significar a mais severa, a primeira visita sem cidade salva é neutra e visitas posteriores restauram a última cidade escolhida.
+Este documento registra a ideia inicial e suas hipóteses, não o contrato atual de implementação. Para decisões aprovadas e estado de entrega, consulte `CAPABILITY-MAP.md`, os arquivos `SPEC-*.md` e `tasks/todo.md`. Em 2026-10-04, o proprietário alterou a condição diária para a predominante entre os códigos horários; a primeira visita sem cidade salva é neutra e visitas posteriores restauram a última cidade escolhida.
 
 ## Problem Statement
 

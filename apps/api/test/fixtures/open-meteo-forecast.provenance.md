@@ -4,3 +4,4 @@
 - Captured: 2026-09-23 (America/Sao_Paulo)
 - Place: São Paulo, Brazil; request coordinates are rounded to three decimal places by the forecast query contract.
 - The JSON file retains values from the captured provider response for the fields now consumed. Unused fields were pruned. Tests may clone it in memory for explicitly labelled malformed, missing and nullable-field cases; they must not mutate the committed baseline.
+- The 2026-10-04 predominant-condition amendment adds `forecast-with-hourly.ts` as an **offline synthetic extension** of this retained baseline: it generates 24 hourly timestamps and repeated codes per day for integration tests. The added hourly arrays were not captured from Open-Meteo. Unit tests separately override them to prove predominance, ties and invalid-hour rejection.

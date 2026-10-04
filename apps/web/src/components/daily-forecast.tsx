@@ -40,7 +40,7 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
             <div className="today-condition">
               <ConditionIcon category={today.condition.category} />
               <p>
-                <span className="visually-hidden">Condição mais severa</span>
+                <span className="visually-hidden">Condição predominante</span>{' '}
                 <strong>{today.condition.labelPt}</strong>
               </p>
             </div>
@@ -64,6 +64,10 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
                 </dd>
               </div>
               <div>
+                <dt>Vento máximo</dt>
+                <dd>{metric(today.windSpeedMaxKmh, 'km/h')}</dd>
+              </div>
+              <div>
                 <dt>Chance de chuva</dt>
                 <dd className="icon-value">
                   <MetricIcon source={rainChanceIcon} />
@@ -77,10 +81,6 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
                   {metric(today.precipitationSumMm, 'mm')}
                 </dd>
               </div>
-              <div>
-                <dt>Vento máximo</dt>
-                <dd>{metric(today.windSpeedMaxKmh, 'km/h')}</dd>
-              </div>
             </dl>
           </article>
           {upcoming.map((day) => (
@@ -89,7 +89,7 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
               <div className="day-weather">
                 <ConditionIcon category={day.condition.category} />
                 <p className="day-condition">
-                  <span className="visually-hidden">Condição mais severa</span>{' '}
+                  <span className="visually-hidden">Condição predominante</span>{' '}
                   {day.condition.labelPt}
                 </p>
               </div>

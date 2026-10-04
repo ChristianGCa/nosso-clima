@@ -1,9 +1,15 @@
 # Spec: Weather Forecast
 
-- **Status:** Local implementation complete; Checkpoint W-C approved by owner on 2026-09-24; revised by owner request on 2026-09-28 to remove UV maximum and risk
+- **Status:** Local implementation complete; Checkpoint W-C approved by owner on 2026-09-24; revised on 2026-09-28 to remove UV and on 2026-10-04 to use predominant daily conditions
 - **Module id:** `weather-forecast`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
+
+## Alteração aprovada pelo pedido do proprietário em 2026-10-04
+
+Os sete cartões passam a mostrar a **condição predominante**, calculada na API a partir de `hourly.weather_code`, sem alterar o formato público da resposta. Para cada data local, contar horas por categoria (`clear`, `cloudy`, `rain`, `snow`, `storm`) e escolher a categoria com mais horas; empate é resolvido pela primeira ocorrência no dia. Dentro dela, escolher o código WMO mais frequente, também com desempate pela primeira ocorrência. Isso evita que uma tempestade isolada represente um dia predominantemente nublado. A previsão atual continua usando `current.weather_code`.
+
+Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code` e a lista de variáveis externas. `daily.weather_code` sai da consulta; `hourly.weather_code` entra. O custo ponderado e o tamanho reais da nova consulta devem ser medidos no P1 antes da entrega de produção. As regras propostas de Redis/Vercel continuam dependentes da aprovação P0 separada.
 
 ## Proposta de alteração para deploy Vercel (ainda não implementável)
 
@@ -77,7 +83,7 @@ The fixed attribution is included on every success. `weather-ui` must show provi
 
 ### Condition semantics
 
-`current.weather_code` is mapped to one of five categories. Use Open-Meteo's `daily.weather_code` for each daily card and label it accurately as the **most severe** condition for that day, not the statistically predominant condition. Do not derive a condition from hourly codes.
+`current.weather_code` is mapped to one of five categories. For each daily card, use the predominant category derived from `hourly.weather_code` as defined in the owner amendment above. Do not use Open-Meteo's daily most-severe code as a proxy for predominance.
 
 | WMO codes | Category | Portuguese label |
 |---|---|---|
@@ -111,13 +117,14 @@ Call only `https://api.open-meteo.com/v1/forecast`. Construct the URL with `URL`
 | `timezone` | Validated selected-place IANA identifier |
 | `forecast_days` | `7` |
 | `current` | `temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day` |
-| `daily` | `weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max` |
+| `hourly` | `weather_code` |
+| `daily` | `temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max` |
 | `temperature_unit` | `celsius` |
 | `wind_speed_unit` | `kmh` |
 | `precipitation_unit` | `mm` |
 | `timeformat` | `iso8601` |
 
-No user-controlled extra parameter, key, header, cookie, IP address or request ID goes upstream. Do not request hourly variables for daily-condition calculation. Open-Meteo may count requests with more than ten variables as more than one API call; this request currently names thirteen weather variables and therefore requires an explicit aggregate usage budget before public deployment.
+No user-controlled extra parameter, key, header, cookie, IP address or request ID goes upstream. Request only hourly weather codes; do not expose hourly values in the public response. Open-Meteo may weight this request differently because hourly data is added; the P1 aggregate usage budget must measure the amended query before public deployment.
 
 Use Node 24 built-in `fetch`, `redirect: 'error'`, and one `AbortSignal.timeout(5_000)` covering both fetch and streaming body consumption. Accept only HTTP 200 with a JSON content type; read at most 65,536 decoded bytes before `JSON.parse`. Abort when the bound is exceeded. Do not retry, especially not `429`. Treat redirects rejected by `fetch` as a network failure without parsing exception text.
 
@@ -125,7 +132,7 @@ Use Node 24 built-in `fetch`, `redirect: 'error'`, and one `AbortSignal.timeout(
 
 JSON begins as `unknown`. Permit extra provider fields but validate every consumed value. Require one top-level object with `timezone`, `current`, `current_units`, `daily`, and `daily_units` objects; reject provider `error` payloads. The returned timezone must agree with the requested IANA zone after runtime canonicalization. Validate the requested units against the unit metadata.
 
-`current.time` must be a valid local ISO minute timestamp; `is_day` must be exactly `0` or `1`. Current numeric values must be finite, wind speed nonnegative and weather code in the approved WMO set. Each named `daily` array must have exactly seven entries. Dates must be valid, consecutive `YYYY-MM-DD` calendar dates in ascending order. Temperature and apparent-temperature values must be finite; wind and precipitation amounts nonnegative. Each daily precipitation probability must be `null` or a finite number within `[0,100]`; preserve a provider `null` in the corresponding response field. Reject mismatched array lengths, other invalid types, nonfinite values, unknown WMO codes, malformed dates, wrong units and missing required fields as one `invalid_response` provider failure. Do not manufacture missing weather values.
+`current.time` must be a valid local ISO minute timestamp; `is_day` must be exactly `0` or `1`. Current numeric values must be finite, wind speed nonnegative and weather code in the approved WMO set. Each named `daily` array must have exactly seven entries. Dates must be valid, consecutive `YYYY-MM-DD` calendar dates in ascending order. Per [Open-Meteo's seven-day hourly contract](https://open-meteo.com/en/docs), `hourly.time` and `hourly.weather_code` must align and contain 168 entries, from local 00:00 through 23:00 for each of those seven dates; all codes must be approved WMO integers. Reject a missing/invalid hour or empty day rather than falling back to the severe daily code. Temperature and apparent-temperature values must be finite; wind and precipitation amounts nonnegative. Each daily precipitation probability must be `null` or a finite number within `[0,100]`; preserve a provider `null` in the corresponding response field. Reject mismatched array lengths, other invalid types, nonfinite values, unknown WMO codes, malformed dates, wrong units and missing required fields as one `invalid_response` provider failure. Do not manufacture missing weather values.
 
 Only daily precipitation probability permits `null`; a missing array, missing entry or `null` in any other consumed field remains an invalid upstream response.
 
@@ -237,7 +244,7 @@ The owner confirmed on 2026-09-23:
 
 1. **TTL:** 10 minutes for current conditions and all seven daily records in one cache entry. The public-deployment aggregate usage budget must account for this TTL.
 2. **First visit:** Neutral `weather-ui` state until explicit city selection; no default city. A returning browser may request a fresh forecast for its last selected city under the revised `weather-ui` spec.
-3. **Daily condition:** Use Open-Meteo's `daily.weather_code` as the day's most severe condition. Do not compute predominance from hourly codes.
+3. **Daily condition (superseded on 2026-10-04):** The original choice used Open-Meteo's `daily.weather_code` as the most severe condition. The owner now requires hourly-category predominance as defined above.
 4. **Missing probability:** Keep the forecast when the provider supplies `null` for rain probability on an individual day. Return `null` and let the UI mark it unavailable.
 5. **Coordinates:** Round valid latitude and longitude to three decimal places before the upstream request and cache key (owner clarification after plan review).
 6. **UV removal:** The owner requested removal of UV maximum and derived risk from the provider query, response contract and UI on 2026-09-28.

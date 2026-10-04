@@ -1,4 +1,4 @@
-import realForecast from '../fixtures/open-meteo-forecast.json' with { type: 'json' };
+import { forecastWithHourly as realForecast } from '../fixtures/forecast-with-hourly.js';
 import { describe, expect, it, vi } from 'vitest';
 
 import { createCache } from '../../src/infrastructure/cache.js';

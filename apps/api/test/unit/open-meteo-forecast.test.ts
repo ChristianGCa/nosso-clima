@@ -1,4 +1,4 @@
-import realForecast from '../fixtures/open-meteo-forecast.json' with { type: 'json' };
+import { forecastWithHourly as realForecast } from '../fixtures/forecast-with-hourly.js';
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -33,9 +33,10 @@ describe('Open-Meteo forecast transport', () => {
       ['timezone', 'America/Sao_Paulo'],
       ['forecast_days', '7'],
       ['current', 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day'],
+      ['hourly', 'weather_code'],
       [
         'daily',
-        'weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
+        'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
       ],
       ['temperature_unit', 'celsius'],
       ['wind_speed_unit', 'kmh'],
@@ -233,6 +234,40 @@ describe('Open-Meteo forecast response validation', () => {
     });
   });
 
+  it('uses the most frequent hourly category instead of an isolated severe event', () => {
+    const payload = {
+      ...realForecast,
+      hourly: {
+        ...realForecast.hourly,
+        weather_code: [
+          ...Array(20).fill(3),
+          ...Array(4).fill(95),
+          ...realForecast.hourly.weather_code.slice(24),
+        ],
+      },
+    };
+    const result = normalizeForecastResponse(payload, location, '2026-09-23T23:00:00.000Z');
+    expect(result.daily[0]?.condition).toEqual({ code: 3, category: 'cloudy', labelPt: 'Nublado' });
+  });
+
+  it('breaks category and WMO-code ties by first hourly occurrence', () => {
+    const payload = {
+      ...realForecast,
+      hourly: {
+        ...realForecast.hourly,
+        weather_code: [
+          ...Array(6).fill(61),
+          ...Array(6).fill(3),
+          ...Array(6).fill(63),
+          ...Array(6).fill(2),
+          ...realForecast.hourly.weather_code.slice(24),
+        ],
+      },
+    };
+    const result = normalizeForecastResponse(payload, location, '2026-09-23T23:00:00.000Z');
+    expect(result.daily[0]?.condition).toEqual({ code: 61, category: 'rain', labelPt: 'Chuva' });
+  });
+
   it.each([
     { timezone: 'UTC' },
     { timezone: 'Not/A_Zone' },
@@ -265,7 +300,21 @@ describe('Open-Meteo forecast response validation', () => {
       },
     },
     { current_units: { ...realForecast.current_units, temperature_2m: '°F' } },
-  ])('rejects malformed consumed provider data: %j', (override) => {
+    { hourly_units: { ...realForecast.hourly_units, weather_code: 'unknown' } },
+    { hourly: { ...realForecast.hourly, weather_code: realForecast.hourly.weather_code.slice(1) } },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        weather_code: [4, ...realForecast.hourly.weather_code.slice(1)],
+      },
+    },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        time: ['2026-09-24T00:00', ...realForecast.hourly.time.slice(1)],
+      },
+    },
+  ])('rejects malformed consumed provider data %#', (override) => {
     expect(() =>
       normalizeForecastResponse(
         { ...realForecast, ...override },

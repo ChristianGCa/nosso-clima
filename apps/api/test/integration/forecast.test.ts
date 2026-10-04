@@ -12,7 +12,7 @@ import {
 } from '../../src/forecast/forecast-contract.js';
 import { normalizeForecastResponse } from '../../src/forecast/open-meteo-forecast.js';
 import { registerForecastRoute } from '../../src/routes/forecast.js';
-import realForecast from '../fixtures/open-meteo-forecast.json' with { type: 'json' };
+import { forecastWithHourly as realForecast } from '../fixtures/forecast-with-hourly.js';
 
 const jsonHeaders = { 'content-type': 'application/json' };
 let app: FastifyInstance | undefined;

@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city; 2026-10-01 corrective checks verified locally
+- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city, and on 2026-10-04 to refine daily cards; 2026-10-01 corrective checks verified locally
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -34,10 +34,10 @@ The HTTP boundary also rejects a forecast whose first daily date is not the date
 |---|---|---|
 | Search suggestions | `GET /api/v1/locations` from `SPEC-location-search.md` | Show `name`, optional `region`, and `country`; use the complete selected result for the forecast request. |
 | Current conditions | `GET /api/v1/forecast` from `SPEC-weather-forecast.md` | Show current temperature, apparent temperature, condition label, wind speed and local valid time. |
-| Seven-day forecast | `daily` from forecast response | Show local date and weekday for all seven days. Today shows max/min temperature and apparent temperature, the day's **most severe** condition, maximum rain chance, rain amount and maximum wind. Each of the next six days shows only its condition, maximum rain chance, rain amount and max/min temperature. |
+| Seven-day forecast | `daily` from forecast response | Show local date and weekday for all seven days. Today shows max/min temperature and apparent temperature, the day's **predominant** condition, maximum wind, maximum rain chance and rain amount, with the two rain metrics last in that order. Each of the next six days shows its predominant condition, max/min temperature, maximum rain chance and rain amount. |
 | Attribution | Each response's `attribution` | Credit Open-Meteo, GeoNames for search results and the selected city, linked CC BY 4.0 licence, and say NossoClima adapted the data. |
 
-The idea document's phrase “condição predominante” is superseded by the approved forecast contract: `daily.weather_code` represents the most severe condition of the day. Do not compute a predominant condition or derive daily conditions from the current condition. Backend `condition.category` and `condition.labelPt` are authoritative for wording and visual grouping.
+The forecast API now calculates predominant daily conditions from hourly codes under the owner's 2026-10-04 amendment. The web displays backend `condition.category` and `condition.labelPt` without interpreting WMO codes or deriving daily conditions from the current condition.
 
 Use `pt-BR` number and date formatting. Show °C, km/h, mm and percent explicitly. Distinguish rain chance (%) and rain amount (mm) with different icons and units, and keep their full names available to assistive technology so `70%` is not mistaken for `8,4 mm`. Maximum and minimum temperatures may use distinct upward and downward icons when their names remain available to assistive technology. A `null` daily precipitation probability is shown as “Indisponível”; never substitute zero.
 
@@ -47,7 +47,7 @@ Keep frontend response types and runtime checks within `apps/web`. Do not import
 
 ## Layout, Backgrounds and Accessibility
 
-The visual hierarchy is search first, current conditions second, seven-day forecast third, and source credit adjacent to the data it credits. The owner's 2026-09-27 wireframe defines the organization: a compact header with search, current conditions, a seven-day forecast, then attribution and brief site information. Its blue, cyan and red fills only separate sections in the sketch; they are not the product palette. Keep the selected weather photograph visible behind neutral, readable surfaces. Use distinct multicolor weather icons. Mark the first, detailed daily card visibly as “HOJE” and keep each later day's condition, icon and metrics together. Daily cards share the same height at each viewport width, with enough space and subtle dividers between temperatures, rain chance and rain volume. At 360 px the page has no horizontal overflow, search suggestions remain usable, and all seven days form a compact readable vertical list. Mobile layouts should minimize vertical scrolling without clipping weather data; wider layouts may show the seven days side by side with more detail for today. Loading, empty and error states reserve enough space to avoid disruptive layout shifts.
+The visual hierarchy is search first, current conditions second, seven-day forecast third, and source credit adjacent to the data it credits. The owner's 2026-09-27 wireframe defines the organization: a compact header with search, current conditions, a seven-day forecast, then attribution and brief site information. Its blue, cyan and red fills only separate sections in the sketch; they are not the product palette. Keep the selected weather photograph visible behind neutral, readable surfaces. Use distinct multicolor weather icons. Mark the first, detailed daily card visibly as “HOJE” and keep each later day's condition, icon and metrics together. Increase the daily card title size and make both current and daily card surfaces slightly more translucent while preserving contrast on all ten backgrounds. Daily cards share the same height at each viewport width, with enough space and subtle dividers between temperatures, rain chance and rain volume. At 360 px the page has no horizontal overflow, search suggestions remain usable, and all seven days form a compact readable vertical list. Mobile layouts should minimize vertical scrolling without clipping weather data; wider layouts may show the seven days side by side with more detail for today. Loading, empty and error states reserve enough space to avoid disruptive layout shifts.
 
 Use one decorative WebP background from the ten bundled files in `apps/web/src/assets/backgrounds/`, selected solely by `current.condition.category` and `current.isDay`. The originals remain under `backgrounds/`; all ten bundled files are optimized variants. The initial and loading states use a neutral solid or gradient background. Map the five categories to their matching `dia-*` or `noite-*` file; if an image fails to load, use the neutral background. Do not request all ten images on first load or use a daily condition to choose the current background. Load only the active bundled image in the browser.
 
@@ -131,7 +131,7 @@ type ForecastViewState =
 
 ### Never
 
-- Treat `null` rain probability as zero; call the daily condition “predominant”; parse the local current timestamp as UTC.
+- Treat `null` rain probability as zero; call a daily condition “most severe”; parse the local current timestamp as UTC.
 - Hide text directly in imagery, rely on color alone, or silently choose a search result.
 - Import `apps/api/src` at runtime, expose raw provider diagnostics, or publish images with unverified rights.
 
@@ -143,7 +143,7 @@ The checked items record the local handoff approved on 2026-09-24 and subsequent
 - [x] Reopening with a valid saved city shows its name and requests a fresh forecast without geocoding; corrupt or blocked storage falls back safely to the neutral state.
 - [x] A keyboard or pointer user can search, distinguish homonymous places, explicitly select one, and load its seven-day forecast.
 - [x] Search, selection, loading, empty, 429, provider failure, malformed response and retry states are understandable and never show a mismatched city's data.
-- [x] Current and daily metrics use the approved labels, units, local dates, distinct valid/retrieval times, null policy and “most severe” daily-condition meaning.
+- [x] Current and daily metrics use the approved labels, units, local dates, distinct valid/retrieval times and null policy. The 2026-10-04 amendment adds predominant daily conditions and the reviewed card layout.
 - [x] All ten background mappings, a neutral fallback and all source/licence credits work without compromising contrast or initial load.
 - [x] The app works from 360 px through desktop with keyboard access and zero critical or serious axe violations.
 - [x] Web typecheck, lint, format, tests, 80% coverage, production build, root check and boundary check pass within their active budgets.
@@ -159,7 +159,7 @@ The checked items record the local handoff approved on 2026-09-24 and subsequent
 
 1. The UI starts searching at three Unicode code points after a 300 ms debounce; the API itself still accepts two-character searches.
 2. A new city selection clears the old forecast until the new response succeeds; typing alone leaves the current forecast visible.
-3. The daily condition remains the “Condição mais severa”; rain chance (%) and rain volume (mm) remain distinct values in both the detailed card and compact summaries.
+3. Superseded on 2026-10-04: the daily condition now means “Condição predominante”; rain chance (%) and rain volume (mm) remain distinct values in both the detailed card and compact summaries.
 4. The existing WebP images may be used during local development. The owner stated on 2026-09-27 that they generated all ten in the Gemini app without uploading reference images and reaffirmed the Gemini origin on 2026-10-01. This records the stated origin; the public-use rights review remains part of `production-delivery`, and no ownership or licence is inferred from the files' presence in the repository.
 
 The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-09-24. The owner approved the completed local user flow at Checkpoint U-C on 2026-09-24.
@@ -167,6 +167,8 @@ The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-0
 The owner revised the search presentation on 2026-09-27: omit the visible "Buscar cidade" label and keep the header height stable throughout search states.
 
 The owner requested last-city restoration on 2026-09-28. This explicitly supersedes the previous prohibition on client persistence and initial forecast requests for returning visitors. The browser stores one selected location only; `production-delivery` must include this local retention and the automatic forecast transfer in the public privacy notice and provider usage budget.
+
+The 2026-10-04 card amendment uses predominant daily conditions, places wind before the two rain metrics in HOJE, increases daily date headings and slightly lowers card opacity. The repeated browser contrast and accessibility result is recorded in [the dated evidence](docs/quality/contrast-2026-10-04.md).
 
 The owner requested site information on 2026-09-28. The neutral screen should link to a short, always accessible explanation of data use. The footer should expose anchored sections for data and privacy, the project's purpose and repository, and distinct licences/credits for weather and location data, icons, and the project code. Keep weather attribution adjacent to weather data. On 2026-10-03 the owner selected MIT for the code and supplied the responsible party and contact. The licence is linked in the footer; the repository link is omitted until a remote URL exists. This local explanation does not close the full `production-delivery` privacy-notice gate, which still needs hosting retention, current provider review, and owner approval before release.
 
