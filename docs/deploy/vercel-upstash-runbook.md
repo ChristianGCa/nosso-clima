@@ -52,11 +52,14 @@ A [Vercel documenta projetos por diretório](https://vercel.com/docs/monorepos) 
 | API Preview/Production | `UPSTASH_REDIS_REST_TOKEN` | Token REST secreto apenas server-side, distinto por ambiente quando possível |
 | API Preview/Production | `RATE_LIMIT_HMAC_KEY` | 32 bytes aleatórios codificados em 64 caracteres hexadecimais, gerados separadamente para cada ambiente com `openssl rand -hex 32`; guardar como variável sensível |
 | API Preview/Production | `CORS_ALLOWED_ORIGINS` ou substituto específico de Vercel | Somente origem web exata; resolver Preview pareado em P1 |
+| API Preview/Production | `OPEN_METEO_MINUTE_CREDITS`, `OPEN_METEO_HOUR_CREDITS`, `OPEN_METEO_DAY_CREDITS`, `OPEN_METEO_MONTH_CREDITS` | Quatro tetos inteiros positivos de créditos ponderados; 1.000 créditos representam uma chamada de peso 1. Devem ficar abaixo dos limites oficiais e incluir a margem confirmada em P1b |
+| API Preview/Production | `OPEN_METEO_GEOCODING_CREDITS`, `OPEN_METEO_FORECAST_CREDITS` | Custo inteiro de cada consulta, no mínimo 1.000 créditos e não maior que nenhum teto. O peso real da previsão depende da calculadora/prova P1b |
+| API Preview/Production | `OPEN_METEO_429_COOLDOWN_MS`, `OPEN_METEO_PROBE_MS` | Inteiros positivos em milissegundos; cooldown no máximo 1 hora, sonda no máximo 1 minuto e não maior que o cooldown. Ajustar depois da medição P1d |
 | API Preview isolado | `UPSTREAM_TEST_BASE` (se necessário ao ensaio) | Apenas eco protegido, proibido em Production e removido antes do release |
 | Web Production | `VITE_API_BASE_URL` | **Ausente**; o cliente usa `/api/v1/*` relativo |
 
 Não imprimir valores no build, nos logs, no runbook ou no frontend. Variáveis do Marketplace não devem ser ligadas ao projeto web. Confirmar o nome real de cada env depois da prova P1; a tabela não exige que a implementação mantenha `CORS_ALLOWED_ORIGINS` com semântica de processo antigo.
-Na [configuração de ambiente da Vercel](https://vercel.com/docs/environment-variables), selecionar os escopos Preview e Production no projeto API. A [Upstash fornece a URL e o token REST](https://upstash.com/docs/redis/howto/connect-with-upstash-redis) na aba de conexão do banco. A entrada da API falha ao inicializar se qualquer um dos três valores de Redis/HMAC estiver ausente ou inválido; não os adicionar ao projeto web.
+Na [configuração de ambiente da Vercel](https://vercel.com/docs/environment-variables), selecionar os escopos Preview e Production no projeto API. A [Upstash fornece a URL e o token REST](https://upstash.com/docs/redis/howto/connect-with-upstash-redis) na aba de conexão do banco. A entrada da API falha ao inicializar se qualquer valor obrigatório de Redis, HMAC ou política Open-Meteo estiver ausente ou inválido; não os adicionar ao projeto web. Os tetos máximos aceitos pelo código correspondem a menos de 600/5.000/10.000/300.000 chamadas ponderadas por minuto/hora/dia/mês; são guardrails, não valores recomendados para Production. A política final deve usar folga comprovada contra a [tabela de preços](https://open-meteo.com/en/pricing) e os [termos](https://open-meteo.com/en/terms) em P1b.
 
 ## Sequência de Preview
 

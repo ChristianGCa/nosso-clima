@@ -5,6 +5,7 @@ import {
   fetchGeocodingJson,
   normalizeGeocodingResponse,
 } from '../../src/locations/open-meteo-geocoding.js';
+import { ProviderAccessFailure } from '../../src/infrastructure/reserved-open-meteo-fetch.js';
 
 const jsonHeaders = { 'content-type': 'application/json; charset=utf-8' };
 
@@ -75,6 +76,17 @@ describe('Open-Meteo geocoding transport', () => {
       message: 'Geocoding provider unavailable',
     });
   });
+
+  it.each(['quota_denied', 'redis_unavailable', 'circuit_open', 'upstream_rate_limited'] as const)(
+    'preserves safe platform failure category %s',
+    async (kind) => {
+      await expect(
+        fetchGeocodingJson('ab', async () => {
+          throw new ProviderAccessFailure(kind);
+        }),
+      ).rejects.toMatchObject({ kind, message: 'Geocoding provider unavailable' });
+    },
+  );
 
   it('caps decoded bytes while accepting a response at the exact limit', async () => {
     const exactBody = `${' '.repeat(65_534)}[]`;

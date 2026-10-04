@@ -6,6 +6,7 @@ import {
   ForecastFailure,
   normalizeForecastResponse,
 } from '../../src/forecast/open-meteo-forecast.js';
+import { ProviderAccessFailure } from '../../src/infrastructure/reserved-open-meteo-fetch.js';
 
 const location = {
   latitude: -23.548,
@@ -89,6 +90,17 @@ describe('Open-Meteo forecast transport', () => {
       message: 'Forecast provider unavailable',
     });
   });
+
+  it.each(['quota_denied', 'redis_unavailable', 'circuit_open', 'upstream_rate_limited'] as const)(
+    'preserves safe platform failure category %s',
+    async (kind) => {
+      await expect(
+        fetchForecastJson(location, async () => {
+          throw new ProviderAccessFailure(kind);
+        }),
+      ).rejects.toMatchObject({ kind, message: 'Forecast provider unavailable' });
+    },
+  );
 
   it('caps decoded bytes while accepting an exact 64 KiB body', async () => {
     const exactBody = `${' '.repeat(65_534)}{}`;

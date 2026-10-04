@@ -3,6 +3,10 @@ import {
   type ForecastLocation,
   type ForecastResponse,
 } from './forecast-contract.js';
+import {
+  ProviderAccessFailure,
+  type ProviderAccessFailureKind,
+} from '../infrastructure/reserved-open-meteo-fetch.js';
 import { mapWmoCondition, type WmoCondition } from './wmo-condition.js';
 
 export type ForecastFailureKind =
@@ -12,7 +16,8 @@ export type ForecastFailureKind =
   | 'content_type'
   | 'body_too_large'
   | 'invalid_json'
-  | 'invalid_response';
+  | 'invalid_response'
+  | ProviderAccessFailureKind;
 
 export class ForecastFailure extends Error {
   readonly kind: ForecastFailureKind;
@@ -57,6 +62,7 @@ export async function fetchForecastJson(
     response = await withAbort(fetchImpl(url, { signal, redirect: 'error' }), signal);
   } catch (failure) {
     if (failure instanceof ForecastFailure) throw failure;
+    if (failure instanceof ProviderAccessFailure) throw new ForecastFailure(failure.kind);
     throw new ForecastFailure(signal.aborted ? 'timeout' : 'network');
   }
 

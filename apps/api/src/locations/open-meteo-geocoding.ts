@@ -1,4 +1,8 @@
 import type { Location } from './location-contract.js';
+import {
+  ProviderAccessFailure,
+  type ProviderAccessFailureKind,
+} from '../infrastructure/reserved-open-meteo-fetch.js';
 
 export type GeocodingFailureKind =
   | 'timeout'
@@ -7,7 +11,8 @@ export type GeocodingFailureKind =
   | 'content_type'
   | 'body_too_large'
   | 'invalid_json'
-  | 'invalid_response';
+  | 'invalid_response'
+  | ProviderAccessFailureKind;
 
 export class GeocodingFailure extends Error {
   readonly kind: GeocodingFailureKind;
@@ -149,7 +154,10 @@ export async function fetchGeocodingJson(
   let response: Response;
   try {
     response = await withAbort(fetchImpl(url, { signal, redirect: 'error' }), signal);
-  } catch {
+  } catch (failure) {
+    if (failure instanceof ProviderAccessFailure) {
+      throw new GeocodingFailure(failure.kind);
+    }
     throw new GeocodingFailure(signal.aborted ? 'timeout' : 'network');
   }
 

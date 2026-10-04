@@ -9,11 +9,11 @@
   - [x] P2a — CORS de Production exige origem HTTPS pública explícita; rejeita HTTP e loopback.
   - [x] P2b — Entrada Fastify serverless e paridade HTTP com o baseline local.
   - [x] P2c — Validar Redis HTTPS, token e chave HMAC na entrada serverless.
-- [ ] P3 — Reserva ponderada atômica das quatro janelas, circuit breaker de `429` externo e saída Open-Meteo por allowlist.
+- [x] P3 — Reserva ponderada atômica das quatro janelas, circuit breaker de `429` externo e saída Open-Meteo por allowlist (integração local; pesos/tetos e Redis reais ainda dependem de P1b).
   - [x] P3a — Transporte REST `EVAL` HTTPS com timeout, resposta limitada e falha fechada.
   - [x] P3b — Reserva ponderada atômica genérica das quatro janelas móveis; tetos e pesos reais seguem para P1b.
   - [x] P3c — Circuit breaker compartilhado e transporte Open-Meteo por allowlist, prontos para integração.
-  - [ ] P3d — Ligar as duas rotas à reserva antes de cada `fetch` real.
+  - [x] P3d — Ligar as duas rotas à reserva antes de cada `fetch` real.
 - [ ] P4 — Cache Redis versionado, TTL e deduplicação entre instâncias.
 - [ ] P5 — Pré-limite em memória e rate limit 60/30/15 compartilhado com HMAC de ~1 minuto.
 - [ ] P6 — Integrar busca e previsão com paridade ao baseline local.
@@ -64,6 +64,7 @@ Ao concluir um item, anexar aqui data, revisão testada, comandos/resultados e l
 - **P3a, 2026-10-04:** transporte REST implementado a partir do comando JSON documentado pela Upstash, sem dependência nova. Testes falharam antes da implementação; depois cobrem formato `EVAL`, token no cabeçalho, HTTPS, resposta errada/grande e pane de rede. `npm run check --workspace @nosso-clima/api` passou (394 testes), cobertura 95,04%/91,58%/94,61%/98,02% e `npm run check:boundaries` passou. Ainda não há chamada Redis no caminho de produção: P3b–P3d e prova real de P1b estão pendentes.
 - **P3b, 2026-10-04:** `EVAL` usa hora do Redis e dois nomes versionados de chave para registrar totais ponderados cumulativos; verifica quatro janelas móveis numa operação e só grava após todas permitirem. A janela mensal local é de 31 dias, conservadora para meses civis. O script remove eventos antigos em lote, sem expiração que apagaria reservas recentes. O módulo exige tetos positivos explícitos e trata resultado Redis inesperado como pane. Testes TypeScript falharam antes da implementação; `luac -p` e simulação Lua local passaram para limite por minuto, hora, mês, fronteira exata, negação sem gravação e limpeza. `npm run check --workspace @nosso-clima/api` passou (402 testes), cobertura 95,12%/91,77%/94,70%/98,05% e `npm run check:boundaries` passou. A semântica `EVAL`, custo de comandos, contenção real, peso da previsão e tetos numéricos finais continuam para P1b.
 - **P3c, 2026-10-04:** circuit breaker Redis por serviço com cooldown e uma sonda após expiração; uma sonda antiga não fecha circuito reaberto. Scripts passaram em simulação Lua local. A allowlist de saída aceita somente as URLs HTTPS de geocodificação e previsão e reconstrói opções de `fetch` sem cabeçalhos do visitante. Testes falharam antes dos módulos; depois `npm run check --workspace @nosso-clima/api` passou (417 testes), cobertura 95,19%/91,79%/94,91%/98,12% e `npm run check:boundaries` passou. Ainda falta ligar reserva, breaker e transporte às duas rotas em P3d e medir cooldown real em P1d.
+- **P3d, 2026-10-04:** a entrada serverless agora verifica o circuito e reserva créditos ponderados antes de cada chamada real de ambas as rotas, com falha segura para Redis indisponível, cota negada e `429` externo. A política exige oito variáveis explícitas, documentadas no [runbook](../docs/deploy/vercel-upstash-runbook.md#variáveis-somente-nomes-nunca-valores); valores finais continuam para P1b/P1d. Testes novos falharam antes da implementação da integração e do descarte do corpo em `429`; depois `npm run check --workspace @nosso-clima/api` passou (447 testes), cobertura 94,80%/91,84%/94,53%/97,78% (statements/branches/functions/lines), `npm run check:boundaries`, `git diff --check` e `npm audit --audit-level=high` passaram (0 vulnerabilidades). P3 está concluída localmente; Redis/cache/rate limit compartilhados de P4–P5 e provas hospedadas de P1 seguem pendentes.
 
 ## Disciplina de execução
 
