@@ -1,7 +1,16 @@
 import type { EnvironmentInput } from './env.js';
 
 export function assertServerlessCredentials(environment: EnvironmentInput): void {
-  const redisUrl = environment.UPSTASH_REDIS_REST_URL;
+  parseUpstashEndpoint(environment.UPSTASH_REDIS_REST_URL);
+  assertUpstashToken(environment.UPSTASH_REDIS_REST_TOKEN);
+
+  const hmacKey = environment.RATE_LIMIT_HMAC_KEY;
+  if (!hmacKey || !/^[0-9a-f]{64}$/i.test(hmacKey)) {
+    throw new Error('Invalid RATE_LIMIT_HMAC_KEY');
+  }
+}
+
+export function parseUpstashEndpoint(redisUrl: string | undefined): URL {
   if (!redisUrl || redisUrl !== redisUrl.trim()) {
     throw new Error('Invalid UPSTASH_REDIS_REST_URL');
   }
@@ -25,13 +34,11 @@ export function assertServerlessCredentials(environment: EnvironmentInput): void
     throw new Error('Invalid UPSTASH_REDIS_REST_URL');
   }
 
-  const token = environment.UPSTASH_REDIS_REST_TOKEN;
+  return parsed;
+}
+
+export function assertUpstashToken(token: string | undefined): asserts token is string {
   if (!token || /\s/.test(token)) {
     throw new Error('Invalid UPSTASH_REDIS_REST_TOKEN');
-  }
-
-  const hmacKey = environment.RATE_LIMIT_HMAC_KEY;
-  if (!hmacKey || !/^[0-9a-f]{64}$/i.test(hmacKey)) {
-    throw new Error('Invalid RATE_LIMIT_HMAC_KEY');
   }
 }

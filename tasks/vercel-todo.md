@@ -10,6 +10,10 @@
   - [x] P2b — Entrada Fastify serverless e paridade HTTP com o baseline local.
   - [x] P2c — Validar Redis HTTPS, token e chave HMAC na entrada serverless.
 - [ ] P3 — Reserva ponderada atômica das quatro janelas, circuit breaker de `429` externo e saída Open-Meteo por allowlist.
+  - [x] P3a — Transporte REST `EVAL` HTTPS com timeout, resposta limitada e falha fechada.
+  - [ ] P3b — Reserva ponderada atômica das quatro janelas móveis e parâmetros de orçamento.
+  - [ ] P3c — Circuit breaker compartilhado e transporte Open-Meteo por allowlist.
+  - [ ] P3d — Ligar as duas rotas à reserva antes de cada `fetch` real.
 - [ ] P4 — Cache Redis versionado, TTL e deduplicação entre instâncias.
 - [ ] P5 — Pré-limite em memória e rate limit 60/30/15 compartilhado com HMAC de ~1 minuto.
 - [ ] P6 — Integrar busca e previsão com paridade ao baseline local.
@@ -57,6 +61,7 @@ Ao concluir um item, anexar aqui data, revisão testada, comandos/resultados e l
 - **P2a, 2026-10-04:** testes novos falharam antes da correção para HTTP e três origens de loopback. Depois, `npm run check` passou (373 testes da API, 73 do web), `npm run test:coverage --workspace @nosso-clima/api` passou (statements 94,81%, branches 91,26%, functions 95,45%, lines 97,82%), `npm run build --workspace @nosso-clima/api` passou e `npm audit --audit-level=high` encontrou 0 vulnerabilidades. P2 permanece aberta até P2b.
 - **P2b, 2026-10-04:** `apps/api/app.ts` exporta a instância Fastify sem `listen` ou sinais; seleção da entrada raiz foi confirmada pelo detector local `@vercel/fastify` 62.2.0. Integração testa health, erro de validação, configuração inválida e bloqueio das duas rotas externas enquanto não há reserva P3. `npm run check --workspace @nosso-clima/api` passou (376 testes), cobertura da API 94,87%/91,32%/95,51%/97,84% (statements/branches/functions/lines), `npm run check:boundaries` passou e `npm audit --audit-level=high` encontrou 0 vulnerabilidades. Detecção local não substitui prova da Function no Preview P1a; P2 continua aberta até P2c.
 - **P2c, 2026-10-04:** testes de integração falharam para 11 configurações Redis/HMAC ausentes ou inválidas antes da validação, e passaram depois. A entrada exige URL Redis HTTPS raiz, token não vazio e chave HMAC hexadecimal de 32 bytes; o erro exposto permanece genérico. `npm run check --workspace @nosso-clima/api` passou (387 testes), `npm run check:boundaries` passou e `npm run test:coverage --workspace @nosso-clima/api` passou (94,96%/91,68%/95,54%/97,89% em statements/branches/functions/lines). O runbook contém nomes/formatos para configuração manual futura; nenhum segredo foi criado ou salvo. P2 local concluída; Function real ainda depende de P1a em Preview.
+- **P3a, 2026-10-04:** transporte REST implementado a partir do comando JSON documentado pela Upstash, sem dependência nova. Testes falharam antes da implementação; depois cobrem formato `EVAL`, token no cabeçalho, HTTPS, resposta errada/grande e pane de rede. `npm run check --workspace @nosso-clima/api` passou (394 testes), cobertura 95,04%/91,58%/94,61%/98,02% e `npm run check:boundaries` passou. Ainda não há chamada Redis no caminho de produção: P3b–P3d e prova real de P1b estão pendentes.
 
 ## Disciplina de execução
 
