@@ -7,7 +7,8 @@
 - [x] P0 — Proprietário aprova specs, adendos, fronteiras e este plano para implementação.
 - [ ] P2 — Adapter serverless e configuração segura; rejeitar origem `http:` em Production em `env.ts`.
   - [x] P2a — CORS de Production exige origem HTTPS pública explícita; rejeita HTTP e loopback.
-  - [ ] P2b — Entrada Fastify serverless e paridade HTTP com o baseline local.
+  - [x] P2b — Entrada Fastify serverless e paridade HTTP com o baseline local.
+  - [ ] P2c — Validar Redis HTTPS, token e chave HMAC na entrada serverless.
 - [ ] P3 — Reserva ponderada atômica das quatro janelas, circuit breaker de `429` externo e saída Open-Meteo por allowlist.
 - [ ] P4 — Cache Redis versionado, TTL e deduplicação entre instâncias.
 - [ ] P5 — Pré-limite em memória e rate limit 60/30/15 compartilhado com HMAC de ~1 minuto.
@@ -54,6 +55,7 @@ Ao concluir um item, anexar aqui data, revisão testada, comandos/resultados e l
 - **P1a, preparação local em 2026-10-04:** checks e builds passaram na revisão `a8c22f0` com alterações locais; versões, ausência de remote e sessão Vercel desconectada estão no [runbook](../docs/deploy/vercel-upstash-runbook.md#p1a-preparação-local-em-2026-10-04). Preview e npm 12 ainda não foram provados; P1a permanece aberta.
 - **Ordem revista em 2026-10-04:** o proprietário não disponibilizará a CLI Vercel e configurará GitHub/Vercel manualmente após a implementação local. P2–P9 podem avançar com testes determinísticos; P1 e os gates hospedados continuam obrigatórios antes da publicação. Nenhum resultado local será registrado como prova de Preview.
 - **P2a, 2026-10-04:** testes novos falharam antes da correção para HTTP e três origens de loopback. Depois, `npm run check` passou (373 testes da API, 73 do web), `npm run test:coverage --workspace @nosso-clima/api` passou (statements 94,81%, branches 91,26%, functions 95,45%, lines 97,82%), `npm run build --workspace @nosso-clima/api` passou e `npm audit --audit-level=high` encontrou 0 vulnerabilidades. P2 permanece aberta até P2b.
+- **P2b, 2026-10-04:** `apps/api/app.ts` exporta a instância Fastify sem `listen` ou sinais; seleção da entrada raiz foi confirmada pelo detector local `@vercel/fastify` 62.2.0. Integração testa health, erro de validação, configuração inválida e bloqueio das duas rotas externas enquanto não há reserva P3. `npm run check --workspace @nosso-clima/api` passou (376 testes), cobertura da API 94,87%/91,32%/95,51%/97,84% (statements/branches/functions/lines), `npm run check:boundaries` passou e `npm audit --audit-level=high` encontrou 0 vulnerabilidades. Detecção local não substitui prova da Function no Preview P1a; P2 continua aberta até P2c.
 
 ## Disciplina de execução
 
