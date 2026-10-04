@@ -1,6 +1,3 @@
-// Substituir pelo endereço público quando o repositório estiver disponível.
-const REPOSITORY_URL: string | null = null;
-
 export function SiteInformation() {
   return (
     <div className="site-information">
@@ -31,6 +28,10 @@ export function SiteInformation() {
             </a>
             .
           </p>
+          <p>
+            Responsável pelo site: ChristianGCa. Contato:{' '}
+            <a href="mailto:christiangca.dev@gmail.com">christiangca.dev@gmail.com</a>.
+          </p>
         </section>
         <section id="sobre-o-projeto" aria-labelledby="sobre-o-projeto-titulo">
           <h2 id="sobre-o-projeto-titulo">Sobre o projeto</h2>
@@ -39,11 +40,6 @@ export function SiteInformation() {
             simples. Os dados meteorológicos e as localidades são fornecidos pela Open-Meteo e
             adaptados para esta interface.
           </p>
-          {REPOSITORY_URL ? (
-            <a href={REPOSITORY_URL}>Ver repositório do projeto</a>
-          ) : (
-            <p>Link do repositório em breve.</p>
-          )}
         </section>
         <section id="licencas-e-creditos" aria-labelledby="licencas-e-creditos-titulo">
           <h2 id="licencas-e-creditos-titulo">Licenças e créditos</h2>
@@ -55,8 +51,10 @@ export function SiteInformation() {
             Ícones Meteocons de Bas Milius:{' '}
             <a href="/third-party-licenses.txt">Licença MIT dos ícones</a>.
           </p>
-          <p>O código do NossoClima ainda não tem licença definida.</p>
-          <p>Os direitos de publicação das imagens de fundo ainda estão em análise.</p>
+          <p>
+            Código do NossoClima sob <a href="/code-license.txt">licença MIT</a>.
+          </p>
+          <p>Fundos criados no Gemini e logo criado no Claude para o NossoClima.</p>
         </section>
       </div>
       <a className="information-return" href="#inicio">

@@ -24,12 +24,16 @@ describe('neutral first screen', () => {
     expect(screen.getByRole('heading', { name: 'Seus dados' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Sobre o projeto' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Licenças e créditos' })).toBeTruthy();
-    expect(screen.getByText('Link do repositório em breve.')).toBeTruthy();
     expect(screen.queryByRole('link', { name: /repositório/i })).toBeNull();
+    expect(
+      screen.getByRole('link', { name: 'christiangca.dev@gmail.com' }).getAttribute('href'),
+    ).toBe('mailto:christiangca.dev@gmail.com');
     expect(screen.getByRole('link', { name: 'Licença MIT dos ícones' }).getAttribute('href')).toBe(
       '/third-party-licenses.txt',
     );
-    expect(screen.getByText(/O código do NossoClima ainda não tem licença definida/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'licença MIT' }).getAttribute('href')).toBe(
+      '/code-license.txt',
+    );
     expect(fetchSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
   });

@@ -13,10 +13,10 @@ Vite proxies `/api` to `http://127.0.0.1:3000`. For a build that calls a differe
 
 Run the local checks with `npm run check --workspace @nosso-clima/web`, `npm run test:coverage --workspace @nosso-clima/web`, and `npm run check:boundaries`. The browser accessibility gate requires Playwright's Chromium (`npx playwright install chromium` on a fresh machine), then `npm run test:a11y`.
 
-The ten bundled background files are approved for local development. The ten originals remain in the repository's `backgrounds/` directory; five bundled night variants are optimized and differ from those originals. `production-delivery` must trace the bundled files to their sources and verify publication rights and provider licensing before a public release.
+The ten bundled background files are approved for local development. The ten originals remain in the repository's `backgrounds/` directory; all bundled files are optimized variants. `production-delivery` must trace the bundled files to their sources and verify publication rights and provider licensing before a public release.
 
 The browser accessibility command checks all ten backgrounds at mobile and desktop sizes and records conservative text/control contrast ratios. The latest matrix and method are in `docs/quality/contrast-2026-10-01.md`.
 
-The footer contains a local explanation of data use, project information, and the distinct data and icon licences. The repository URL is intentionally unset in `src/components/site-information.tsx` until the owner provides a public address; the site shows non-clickable text meanwhile. The project code has no licence selected. This local explanation does not replace the release-time privacy notice, which needs the selected host's logging/retention and a public contact route.
+The footer contains a local explanation of data use, the project contact, and separate links for the code, data and icon licences. No repository link is shown until a remote URL exists. This local explanation does not replace the release-time privacy notice, which still needs the selected host's logging and retention details.
 
 The owner-supplied brand variants live in the repository's `logo/` directory. The dark-header vector wordmark is copied into `src/assets/brand/`; the supplied favicon and touch/home-screen icons are copied into `public/`. The page loads only the header wordmark and browser-selected icons.
