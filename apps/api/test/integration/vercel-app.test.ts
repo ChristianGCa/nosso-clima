@@ -8,6 +8,9 @@ const productionEnvironment = {
   HOST: '0.0.0.0',
   LOG_LEVEL: 'silent',
   CORS_ALLOWED_ORIGINS: 'https://clima.example.com',
+  UPSTASH_REDIS_REST_URL: 'https://test-redis.upstash.io',
+  UPSTASH_REDIS_REST_TOKEN: 'test-token-not-a-real-credential',
+  RATE_LIMIT_HMAC_KEY: 'ab'.repeat(32),
 } as const;
 
 let app: FastifyInstance | undefined;
@@ -81,5 +84,26 @@ describe('Vercel Fastify entry', () => {
         CORS_ALLOWED_ORIGINS: 'http://private.example.com',
       }),
     ).toThrow('Invalid API configuration');
+  });
+
+  it.each([
+    ['missing Redis URL', { UPSTASH_REDIS_REST_URL: undefined }],
+    ['malformed Redis URL', { UPSTASH_REDIS_REST_URL: 'not-a-url' }],
+    ['non-HTTPS Redis URL', { UPSTASH_REDIS_REST_URL: 'http://test-redis.upstash.io' }],
+    [
+      'Redis URL with credentials',
+      { UPSTASH_REDIS_REST_URL: 'https://user:pass@test-redis.upstash.io' },
+    ],
+    ['Redis URL with path', { UPSTASH_REDIS_REST_URL: 'https://test-redis.upstash.io/other' }],
+    ['Redis URL with query', { UPSTASH_REDIS_REST_URL: 'https://test-redis.upstash.io/?x=1' }],
+    ['missing Redis token', { UPSTASH_REDIS_REST_TOKEN: undefined }],
+    ['blank Redis token', { UPSTASH_REDIS_REST_TOKEN: '  ' }],
+    ['missing HMAC key', { RATE_LIMIT_HMAC_KEY: undefined }],
+    ['short HMAC key', { RATE_LIMIT_HMAC_KEY: 'ab'.repeat(31) }],
+    ['non-hex HMAC key', { RATE_LIMIT_HMAC_KEY: 'z'.repeat(64) }],
+  ])('rejects %s without exposing configuration', (_case, values) => {
+    expect(() => createVercelApp({ ...productionEnvironment, ...values })).toThrow(
+      /^Invalid API configuration$/,
+    );
   });
 });

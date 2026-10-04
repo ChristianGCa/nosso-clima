@@ -47,14 +47,16 @@ A [Vercel documenta projetos por diretório](https://vercel.com/docs/monorepos) 
 
 | Escopo | Variável | Regra |
 |---|---|---|
-| API Preview/Production | `UPSTASH_REDIS_REST_URL` | URL `https:` criada pela integração Upstash; conferir ambiente e região |
-| API Preview/Production | `UPSTASH_REDIS_REST_TOKEN` | Segredo apenas server-side, distinto por ambiente quando possível |
-| API Preview/Production | `RATE_LIMIT_HMAC_KEY` (nome proposto) | Segredo para digest temporário do IP; validar comprimento/rotação em P1 |
+| API Preview/Production | `NODE_ENV` / `HOST` | `production` / `0.0.0.0`; `HOST` é exigido pelo parser compartilhado, embora a Function não chame `listen` |
+| API Preview/Production | `UPSTASH_REDIS_REST_URL` | URL raiz `https:` da Upstash, sem credenciais, caminho adicional, query ou fragmento; conferir ambiente e região |
+| API Preview/Production | `UPSTASH_REDIS_REST_TOKEN` | Token REST secreto apenas server-side, distinto por ambiente quando possível |
+| API Preview/Production | `RATE_LIMIT_HMAC_KEY` | 32 bytes aleatórios codificados em 64 caracteres hexadecimais, gerados separadamente para cada ambiente com `openssl rand -hex 32`; guardar como variável sensível |
 | API Preview/Production | `CORS_ALLOWED_ORIGINS` ou substituto específico de Vercel | Somente origem web exata; resolver Preview pareado em P1 |
 | API Preview isolado | `UPSTREAM_TEST_BASE` (se necessário ao ensaio) | Apenas eco protegido, proibido em Production e removido antes do release |
 | Web Production | `VITE_API_BASE_URL` | **Ausente**; o cliente usa `/api/v1/*` relativo |
 
 Não imprimir valores no build, nos logs, no runbook ou no frontend. Variáveis do Marketplace não devem ser ligadas ao projeto web. Confirmar o nome real de cada env depois da prova P1; a tabela não exige que a implementação mantenha `CORS_ALLOWED_ORIGINS` com semântica de processo antigo.
+Na [configuração de ambiente da Vercel](https://vercel.com/docs/environment-variables), selecionar os escopos Preview e Production no projeto API. A [Upstash fornece a URL e o token REST](https://upstash.com/docs/redis/howto/connect-with-upstash-redis) na aba de conexão do banco. A entrada da API falha ao inicializar se qualquer um dos três valores de Redis/HMAC estiver ausente ou inválido; não os adicionar ao projeto web.
 
 ## Sequência de Preview
 

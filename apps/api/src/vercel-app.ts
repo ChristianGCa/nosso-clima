@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 import { buildApp } from './app.js';
 import { type AppConfig, type EnvironmentInput, parseEnvironment } from './config/env.js';
+import { assertServerlessCredentials } from './config/serverless-credentials.js';
 
 const denyUnreservedFetch: typeof fetch = async () => {
   throw new Error('Unreserved provider request blocked');
@@ -17,6 +18,7 @@ export function createVercelApp(
       throw new Error('NODE_ENV is required');
     }
     config = parseEnvironment(environment);
+    assertServerlessCredentials(environment);
   } catch {
     throw new Error('Invalid API configuration');
   }

@@ -7,7 +7,7 @@
 
 ## Contrato local vigente
 
-`apps/api/src/app.ts` compõe Fastify, configuração, HTTP, erros, logs, cache LRU, `SingleFlight`, executor limitado e rate limits locais. `server.ts` controla `listen` e shutdown. A entrada Vercel existe em `apps/api/app.ts` e constrói o mesmo Fastify sem abrir porta nem instalar sinais; bloqueia chamadas externas até a reserva P3 estar conectada. Redis, reserva agregada e HMAC compartilhado ainda não estão implementados. A Function hospedada ainda depende de prova em Preview P1a.
+`apps/api/src/app.ts` compõe Fastify, configuração, HTTP, erros, logs, cache LRU, `SingleFlight`, executor limitado e rate limits locais. `server.ts` controla `listen` e shutdown. A entrada Vercel existe em `apps/api/app.ts` e constrói o mesmo Fastify sem abrir porta nem instalar sinais; valida configuração Redis/HMAC e bloqueia chamadas externas até a reserva P3 estar conectada. Redis, reserva agregada e HMAC compartilhado ainda não estão implementados. A Function hospedada ainda depende de prova em Preview P1a.
 
 O [baseline Node aprovado](docs/history/backend-platform-node-baseline-2026-09-23.md) continua sendo a referência detalhada do contrato local: health, envelopes de erro, request IDs, limites de entrada, configuração, segurança, cache, fila e lifecycle. Os contratos de busca e previsão estão nas respectivas specs atuais. A localização do baseline em `docs/history/` preserva o documento original; não revoga essas garantias.
 
