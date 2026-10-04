@@ -1,6 +1,6 @@
 # ADR 0001 — Vercel em dois projetos com Upstash Redis
 
-- **Estado:** proposto em 2026-10-04. O proprietário confirmou o escopo para documentação; aprovação P0 de implementação e decisão de publicação ainda pendentes.
+- **Estado:** aprovado para implementação pelo proprietário em 2026-10-04. A decisão de publicação pública permanece pendente.
 - **Decisores:** proprietário do NossoClima.
 - **Refs:** [pesquisa](../deploy/vercel-research-2026-10-04.md), [spec da plataforma](../../SPEC-backend-platform.md), [spec de entrega](../../SPEC-production-delivery.md), [plano](../../tasks/vercel-plan.md).
 
@@ -12,7 +12,7 @@ O NossoClima já tem web Vite e API Fastify/Node. O cache e os limites atuais vi
 
 Usar **dois projetos Vercel no mesmo repositório**: estáticos em `apps/web`, Function Fastify em `apps/api`, com `/api/*` reescrito do domínio web ao domínio da API. Usar **Upstash Redis via HTTPS** do Marketplace, somente em planos gratuitos, para cache de busca de até 24 h, cache de previsão de até 10 min, contadores de rate limit por HMAC de IP com vida aproximada de 1 min e reserva atômica da cota ponderada Open-Meteo nas janelas de minuto, hora, dia e mês. Exigir regra WAF antes da Function, pré-limite em memória e alarme mensal de comandos. O Redis fica acessível apenas à API; IP bruto não é armazenado. Uma chamada Open-Meteo só ocorre após reserva; em falha/cota esgotada, a API não faz nova chamada externa. `429` externo abre circuit breaker compartilhado e impede novo miss durante cooldown. O navegador usa caminho de API relativo, sem credencial nem fetch direto aos fornecedores.
 
-Ambas as rotas reais precisam de teste com eco e canário em Preview e caminho final. A publicação requer pacote de evidência e autorização separada. Esta ADR não autoriza criação de projetos, mudança de código ou publicação.
+Ambas as rotas reais precisam de teste com eco e canário em Preview e caminho final. A publicação requer pacote de evidência e autorização separada. A aprovação P0 autoriza implementar as etapas do plano, sujeita aos seus gates, sem autorizar publicação pública.
 
 ## Alternativas consideradas
 
@@ -31,4 +31,4 @@ Ambas as rotas reais precisam de teste com eco e canário em Preview e caminho f
 - A reserva ponderada deve ser única para geocodificação e previsão, segura sob concorrência e quatro janelas móveis. A tabela de preços Open-Meteo inclui 300.000/mês, embora a seção de uso não comercial dos termos cite apenas minuto/hora/dia; P1 esclarecerá a discrepância. Peso e tetos internos permanecem pendentes de cálculo oficial e ensaio P1; a reserva própria não garante capacidade de um IP de saída compartilhado.
 - Planos gratuitos podem interromper o serviço. Não há upgrade automático nem cobrança aceita. Dimensionamento inclui comandos de Redis, invocações, banda, armazenamento e pedidos WAF sob abuso. P1 mede comandos por pedido, eficácia do WAF em ambos os caminhos, alarme mensal e taxa de `429` externo; se a proteção não for viável, a P0 é reaberta.
 - CDN/rewrite podem alterar caching e headers; Preview deve demonstrar a política real. O teste de ausência de IP é específico ao código e ao caminho final.
-- Todos os limiares de `CONSTRAINTS.md` continuam ativos. A P0 precisa de aprovação explícita antes de implementação.
+- Todos os limiares de `CONSTRAINTS.md` continuam ativos. A P0 foi aprovada para implementação em 2026-10-04; cada gate posterior conserva seu próprio critério de aceite.

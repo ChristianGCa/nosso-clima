@@ -9,13 +9,11 @@
 
 Os sete cartões passam a mostrar a **condição predominante**, calculada na API a partir de `hourly.weather_code`, sem alterar o formato público da resposta. Para cada data local, contar horas por categoria (`clear`, `cloudy`, `rain`, `snow`, `storm`) e escolher a categoria com mais horas; empate é resolvido pela primeira ocorrência no dia. Dentro dela, escolher o código WMO mais frequente, também com desempate pela primeira ocorrência. Isso evita que uma tempestade isolada represente um dia predominantemente nublado. A previsão atual continua usando `current.weather_code`.
 
-Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code` e a lista de variáveis externas. `daily.weather_code` sai da consulta; `hourly.weather_code` entra. O custo ponderado e o tamanho reais da nova consulta devem ser medidos no P1 antes da entrega de produção. As regras propostas de Redis/Vercel continuam dependentes da aprovação P0 separada.
+Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code` e a lista de variáveis externas. `daily.weather_code` sai da consulta; `hourly.weather_code` entra. O custo ponderado e o tamanho reais da nova consulta devem ser medidos no P1 antes da entrega de produção. A migração Redis/Vercel foi aprovada para implementação na P0 e ainda depende da prova P1.
 
-## Proposta de alteração para deploy Vercel (ainda não implementável)
+## Alcance desta spec
 
-O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para previsão validada, com TTL máximo de 10 minutos, sem IP ou identificador do visitante. A chave opaca é derivada com segredo da API das coordenadas arredondadas para três casas e do fuso canônico; o valor preserva a resposta pública, inclusive `retrievedAtUtc`, durante o TTL. Não há histórico, dado vencido nem cache de falhas. Cache e reserva agregada são infraestrutura de `backend-platform`; parâmetros Open-Meteo, sete dias, contrato HTTP, validação e créditos abaixo não mudam.
-
-Esta é uma **alteração proposta**, dependente da aprovação P0 de `SPEC-backend-platform.md` e `SPEC-production-delivery.md`. Até essa aprovação, as regras abaixo sobre cache local e não persistência continuam sendo a base da implementação existente. Após aprovação, somente a persistência efêmera descrita acima na Upstash substitui essas regras; a proibição de logs, telemetria, histórico e armazenamento sem TTL permanece. Não alterar este módulo para Redis antes da aprovação e dos testes de viabilidade P1.
+O contrato HTTP e o comportamento local abaixo estão implementados e aprovados. A seção **Cache: contrato local e migração proposta** identifica separadamente o cache atual e a alteração Vercel + Upstash aprovada para implementação, ainda pendente da prova P1. Os critérios concluídos registram a entrega local; a migração de produção é acompanhada em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -136,11 +134,21 @@ JSON begins as `unknown`. Permit extra provider fields but validate every consum
 
 Only daily precipitation probability permits `null`; a missing array, missing entry or `null` in any other consumed field remains an invalid upstream response.
 
-## Cache and Shared Work
+## Cache: contrato local e migração proposta
+
+### Implementado localmente
 
 Use `BackendPlatformContext.createCache('weather-forecast')` exactly once from `buildApp()` with the shared `SingleFlight` and bounded outbound executor. The owner-approved TTL for the entire normalized current-plus-daily result is **10 minutes**. Both data and `retrievedAtUtc` remain unchanged during a cache hit, and expiry is inclusive at the exact boundary. Cache only complete validated success, never provider failures, saturation or unexpected errors; do not serve stale data. Recheck inside the single-flight callback.
 
 The namespaced cache key includes canonical coordinates and timezone; it is never logged. Each miss consumes one executor slot for the bounded outbound operation. Distinct places may run independently within the shared concurrency ceiling. Cache and in-flight state are process-local and disposable, not an aggregate usage-quota mechanism.
+
+### Migração Vercel + Upstash — P0 aprovada, pendente de P1
+
+O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para previsão validada, com TTL máximo de 10 minutos, sem IP ou identificador do visitante. A chave opaca é derivada com segredo da API das coordenadas arredondadas para três casas e do fuso canônico; o valor preserva a resposta pública, inclusive `retrievedAtUtc`, durante o TTL. Não há histórico, dado vencido nem cache de falhas. Cache e reserva agregada são infraestrutura de `backend-platform`; parâmetros Open-Meteo, sete dias, contrato HTTP, validação e créditos desta spec não mudam.
+
+Esta alteração foi aprovada para implementação na P0; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime existente. P4 implementa a infraestrutura de cache e P6 integra este módulo localmente; só essa migração verificada e aprovada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
+
+Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 10 minutos são preservados. A aceitação da migração exige testes entre instâncias, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs, conforme a [lista ativa](tasks/vercel-todo.md).
 
 ## Observability, Privacy and Licensing
 
@@ -222,10 +230,11 @@ export type ForecastLocation = Readonly<{
 
 - Let public input choose an outbound origin, path, header or credential.
 - Trust TypeScript instead of validating provider data, or forward raw provider payloads.
-- Log/persist coordinates, timezone, keys, weather values, provider text, IPs or secrets.
+- Log coordinates, timezone, keys, weather values, provider text, IPs or secrets.
+- Persist any of the data listed in the preceding rule in the current local implementation. The only proposed exception is the bounded Upstash cache specified above, activated through P0/P1 and verified integration; it does not permit raw IP storage, history or other persistence.
 - Bypass shared rate limits/executor, retry a 429 blindly, weaken constraints or skip tests.
 
-## Success Criteria
+## Success Criteria — implementação local
 
 - [x] Exactly one validated city selection produces current conditions and seven consecutive local calendar days in the stable metric-unit response.
 - [x] All current and daily WMO codes map deterministically to a documented category and Portuguese label; unknown codes fail safely.
@@ -240,7 +249,7 @@ export type ForecastLocation = Readonly<{
 
 ## Decisions and Approval Gate
 
-The owner confirmed on 2026-09-23:
+The original decisions were confirmed on 2026-09-23; later amendments are dated below:
 
 1. **TTL:** 10 minutes for current conditions and all seven daily records in one cache entry. The public-deployment aggregate usage budget must account for this TTL.
 2. **First visit:** Neutral `weather-ui` state until explicit city selection; no default city. A returning browser may request a fresh forecast for its last selected city under the revised `weather-ui` spec.
@@ -249,7 +258,7 @@ The owner confirmed on 2026-09-23:
 5. **Coordinates:** Round valid latitude and longitude to three decimal places before the upstream request and cache key (owner clarification after plan review).
 6. **UV removal:** The owner requested removal of UV maximum and derived risk from the provider query, response contract and UI on 2026-09-28.
 
-All listed decisions are resolved, and the owner approved this spec and the W1–W7 plan with the requested amendments on 2026-09-23.
+The owner approved the original spec and W1–W7 plan on 2026-09-23 and the completed local module at Checkpoint W-C on 2026-09-24. Later owner requests on 2026-09-28 and 2026-10-04 amended the local contract as recorded above. The Redis migration was approved for implementation at P0 on 2026-10-04 and remains subject to the P1 viability gate.
 
 ## Official Sources
 

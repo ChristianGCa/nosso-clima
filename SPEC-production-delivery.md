@@ -1,9 +1,14 @@
 # Spec: Production Delivery — dois projetos Vercel (P0)
 
-- **Estado:** proposta P0 de 2026-10-04; o proprietário confirmou o escopo para documentação, mas não aprovou implementação nem publicação.
+- **Estado:** P0 aprovada para implementação pelo proprietário em 2026-10-04; publicação pública depende de decisão separada.
 - **Módulo:** `production-delivery`; depende de `backend-platform`, `location-search`, `weather-forecast`, `weather-ui`.
 - **Histórico:** [plano original Node](docs/history/production-delivery-pre-p0-2026-10-03.md). A alternativa Cloudflare foi descartada.
 - **Pesquisa:** [viabilidade e fontes oficiais](docs/deploy/vercel-research-2026-10-04.md).
+- **Execução:** [plano P0–P11](tasks/vercel-plan.md) e [lista ativa de tarefas/evidências](tasks/vercel-todo.md).
+
+## Estado e alcance
+
+Este módulo ainda não foi implementado. O fluxo local está concluído; os critérios abaixo dizem respeito à entrega Vercel + Upstash. `production-delivery` coordena os gates e a implantação, enquanto os requisitos de runtime compartilhado são definidos em [Backend Platform](SPEC-backend-platform.md). Por orientação do proprietário em 2026-10-04, P2–P9 são implementados e testados localmente primeiro. Depois ele configura a Vercel e executa P1 em Preview protegido com a implementação final. Evidência local não conclui P1 nem autoriza publicação.
 
 ## Resultado pretendido
 
@@ -11,9 +16,9 @@ Publicar o NossoClima não comercial usando somente planos gratuitos: um projeto
 
 O proprietário exige que a Open-Meteo não receba o IP do visitante, escolheu apenas planos gratuitos e autorizou resultados temporários na Upstash (busca até 24 h, previsão até 10 min, sem IP) e HMAC derivado de IP por aproximadamente 1 min para rate limit. Uma falha ou cota esgotada pode tornar a consulta indisponível; a API não faz chamada externa sem reserva. Não há artefatos verificáveis do ensaio de Preview anterior neste pacote; ele não serve como evidência de aprovação.
 
-## Viabilidade P1 antes de código de produção
+## Viabilidade P1 antes de publicação pública
 
-- Provar com um protótipo isolado de Preview os dois [projetos de monorepo](https://vercel.com/docs/monorepos), o [adapter Fastify](https://vercel.com/docs/frameworks/backend/fastify), [Node 24](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions), npm 12/lockfile, diretórios raiz e [rewrite](https://vercel.com/docs/routing/rewrites). Registrar a configuração efetiva, URLs, versões, status das rotas e comportamento de Preview pareado com backend correto. Não fixar no bundle web a URL de Preview da API.
+- Provar com a implementação final em Preview protegido os dois [projetos de monorepo](https://vercel.com/docs/monorepos), o [adapter Fastify](https://vercel.com/docs/frameworks/backend/fastify), [Node 24](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions), npm 12/lockfile, diretórios raiz e [rewrite](https://vercel.com/docs/routing/rewrites). Registrar a configuração efetiva, URLs, versões, status das rotas e comportamento de Preview pareado com backend correto. Não fixar no bundle web a URL de Preview da API.
 - Criar Upstash pela integração do Marketplace em conta do proprietário somente depois da aprovação P0. Verificar variáveis do projeto API por ambiente, endpoint `https:`, segredo não exposto no web, região, custo por comando, latência, TTL, scripts e reserva sob contenção real. Nenhuma instância de teste deve exceder as cotas gratuitas.
 - Confirmar na [documentação da Vercel sobre IP](https://vercel.com/docs/headers/request-headers) e por requisições com IP falsificado o sinal recebido pela Function via domínio API direto e rewrite web. Resolver a derivação HMAC e o caso de header ausente sem confiar em um cabeçalho fornecido pelo visitante.
 - Verificar que os headers e o cache do CDN/rewrite não servem erro ou dados além dos TTLs; cache compartilhado Redis continua autoritativo. Testar `Cache-Control` de sucesso/erro e o comportamento real do [CDN](https://vercel.com/docs/caching/cdn-cache). A [mudança de cache em rewrites anunciada em 2026](https://vercel.com/changelog/vercels-cdn-now-respects-cache-control-headers-from-external-origins-by-default) exige medição, não suposição.
@@ -39,7 +44,7 @@ O proprietário exige que a Open-Meteo não receba o IP do visitante, escolheu a
 
 - Definir alarmes/observabilidade sem dados pessoais para `429` externo versus limite próprio, circuit breaker, 503, negações de cota, comandos mensais Upstash, consumo WAF/Vercel, falha Open-Meteo e cache hit/miss. Confirmar notificações e comportamento ao limite do plano gratuito; não habilitar cobrança ou upgrade automático. Registrar região, project IDs, nomes de variáveis (não valores), versão, URL web/API, quotas internas de minuto/hora/dia/mês e período de retenção no runbook.
 - Ensaiar deploy protegido de Preview, smoke de `/health`, validação inválida sem provider, busca/previsão com fixture e, após termos/cota/privacy revisados, no máximo chamadas reais manuais limitadas. Reverter os **dois** projetos para versões compatíveis, mantendo chaves Redis e formato de valor versionados durante o rollback; testar que um frontend antigo continua falando com API antiga/compatível. Registrar comandos e resultados, sem alegar rollback testado antes do ensaio.
-- Exposição pública depende de revisão do pacote final pelo proprietário em decisão separada. O escopo confirmado em 2026-10-04 autoriza este documento, não cria projeto externo, não aprova código de produção e não publica o site.
+- Exposição pública depende de revisão do pacote final pelo proprietário em decisão separada. A autorização de implementação de 2026-10-04 permite executar o plano P1–P11, respeitando os gates de viabilidade; não aprova publicação pública.
 
 ## Critérios de aceite
 

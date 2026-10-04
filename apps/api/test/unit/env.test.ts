@@ -129,4 +129,18 @@ describe('parseEnvironment', () => {
       }),
     ).toThrow(/CORS_ALLOWED_ORIGINS/);
   });
+
+  it.each([
+    ['HTTP', 'http://clima.example.com'],
+    ['localhost', 'https://localhost:4173'],
+    ['IPv4 loopback', 'https://127.0.0.1:4173'],
+    ['IPv6 loopback', 'https://[::1]:4173'],
+  ])('rejects %s as a production CORS origin', (_caseName, origin) => {
+    expect(() =>
+      parseEnvironment({
+        ...validProductionEnvironment,
+        CORS_ALLOWED_ORIGINS: origin,
+      }),
+    ).toThrow(/CORS_ALLOWED_ORIGINS/);
+  });
 });

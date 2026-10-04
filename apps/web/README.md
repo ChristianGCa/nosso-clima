@@ -9,13 +9,13 @@ npm run dev --workspace @nosso-clima/api
 npm run dev --workspace @nosso-clima/web
 ```
 
-Vite proxies `/api` to `http://127.0.0.1:3000`. For a build that calls a different API origin, set `VITE_API_BASE_URL` to that origin before building. Production origin and CORS decisions belong to `production-delivery`.
+Vite proxies `/api` to `http://127.0.0.1:3000`. The current local client also accepts `VITE_API_BASE_URL` for a separate API origin. The [Vercel delivery proposal](../../SPEC-production-delivery.md) instead uses relative `/api/v1/*` paths with a web-to-API rewrite; its configuration leaves this variable unset. Production validation of the variable is still pending in P7 of the [active plan](../../tasks/vercel-plan.md).
 
 Run the local checks with `npm run check --workspace @nosso-clima/web`, `npm run test:coverage --workspace @nosso-clima/web`, and `npm run check:boundaries`. The browser accessibility gate requires Playwright's Chromium (`npx playwright install chromium` on a fresh machine), then `npm run test:a11y`.
 
 The ten bundled background files are approved for local development. The ten originals remain in the repository's `backgrounds/` directory; all bundled files are optimized variants. `production-delivery` must trace the bundled files to their sources and verify publication rights and provider licensing before a public release.
 
-The browser accessibility command checks all ten backgrounds at mobile and desktop sizes and records conservative text/control contrast ratios. The latest matrix and method are in `docs/quality/contrast-2026-10-01.md`.
+The browser accessibility command checks all ten backgrounds at mobile and desktop sizes and records conservative text/control contrast ratios. The [2026-10-04 report](../../docs/quality/contrast-2026-10-04.md) is the latest measurement after the card changes; the [2026-10-01 report](../../docs/quality/contrast-2026-10-01.md) explains the method and preserves the previous matrix.
 
 The footer contains a local explanation of data use, the project contact, and separate links for the code, data and icon licences. No repository link is shown until a remote URL exists. This local explanation does not replace the release-time privacy notice, which still needs the selected host's logging and retention details.
 

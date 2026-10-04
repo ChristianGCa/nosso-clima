@@ -1,6 +1,23 @@
 # Runbook preliminar: Vercel + Upstash
 
-**Estado:** rascunho de 2026-10-04 para P0/P1. Não execute como procedimento de publicação: nomes reais de projetos, região, quotas, variáveis finais, CI e rollback ainda dependem de Preview e aprovação. Ver [plano](../../tasks/vercel-plan.md) e [pesquisa](vercel-research-2026-10-04.md).
+**Estado:** rascunho de 2026-10-04 para P1 após aprovação da implementação P0. Não execute como procedimento de publicação: nomes reais de projetos, região, quotas, variáveis finais, CI e rollback ainda dependem de Preview e revisão final. Ver [plano](../../tasks/vercel-plan.md) e [pesquisa](vercel-research-2026-10-04.md).
+
+## P1a: preparação local em 2026-10-04
+
+Revisão de base: `a8c22f0`, com alterações locais anteriores ainda não commitadas. Esta preparação não conclui P1a, pois não houve Preview.
+
+| Verificação | Resultado local |
+|---|---|
+| `node --version` | `v24.21.0` |
+| `npm --version` | `11.19.0`; npm 12 exigido ainda não foi verificado |
+| `vercel --version` | CLI `62.2.0` |
+| `vercel whoami` | `Logged out`; nenhum projeto foi criado ou implantado |
+| `git remote -v` | Nenhum remote configurado neste checkout |
+| `npm run check` | Passou: TypeScript, Biome, 369 testes da API, 73 do web e fronteiras |
+| `npm run build --workspace @nosso-clima/api` | Passou |
+| `npm run build --workspace @nosso-clima/web` | Passou |
+
+Para concluir P1a ainda são necessários `npm ci` com npm 12 em ambos os projetos e Preview protegido que comprove diretórios raiz, detecção da entrada Fastify, versão efetiva, API direta, rewrite pareado, 404 JSON, CORS/Origin e headers/cache. A [documentação atual de monorepos](https://vercel.com/docs/monorepos), [Fastify](https://vercel.com/docs/frameworks/backend/fastify), [rewrites](https://vercel.com/docs/routing/rewrites) e [Node](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions) orienta a configuração, mas não substitui a medição no projeto real.
 
 ## Preparação local
 
@@ -41,13 +58,13 @@ Não imprimir valores no build, nos logs, no runbook ou no frontend. Variáveis 
 
 ## Sequência de Preview
 
-1. Após aprovação P0, criar projetos privados/protegidos e Upstash Free em região próxima à Function, sem ativar upgrade automático. Registrar nomes, regiões e limites, sem token.
+1. Após implementação e gates locais P2–P9, o proprietário cria projetos privados/protegidos e Upstash Free em região próxima à Function, sem ativar upgrade automático. Registrar nomes, regiões e limites, sem token.
 2. Implantar API em Preview com fixtures/eco protegidos. Conferir `/health`, erro JSON de query inválida, rotas e status, versões Node/npm, URLs e logs seguros.
 3. Implantar web Preview ligado **àquela** API Preview. Conferir rewrite, origem do navegador, CORS/Origin recebido, assets, `Cache-Control` de sucesso/erro e ausência de segredo no JS compilado.
 4. Provar Redis: `EVAL` atômico em quatro janelas, falha fechada, TTL de cache e HMAC, comportamento com duas instâncias e comandos por pedido aceito/rejeitado. Confirmar peso oficial de ambas consultas, discrepância termos/preços no limite mensal de 300.000 e orçamento com margem em cada janela.
 5. Configurar a regra WAF nas rotas API e provar acesso direto e via rewrite, bloqueio antes da Function, contadores por região, consumo de pedidos permitidos e zero comando Redis nas rejeições. Medir pré-limite em memória, custo de comandos e testar alarme mensal. Medir manualmente a taxa de `429` externo a partir da Vercel e testar cooldown/reabertura do circuit breaker.
 6. Repetir eco com canário/IP falso nas duas rotas e nos dois domínios. Desabilitar cache no ensaio ou contar hits no receptor para provar 1 saída real por execução; registrar apenas se algum valor sensível chegou.
-7. Rodar suites, browser E2E, acessibilidade, performance, auditoria e scan de segredos. P1 poderá descobrir bloqueios antes desses comandos serem implementados; qualquer gate ainda ausente fica pendente, nunca marcado verde.
+7. Repetir suites, browser E2E, acessibilidade, performance, auditoria e scan de segredos na revisão implantada. Qualquer gate ausente ou falho fica pendente, nunca marcado verde.
 
 ## Falha, limites e rollback
 

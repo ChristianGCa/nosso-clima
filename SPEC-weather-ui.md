@@ -5,6 +5,10 @@
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
 
+## Alcance desta spec
+
+O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. A adaptação para Vercel está descrita abaixo como proposta de P7; seu progresso é registrado em [tasks/vercel-todo.md](tasks/vercel-todo.md). A entrega local não conclui os gates de produção.
+
 ## Objective
 
 Build a responsive Portuguese-language site where a person searches for a city, explicitly selects one result, and understands its current conditions and seven-day forecast. The interface must make the city, local times, units, uncertainty and unavailable metrics clear without requiring weather expertise. It consumes the two approved backend HTTP contracts and does not interpret raw Open-Meteo responses or WMO codes.
@@ -27,6 +31,8 @@ For rate limiting, show a specific friendly message for `429 RATE_LIMITED` and a
 ## Backend Contracts and Presentation
 
 The frontend calls the same configured API base URL for both routes and uses `URLSearchParams` for query values. The base URL comes from build configuration, never from a search term or server response. Development may use a Vite proxy; production origin and CORS configuration belong to `production-delivery`.
+
+**Migração Vercel — P0 aprovada, implementação local em P7 e publicação pendente de P1:** o build de produção usa `/api/v1/*` na origem web, com rewrite para a API. A configuração prevista deixa `VITE_API_BASE_URL` ausente; se a variável for fornecida, a validação deve aceitar somente a própria origem HTTPS e rejeitar HTTP, loopback e outra origem. Essa validação ainda não existe no cliente atual. O rewrite, CORS e os headers de entrega seguem [Production Delivery](SPEC-production-delivery.md); contratos HTTP e comportamento visual continuam os descritos nesta spec.
 
 The HTTP boundary also rejects a forecast whose first daily date is not the date in `current.validAtLocal`, or whose returned timezone differs from the explicitly selected city's timezone. Such a response uses the unavailable state instead of labelling a mismatched date “HOJE” or presenting a time for the wrong zone.
 
@@ -135,9 +141,9 @@ type ForecastViewState =
 - Hide text directly in imagery, rely on color alone, or silently choose a search result.
 - Import `apps/api/src` at runtime, expose raw provider diagnostics, or publish images with unverified rights.
 
-## Success Criteria
+## Success Criteria — implementação local
 
-The checked items record the local handoff approved on 2026-09-24 and subsequent owner-approved amendments through 2026-09-28. The later audit findings below reopen verification of specific claims without changing the approved behavior.
+The checked items record the local handoff approved on 2026-09-24, subsequent owner-approved amendments through 2026-10-04 and the completed corrective verification below. Current contrast evidence is in [the 2026-10-04 report](docs/quality/contrast-2026-10-04.md); the earlier report preserves the original method and measurement.
 
 - [x] A first visit without a saved city makes no location or forecast request and shows a useful neutral state.
 - [x] Reopening with a valid saved city shows its name and requests a fresh forecast without geocoding; corrupt or blocked storage falls back safely to the neutral state.
@@ -155,11 +161,11 @@ The checked items record the local handoff approved on 2026-09-24 and subsequent
 - [x] HTTP failures other than `429 RATE_LIMITED` and `503 SERVICE_UNAVAILABLE` use the generic failure state. Boundary and component tests cover unrelated statuses and keep provider diagnostics hidden.
 - [x] Mobile and desktop contrast was measured for all ten bundled backgrounds against computed text and control surfaces. The reproducible browser check and its numeric evidence are in `apps/web/test/contrast.mjs` and `docs/quality/contrast-2026-10-01.md`.
 
-## Decisions for Owner Review
+## Decisions and Approval Record
 
 1. The UI starts searching at three Unicode code points after a 300 ms debounce; the API itself still accepts two-character searches.
 2. A new city selection clears the old forecast until the new response succeeds; typing alone leaves the current forecast visible.
-3. Superseded on 2026-10-04: the daily condition now means “Condição predominante”; rain chance (%) and rain volume (mm) remain distinct values in both the detailed card and compact summaries.
+3. Since the approved amendment of 2026-10-04, the daily condition means “Condição predominante”; rain chance (%) and rain volume (mm) remain distinct values in both the detailed card and compact summaries.
 4. The existing WebP images may be used during local development. The owner stated on 2026-09-27 that they generated all ten in the Gemini app without uploading reference images and reaffirmed the Gemini origin on 2026-10-01. This records the stated origin; the public-use rights review remains part of `production-delivery`, and no ownership or licence is inferred from the files' presence in the repository.
 
 The owner approved this spec and the resulting plan and U1–U10 tasks on 2026-09-24. The owner approved the completed local user flow at Checkpoint U-C on 2026-09-24.

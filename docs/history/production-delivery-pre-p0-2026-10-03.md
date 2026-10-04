@@ -1,5 +1,7 @@
 # Spec: Production Delivery
 
+**Histórico, substituído pela proposta Vercel + Upstash em 2026-10-04.** As referências a Cloudflare e tarefas pendentes abaixo pertencem ao planejamento daquela data. Consulte a [spec atual](../../SPEC-production-delivery.md) e o [plano ativo](../../tasks/vercel-plan.md) para continuar.
+
 - **Status:** Approved for planning by owner on 2026-09-24; owner clarified use, traffic and asset origins on 2026-10-01; Cloudflare deployment amendment remains pending
 - **Module id:** `production-delivery`
 - **Depends on:** `location-search`, `weather-forecast`, `weather-ui`

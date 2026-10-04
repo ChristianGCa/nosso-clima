@@ -88,7 +88,7 @@ export function parseEnvironment(environment: EnvironmentInput): AppConfig {
     throw new Error('CORS_ALLOWED_ORIGINS cannot contain a wildcard in production');
   }
 
-  const corsAllowedOrigins = parseCorsAllowedOrigins(parsed.CORS_ALLOWED_ORIGINS);
+  const corsAllowedOrigins = parseCorsAllowedOrigins(parsed.CORS_ALLOWED_ORIGINS, parsed.NODE_ENV);
 
   return Object.freeze({
     nodeEnv: parsed.NODE_ENV,
@@ -132,16 +132,19 @@ function hasNonBlankValue(environment: EnvironmentInput, key: string): boolean {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function parseCorsAllowedOrigins(rawOrigins: string): readonly string[] {
+function parseCorsAllowedOrigins(
+  rawOrigins: string,
+  nodeEnvironment: NodeEnvironment,
+): readonly string[] {
   const values = rawOrigins.split(',').map((origin) => origin.trim());
   if (values.some((origin) => origin.length === 0)) {
     throw invalidCorsOriginsError();
   }
 
-  return Object.freeze(values.map(normalizeHttpOrigin));
+  return Object.freeze(values.map((origin) => normalizeHttpOrigin(origin, nodeEnvironment)));
 }
 
-function normalizeHttpOrigin(origin: string): string {
+function normalizeHttpOrigin(origin: string, nodeEnvironment: NodeEnvironment): string {
   let parsed: URL;
 
   try {
@@ -157,6 +160,19 @@ function normalizeHttpOrigin(origin: string): string {
 
   if (!isHttp || hasCredentials || hasResourcePath || parsed.origin === 'null') {
     throw invalidCorsOriginsError();
+  }
+
+  if (nodeEnvironment === 'production') {
+    const hostname = parsed.hostname.toLowerCase().replace(/\.$/, '');
+    const isLoopback =
+      hostname === 'localhost' ||
+      hostname.endsWith('.localhost') ||
+      hostname.startsWith('127.') ||
+      hostname === '[::1]';
+
+    if (parsed.protocol !== 'https:' || isLoopback) {
+      throw new Error('CORS_ALLOWED_ORIGINS must contain only public HTTPS origins in production');
+    }
   }
 
   return parsed.origin;

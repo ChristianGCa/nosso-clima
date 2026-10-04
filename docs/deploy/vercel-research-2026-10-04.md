@@ -41,7 +41,9 @@ No ensaio novo, confirmar uma chamada real por repetição (log do receptor ou r
 - O proprietário autorizou em 2026-10-04 cache Upstash de resultados de busca por até 24 horas e de previsões associadas a coordenadas por até 10 minutos, sem IP ou identificador do visitante. Também autorizou digest HMAC derivado do IP por cerca de um minuto, separado do cache, para rate limit. Isso altera a regra atual que proíbe persistência de consultas e coordenadas; os adendos propostos em `SPEC-location-search.md` e `SPEC-weather-forecast.md` registram o alcance da alteração. Selecionar região, TTL, política de chaves e acesso; documentar Vercel e Upstash no aviso de privacidade. Não persistir IP bruto, texto de busca ou coordenadas em logs ou métricas.
 - Não há remote Git neste checkout. CI hospedada, URL definitiva, configuração de conta/Redis, ensaio de rollback, direitos de imagens, aviso de privacidade completo e aprovação separada do lançamento continuam gates de publicação.
 
-## Decisões abertas para a P0
+## Pendências de viabilidade e release
+
+P0 aprova o escopo desses ensaios. P1 mede as questões abaixo; P10 consolida os dados de operação, termos e privacidade, e P8/P11 repetem a prova de IP no caminho final. As fatias P1a–P1d e a evidência exigida estão no [plano ativo](../../tasks/vercel-plan.md). Estes resultados ainda não existem neste registro de pesquisa.
 
 1. Região da Upstash próxima à Function, limites efetivos dos planos gratuitos e alertas de consumo.
 2. Formato das chaves de cache, limites de armazenamento e política de indisponibilidade, inclusive resposta ao usuário e validade de dados em cache.

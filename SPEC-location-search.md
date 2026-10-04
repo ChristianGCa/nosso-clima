@@ -5,11 +5,9 @@
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
 
-## Proposta de alteração para deploy Vercel (ainda não implementável)
+## Alcance desta spec
 
-O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para resultados normalizados de busca, inclusive vazios, com TTL máximo de 24 horas, sem IP ou identificador do visitante. A busca canônica passa a gerar uma chave opaca derivada com segredo da API; a chave não expõe o texto diretamente. O valor pode conter nomes e coordenadas dos resultados, pois são necessários ao contrato de busca. Falhas continuam fora do cache. O cache e a reserva agregada pertencem a `backend-platform`, não a este módulo; o contrato HTTP, canonicalização, timeout, filtro e créditos abaixo permanecem iguais.
-
-Esta é uma **alteração proposta**, dependente da aprovação P0 de `SPEC-backend-platform.md` e `SPEC-production-delivery.md`. Até essa aprovação, as regras abaixo sobre cache local e não persistência continuam sendo a base da implementação existente. Após aprovação, somente a persistência efêmera descrita acima na Upstash substitui essas regras; a proibição de logs, telemetria, histórico e armazenamento sem TTL permanece. Não alterar este módulo para Redis antes da aprovação e dos testes de viabilidade P1.
+O contrato HTTP e o comportamento local abaixo estão implementados e aprovados. A seção **Cache: contrato local e migração proposta** identifica separadamente o cache atual e a alteração Vercel + Upstash aprovada para implementação, ainda pendente da prova P1. Os critérios concluídos registram a entrega local; a migração de produção é acompanhada em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -172,7 +170,9 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 - Text fields used publicly are trimmed, limited to 256 Unicode code points, and rejected if they contain C0 controls or DEL. JSON encoding, not HTML markup, is returned.
 - If an accepted candidate is missing or violates a consumed field, the entire upstream response is rejected. The API does not silently manufacture coordinates, country data, or timezone values.
 
-## Cache and Duplicate Work
+## Cache: contrato local e migração proposta
+
+### Implementado localmente
 
 - Use the bounded process-local cache, `SingleFlight`, and outbound executor provided by `backend-platform`; do not create parallel implementations.
 - The cache key is namespaced as `location-search:v1:` plus the canonical query lower-cased with locale-independent Unicode casing. Cache keys are never logged or exposed.
@@ -185,6 +185,14 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 
 The canonical query exists transiently in process memory as the request, cache key, and outbound parameter. It is not persisted. Hashing the cache key would not anonymize low-entropy city names and is therefore not represented as a privacy control.
 
+### Migração Vercel + Upstash — P0 aprovada, pendente de P1
+
+O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para resultados normalizados de busca, inclusive vazios, com TTL máximo de 24 horas, sem IP ou identificador do visitante. A busca canônica passa a gerar uma chave opaca derivada com segredo da API; a chave não expõe o texto diretamente. O valor pode conter nomes e coordenadas dos resultados, pois são necessários ao contrato de busca. Falhas continuam fora do cache. O cache e a reserva agregada pertencem a `backend-platform`, não a este módulo; o contrato HTTP, canonicalização, timeout, filtro e créditos desta spec permanecem iguais.
+
+Esta alteração foi aprovada para implementação na P0; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime existente. P4 implementa a infraestrutura de cache e P6 integra este módulo localmente; só essa migração verificada e aprovada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
+
+Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 24 horas são preservados. A aceitação da migração exige testes entre instâncias, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs, conforme a [lista ativa](tasks/vercel-todo.md).
+
 ## Observability, Privacy, and Licensing
 
 - Expected provider failures produce one structured warning named `geocoding_upstream_failed` with `requestId` and a bounded `failureKind`: `timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, or `invalid_response`. A redirect rejected by `fetch` is classified as `network`; the implementation must not inspect unstable exception text to distinguish it.
@@ -194,7 +202,7 @@ The canonical query exists transiently in process memory as the request, cache k
 - The UI must render provider/source/license credit from the response, with working links and an indication that NossoClima adapted the data, anywhere geocoding results are presented.
 - The user's query is sent to Open-Meteo, a third party. `production-delivery` must ensure the deployed privacy notice describes that transfer and the provider's applicable retention terms.
 - The fixed free endpoint is approved only for a non-commercial deployment within Open-Meteo's published free limits. A commercial, advertising-supported, subscription, or higher-volume launch requires prior approval, a spec update, a paid customer endpoint, and secret handling through deployment configuration.
-- Per-client inbound rate limits do not prove compliance with Open-Meteo's aggregate minute, hour, and day quotas across geocoding, forecasting, restarts, or multiple instances. Before any public deployment using the free endpoint, `production-delivery` must approve an application-wide usage budget or a demonstrably lower traffic ceiling. If enforcement requires a shared runtime primitive, update `backend-platform` first rather than implementing it privately here.
+- Per-client inbound rate limits do not prove compliance with Open-Meteo's aggregate minute, hour, day, and monthly quotas considered by the production proposal across geocoding, forecasting, restarts, or multiple instances. Before any public deployment using the free endpoint, `production-delivery` must approve an application-wide usage budget or a demonstrably lower traffic ceiling. If enforcement requires a shared runtime primitive, update `backend-platform` first rather than implementing it privately here.
 - Attribution requirements remain applicable to free and paid use.
 
 ## Tech Stack
@@ -340,14 +348,15 @@ Use injected fake `fetch`, fake streams, and fake time. Tests must not use a liv
 
 - Let user input control an outbound origin, path, header, or credential.
 - Trust TypeScript types in place of runtime validation for Open-Meteo data.
-- Log or persist queries, location labels, coordinates, client IPs, cache keys, full URLs, raw responses, secrets, or provider error text.
+- Log queries, location labels, coordinates, client IPs, cache keys, full URLs, raw responses, secrets, or provider error text.
+- Persist any of the data listed in the preceding rule in the current local implementation. The only proposed exception is the bounded Upstash cache specified above, activated through P0/P1 and verified integration; it does not permit raw IP storage, history or other persistence.
 - Return raw provider payloads, provider errors, stack traces, or internal exception messages.
 - Cache failures, serve stale data implicitly, retry `429` blindly, or bypass the shared executor/rate limits.
 - Render or forward provider text as HTML.
 - Add weather data, UI behavior, tracking, accounts, history, or favorites to this module.
 - Weaken a project constraint, suppress a diagnostic, skip/delete a test, or use an unimplemented stub to make the gate pass.
 
-## Success Criteria
+## Success Criteria — implementação local
 
 - [x] `GET /api/v1/locations?query=<valid>` returns zero to five normalized current populated places matching the exact public schema.
 - [x] Homonymous results expose city, region or `null`, and country so a user can distinguish them before selection.
@@ -374,13 +383,13 @@ Use injected fake `fetch`, fake streams, and fake time. Tests must not use a liv
 | Provider slowness consumes server resources | Enforce a 5-second abort, 64 KiB body ceiling and shared bounded executor |
 | Provider schema drift corrupts the UI | Validate all consumed fields and fail closed with `503` |
 | Filtering after an upstream limit returns fewer than five cities | Request ten candidates, retain only approved current populated-place codes, and accept a smaller list as correct |
-| City searches reveal location interest | Do not persist or log queries locally; disclose the necessary Open-Meteo transfer in deployment privacy material |
+| City searches reveal location interest | Keep the local cache process-only; disclose Open-Meteo transfer and, when implemented, the proposed Upstash TTL cache. Never log queries or create history |
 | Free API use exceeds aggregate quotas or becomes commercial | Gate public launch on an aggregate usage strategy, gate commercial launch on a paid endpoint, and re-check terms in `production-delivery` |
 | Attribution is omitted by the UI | Make attribution part of every successful API response and an integration requirement for `weather-ui` |
 
-## Open Questions
+## Aprovações e pendências
 
-No question blocks planning after human approval of this draft. Approval explicitly confirms the public route and fields, Portuguese localization, current-populated-place filter, five-result limit, 24-hour cache TTL, 5-second timeout, and 64 KiB response ceiling.
+A implementação local foi aprovada no Checkpoint L-B em 2026-09-23: rota e campos públicos, localização em português, filtro de lugares povoados atuais, limite de cinco resultados, cache de 24 horas, timeout de 5 segundos e teto de resposta de 64 KiB. A migração Redis foi aprovada para implementação na P0 e continua pendente da prova P1; o progresso está na lista ativa de produção.
 
 The owner confirmed non-commercial use for the intended release on 2026-10-01. `production-delivery` must still recheck actual use and current Open-Meteo terms at release and prove an aggregate geocoding-plus-forecast usage ceiling; a future commercial change requires the paid-endpoint process above.
 

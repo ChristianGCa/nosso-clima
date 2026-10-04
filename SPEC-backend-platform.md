@@ -1,8 +1,19 @@
-# Spec: Backend Platform — Vercel Functions e Upstash Redis (P0)
+# Spec: Backend Platform — estado local e migração Vercel + Upstash
 
-- **Estado:** proposta P0 documentada em 2026-10-04; escopo confirmado pelo proprietário, implementação ainda não aprovada.
+- **Estado local:** implementado e aprovado em 2026-09-23.
+- **Estado da migração:** P0 aprovada para implementação pelo proprietário em 2026-10-04; código e testes locais precedem a prova P1 em Preview, obrigatória antes da publicação.
 - **Módulo:** `backend-platform`; consumidores: `location-search`, `weather-forecast`, `production-delivery`.
 - **Histórico:** [Node/Fastify aprovado para execução local](docs/history/backend-platform-node-baseline-2026-09-23.md). A alternativa Cloudflare foi descartada.
+
+## Contrato local vigente
+
+`apps/api/src/app.ts` compõe Fastify, configuração, HTTP, erros, logs, cache LRU, `SingleFlight`, executor limitado e rate limits locais. `server.ts` controla `listen` e shutdown. Redis, reserva agregada, HMAC compartilhado e entrada Vercel ainda não estão implementados.
+
+O [baseline Node aprovado](docs/history/backend-platform-node-baseline-2026-09-23.md) continua sendo a referência detalhada do contrato local: health, envelopes de erro, request IDs, limites de entrada, configuração, segurança, cache, fila e lifecycle. Os contratos de busca e previsão estão nas respectivas specs atuais. A localização do baseline em `docs/history/` preserva o documento original; não revoga essas garantias.
+
+## Alcance da proposta de migração
+
+As seções seguintes definem o destino Vercel + Upstash e seus critérios de aceitação. A P0 autoriza as mudanças locais no runtime; sua publicação depende da viabilidade P1 em Preview. A aprovação local não conclui nenhum item da migração; a implementação e sua evidência são registradas em [tasks/vercel-todo.md](tasks/vercel-todo.md). Os contratos locais permanecem até a substituição verificada nas etapas P2–P6.
 
 ## Objetivo e fronteira
 
@@ -52,7 +63,7 @@ A exigência do proprietário é não enviar o IP do visitante à Open-Meteo. N�
 
 ## Critérios de aceitação e gate
 
-- P1 demonstra entrada Fastify real na Vercel, versão Node/npm, configuração de dois projetos, Redis HTTPS, `EVAL` atômico, WAF efetivo, taxa de `429` externo e limites gratuitos medidos. Falha em P1 devolve esta P0 à revisão; não iniciar integração de produção por suposição.
+- P1 demonstra entrada Fastify real na Vercel, versão Node/npm, configuração de dois projetos, Redis HTTPS, `EVAL` atômico, WAF efetivo, taxa de `429` externo e limites gratuitos medidos. Falha em P1 devolve esta P0 à revisão; não publicar a integração de produção por suposição.
 - Testes offline com tempo falso e concorrência cobrem cache/TTL, validação, limites 60/30/15, quatro janelas, negação parcial, pane/timeout Redis, `429` externo e circuit breaker, rajadas, reinício e múltiplas instâncias, segurança de logs e respostas. Nenhum teste automatizado usa Open-Meteo real.
 - Repetir o ensaio de IP em Preview na entrada e nas **duas** rotas finais, com canário e cabeçalhos falsos, contando requisições reais no eco para afastar respostas de CDN/cache; registrar apenas presença/ausência. Repetir o smoke limitado em Production antes da liberação pública. Resultado positivo do teste anterior não aprova uma implementação diferente.
-- `npm run check`, cobertura mínima de 80% por métrica/app, auditoria, limites arquiteturais e demais gates de `CONSTRAINTS.md` permanecem bloqueantes. Esta proposta precisa de aprovação explícita do proprietário antes de qualquer código de produção; aprovação da spec não é aprovação de publicação.
+- `npm run check`, cobertura mínima de 80% por métrica/app, auditoria, limites arquiteturais e demais gates de `CONSTRAINTS.md` permanecem bloqueantes. A P0 foi aprovada em 2026-10-04; a publicação depende da viabilidade P1 e de decisão separada.
