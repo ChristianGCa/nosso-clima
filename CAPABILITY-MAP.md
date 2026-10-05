@@ -1,14 +1,14 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-04:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P5 estão implementadas localmente e P6–P11 continuam no plano ativo. Cloudflare e Render não fazem parte do plano ativo.
+**Estado em 2026-10-04:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P6 estão implementadas localmente e P7–P11 continuam no plano ativo. Cloudflare e Render não fazem parte do plano ativo.
 
 ## Estado por módulo
 
 | Módulo | Implementado e aprovado localmente | Proposto para produção Vercel | Depende de |
 |---|---|---|---|
-| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada e circuit breaker ligados às rotas; infraestrutura de cache compartilhado pronta para P6; HMAC temporário, pré-limite e limites compartilhados ligados à entrada Function, sujeitos à prova real em P1 | — |
-| `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Consumir cache Redis e saída com reserva da plataforma; preservar contrato e TTL | `backend-platform` |
-| `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Consumir cache Redis e saída com reserva da plataforma; preservar contrato e TTL | `backend-platform` |
+| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada, circuit breaker e cache compartilhado ligados às rotas; HMAC temporário, pré-limite e limites compartilhados ligados à entrada Function, sujeitos à prova real em P1 | — |
+| `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Cache Redis de 24 h e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
+| `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Cache Redis de 10 min e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
 | `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos e estados da interface | Usar `/api/v1/*` na origem web e validar configuração de build; mudanças de entrega em P7 | `location-search`, `weather-forecast` |
 | `production-delivery` | Planejamento e runbook preliminar; sem implantação ou gates hospedados concluídos | Dois projetos Vercel, rewrite web → API, WAF, headers/assets, E2E, performance, CI, privacidade, direitos, Preview e rollback | Todos os módulos acima |
 
@@ -23,7 +23,7 @@ backend-platform
                       ┘
 ```
 
-P0: aprovar specs e fronteiras → P2–P5: plataforma compartilhada local → P6: integrar busca e previsão → P7: roteamento web → P8–P9: E2E e gates locais → P1: provar viabilidade em Preview configurado pelo proprietário → P10–P11: pacote de release e rollback → decisão de publicação. O [plano](tasks/vercel-plan.md) detalha a sequência; o progresso é registrado somente na [lista ativa](tasks/vercel-todo.md). P1 continua obrigatório antes de exposição pública.
+P0: aprovar specs e fronteiras → P2–P5: plataforma compartilhada local → P6: integrar busca e previsão (concluída localmente) → P7: roteamento web → P8–P9: E2E e gates locais → P1: provar viabilidade em Preview configurado pelo proprietário → P10–P11: pacote de release e rollback → decisão de publicação. O [plano](tasks/vercel-plan.md) detalha a sequência; o progresso é registrado somente na [lista ativa](tasks/vercel-todo.md). P1 continua obrigatório antes de exposição pública.
 
 ## Regras de fronteira
 

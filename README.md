@@ -2,13 +2,13 @@
 
 Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias. Monorepo com React/Vite em `apps/web` e Fastify/Node em `apps/api`, usando dados da Open-Meteo.
 
-**Estado em 2026-10-04:** o fluxo local está implementado e aprovado, incluindo restauração da última cidade e condição diária predominante. A migração para dois projetos Vercel com Upstash Redis foi aprovada para implementação em P0. P2–P5 estão implementadas localmente; a integração P6 e a verificação em Preview permanecem pendentes.
+**Estado em 2026-10-04:** o fluxo local está implementado e aprovado, incluindo restauração da última cidade e condição diária predominante. A migração para dois projetos Vercel com Upstash Redis foi aprovada para implementação em P0. P2–P6 estão implementadas localmente; a verificação em Preview permanece pendente.
 
 ## Como continuar
 
 1. Leia o [mapa de capacidades](CAPABILITY-MAP.md) e as [restrições](CONSTRAINTS.md).
 2. Consulte a spec do módulo que será alterado na tabela abaixo.
-3. Siga o [plano Vercel + Upstash](tasks/vercel-plan.md) e registre o progresso na [lista ativa de tarefas](tasks/vercel-todo.md). O próximo incremento é P6, integração do cache compartilhado às rotas; P1 será verificada no Preview configurado pelo proprietário antes da publicação.
+3. Siga o [plano Vercel + Upstash](tasks/vercel-plan.md) e registre o progresso na [lista ativa de tarefas](tasks/vercel-todo.md). O próximo incremento é P7, roteamento web e configuração local de entrega; P1 será verificada no Preview configurado pelo proprietário antes da publicação.
 
 | Documento | Fonte para |
 |---|---|
