@@ -35,6 +35,10 @@ test('rewrites every API path to the paired API origin, including unknown paths'
   ]);
   assert.equal(config.framework, 'vite');
   assert.equal(config.outputDirectory, 'dist');
+  assert.equal(
+    config.installCommand,
+    'node --version && npx --yes npm@12.0.2 --version && npx --yes npm@12.0.2 ci --include=dev',
+  );
 });
 
 test('web headers limit connection origins and cache only hashed Vite assets immutably', () => {

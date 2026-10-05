@@ -1,4 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "fastify"
+  "framework": "fastify",
+  "installCommand": "node --version && npx --yes npm@12.0.2 --version && npx --yes npm@12.0.2 ci --include=dev"
 }

@@ -20,15 +20,26 @@ export function createVercelApp(
   environment: EnvironmentInput,
   dependencies: VercelAppDependencies = {},
 ): FastifyInstance {
+  const runtimeEnvironment =
+    environment.VERCEL_ENV === 'preview'
+      ? {
+          ...environment,
+          NODE_ENV: environment.NODE_ENV ?? 'production',
+          HOST: environment.HOST ?? '0.0.0.0',
+        }
+      : environment;
   let config: AppConfig;
   let policy: ProviderPolicy;
   try {
-    if (!environment.NODE_ENV) {
-      throw new Error('NODE_ENV is required');
+    if (
+      !runtimeEnvironment.NODE_ENV ||
+      (environment.VERCEL_ENV === 'preview' && runtimeEnvironment.NODE_ENV !== 'production')
+    ) {
+      throw new Error('Invalid NODE_ENV');
     }
-    config = parseEnvironment(environment);
-    assertServerlessCredentials(environment);
-    policy = parseProviderPolicy(environment);
+    config = parseEnvironment(runtimeEnvironment);
+    assertServerlessCredentials(runtimeEnvironment);
+    policy = parseProviderPolicy(runtimeEnvironment);
   } catch {
     throw new Error('Invalid API configuration');
   }
