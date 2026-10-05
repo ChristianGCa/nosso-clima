@@ -237,6 +237,10 @@ a {
   background: rgb(10 23 32 / 0.58);
 }
 
+.state-panel:not(.state-panel--idle) {
+  min-height: 100svh;
+}
+
 .state-inner h1,
 .current-inner h1 {
   margin: 0;
