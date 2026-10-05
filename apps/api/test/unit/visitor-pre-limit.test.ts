@@ -3,7 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { createVisitorPreLimit } from '../../src/infrastructure/visitor-pre-limit.js';
 import type { VisitorIdentity } from '../../src/infrastructure/visitor-identity.js';
 
-const visitor = (digest: string, bucket = 1): VisitorIdentity => ({ digest, bucket });
+const visitor = (digest: string, bucket = 1): VisitorIdentity => ({
+  digest,
+  bucket,
+  neighborDigests: [digest, digest, digest],
+});
 
 describe('bounded visitor pre-limit', () => {
   it('allows 60 global requests in a minute and rejects the next', () => {

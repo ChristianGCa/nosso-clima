@@ -10,7 +10,11 @@ export class InvalidVisitorIdentity extends Error {
   }
 }
 
-export type VisitorIdentity = Readonly<{ digest: string; bucket: number }>;
+export type VisitorIdentity = Readonly<{
+  digest: string;
+  bucket: number;
+  neighborDigests: readonly [string, string, string];
+}>;
 
 export function createVisitorIdentity(
   hexSecret: string,
@@ -31,7 +35,13 @@ export function createVisitorIdentity(
     const canonicalIp =
       version === 6 ? new URL(`http://[${forwardedFor}]/`).hostname.slice(1, -1) : forwardedFor;
     const bucket = Math.floor(time / WINDOW_MS);
-    const digest = createHmac('sha256', secret).update(`v1:${bucket}:${canonicalIp}`).digest('hex');
-    return { digest, bucket };
+    const digestFor = (minute: number) =>
+      createHmac('sha256', secret).update(`v1:${minute}:${canonicalIp}`).digest('hex');
+    const neighborDigests = [
+      digestFor(bucket - 1),
+      digestFor(bucket),
+      digestFor(bucket + 1),
+    ] as const;
+    return { digest: neighborDigests[1], bucket, neighborDigests };
   };
 }

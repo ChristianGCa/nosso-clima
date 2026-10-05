@@ -17,10 +17,13 @@ describe('temporary visitor identity', () => {
     now = 120_000;
     const nextMinute = identify('203.0.113.10');
 
-    expect(first).toEqual({ digest: expect.stringMatching(/^[0-9a-f]{64}$/), bucket: 1 });
+    expect(first).toMatchObject({ digest: expect.stringMatching(/^[0-9a-f]{64}$/), bucket: 1 });
+    expect(first.neighborDigests).toHaveLength(3);
+    expect(first.neighborDigests[1]).toBe(first.digest);
     expect(sameMinute).toEqual(first);
     expect(otherVisitor.digest).not.toBe(first.digest);
     expect(nextMinute.digest).not.toBe(first.digest);
+    expect(nextMinute.neighborDigests[0]).toBe(first.digest);
     expect(JSON.stringify(first)).not.toContain('203.0.113.10');
   });
 
