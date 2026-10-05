@@ -75,6 +75,25 @@ afterEach(async () => {
 });
 
 describe('Vercel Fastify entry', () => {
+  it('starts Preview without process-only settings or an explicit provisional provider policy', async () => {
+    const previewEnvironment = Object.fromEntries(
+      Object.entries(productionEnvironment).filter(
+        ([key]) => key !== 'NODE_ENV' && key !== 'HOST' && !key.startsWith('OPEN_METEO_'),
+      ),
+    );
+    app = createVercelApp({ ...previewEnvironment, VERCEL_ENV: 'preview' });
+
+    const health = await app.inject({ method: 'GET', url: '/health' });
+    expect(health.statusCode).toBe(200);
+    expect(health.json()).toEqual({ status: 'ok' });
+  });
+
+  it('rejects a development runtime on Preview', () => {
+    expect(() =>
+      createVercelApp({ ...productionEnvironment, VERCEL_ENV: 'preview', NODE_ENV: 'development' }),
+    ).toThrow(/^Invalid API configuration$/);
+  });
+
   it('builds the existing app without listening or installing signal handlers', async () => {
     const sigintListeners = process.listenerCount('SIGINT');
     const sigtermListeners = process.listenerCount('SIGTERM');

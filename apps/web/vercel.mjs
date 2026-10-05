@@ -41,6 +41,8 @@ export function createWebVercelConfig(environment) {
   const origin = apiOrigin(environment);
   return {
     framework: 'vite',
+    installCommand:
+      'node --version && npx --yes npm@12.0.2 --version && npx --yes npm@12.0.2 ci --include=dev',
     outputDirectory: 'dist',
     rewrites: [
       { source: '/api', destination: `${origin}/api` },
