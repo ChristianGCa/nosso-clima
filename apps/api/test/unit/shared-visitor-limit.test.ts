@@ -70,7 +70,7 @@ describe('shared visitor limit', () => {
     });
     expect(fixture.counters.size).toBe(1);
     for (const key of fixture.counters.keys()) {
-      expect(key).toMatch(/^nc:visitor-limit:v1:[0-9a-f]{64}:global$/);
+      expect(key).toMatch(/^nc:visitor-limit:v1:\{[0-9a-f]{64}\}:global$/);
       expect(key).not.toContain('203.0.113.10');
     }
     expect(

@@ -32,6 +32,20 @@ describe('temporary visitor identity', () => {
     expect(identify('2001:0db8:0000:0000:0000:0000:0000:0001')).toEqual(identify('2001:db8::1'));
   });
 
+  it('groups IPv6 addresses within one /64 without grouping adjacent networks', () => {
+    const identify = createVisitorIdentity(secret, () => 60_000);
+    expect(identify('2001:db8:abcd:1234::1')).toEqual(identify('2001:db8:abcd:1234::2'));
+    expect(identify('2001:db8:abcd:1235::1').digest).not.toBe(
+      identify('2001:db8:abcd:1234::1').digest,
+    );
+  });
+
+  it('keeps IPv4-mapped IPv6 visitors distinct', () => {
+    const identify = createVisitorIdentity(secret, () => 60_000);
+    expect(identify('::ffff:192.0.2.1').digest).not.toBe(identify('::ffff:192.0.2.2').digest);
+    expect(identify('::ffff:192.0.2.1').digest).toBe(identify('192.0.2.1').digest);
+  });
+
   it.each([
     undefined,
     ['203.0.113.10'],

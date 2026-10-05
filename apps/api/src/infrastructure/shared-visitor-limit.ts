@@ -10,7 +10,8 @@ export type SharedVisitorLimit = Readonly<{
   check(identity: VisitorIdentity, group?: VisitorGroup): Promise<SharedVisitorDecision>;
 }>;
 
-export const SHARED_VISITOR_LIMIT_SCRIPT = `local clock = redis.call('TIME')
+export const SHARED_VISITOR_LIMIT_SCRIPT = `#!lua flags=allow-key-locking
+local clock = redis.call('TIME')
 local now = tonumber(clock[1]) * 1000 + math.floor(tonumber(clock[2]) / 1000)
 local currentBucket = math.floor(now / 60000)
 local offset = currentBucket - tonumber(ARGV[1])
@@ -38,8 +39,8 @@ export function createSharedVisitorLimit(redis: UpstashRestClient): SharedVisito
   return {
     async check(identity, group) {
       const keys = identity.neighborDigests.flatMap((digest) => [
-        `nc:visitor-limit:v1:${digest}:global`,
-        `nc:visitor-limit:v1:${digest}:${group ?? 'none'}`,
+        `nc:visitor-limit:v1:{${digest}}:global`,
+        `nc:visitor-limit:v1:{${digest}}:${group ?? 'none'}`,
       ]);
       let result: unknown;
       try {

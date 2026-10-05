@@ -67,6 +67,14 @@ O adapter de cache ainda será ligado às duas rotas na P6. Ele deriva chaves op
 
 Misses concorrentes usam um lock Redis de 12 s com token, [`SET` com `NX`/`PX`](https://redis.io/docs/latest/commands/set/) e liberação condicional. Outras instâncias aguardam até 6,3 s em leituras espaçadas; depois podem carregar por conta própria. Cada chamada real ao provedor continuará exigindo a reserva da P3. Em P1b/P1c, medir a semântica e o custo do lock, das leituras repetidas e das escritas com TTL no Redis real antes de escolher a configuração final do Free.
 
+### Limite por visitante implementado localmente na P5
+
+A entrada Function exige um único IP válido em `x-vercel-forwarded-for` para rotas diferentes de `/health`; cabeçalho ausente ou ambíguo resulta em `503` seguro. O código ignora `x-forwarded-for` para identidade. A [Vercel documenta](https://vercel.com/docs/headers/request-headers) os cabeçalhos encaminhados, mas a confiabilidade no acesso direto e via rewrite precisa ser provada em P1d com pedidos falsificados. `/health` não consulta Redis.
+
+O IP é normalizado (IPv6 por prefixo /64) e transformado em HMAC-SHA-256 com `RATE_LIMIT_HMAC_KEY` e minuto UTC; o IP bruto não entra em logs ou chaves Redis, e o digest aparece apenas em chaves opacas temporárias, nunca em logs. A mesma variável já prevista na tabela acima atende à P5, sem configuração adicional agora. O pré-limite por instância, antes de Redis, mantém no máximo 2.048 identidades de um minuto e aplica 60 pedidos gerais, 30 de busca e 15 de previsão. A capacidade cheia nega novos visitantes naquela instância até a próxima janela. O Redis aplica os mesmos tetos de modo atômico entre instâncias, com TTL até o fim do minuto; falha do Redis nega o pedido com `503`, limite excedido retorna `429`. O script usa [bloqueio por chave da Upstash](https://upstash.com/docs/redis/features/key-locking), cuja execução real ainda depende de P1b/P1c.
+
+Esses contadores usam janelas fixas de minuto; medir rajadas na fronteira e o custo de comandos por pedido em P1c. A regra WAF antes da Function continua obrigatória na P7/P1c e deve cobrir tanto o domínio direto da API quanto o rewrite do web. Registrar na prova P1 apenas categorias e contagens, nunca IPs ou digests.
+
 ## Sequência de Preview
 
 1. Após implementação e gates locais P2–P9, o proprietário cria projetos privados/protegidos e Upstash Free em região próxima à Function, sem ativar upgrade automático. Registrar nomes, regiões e limites, sem token.

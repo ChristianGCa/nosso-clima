@@ -21,6 +21,10 @@ import { registerCors } from './plugins/cors.js';
 import { registerRateLimit } from './plugins/rate-limit.js';
 import { logRequestCompletion, registerRequestContext } from './plugins/request-context.js';
 import { registerSecurity, REQUEST_BODY_LIMIT_BYTES } from './plugins/security.js';
+import {
+  registerServerlessRateLimit,
+  type ServerlessRateLimitOptions,
+} from './plugins/serverless-rate-limit.js';
 import { registerHealthRoute } from './routes/health.js';
 import { registerLocationRoute } from './routes/locations.js';
 import { createForecastService } from './forecast/forecast-service.js';
@@ -32,6 +36,7 @@ export type BuildAppOptions = Readonly<
   Pick<FastifyServerOptions, 'logger' | 'loggerInstance'> & {
     config?: AppConfig;
     fetchImpl?: typeof fetch;
+    serverlessRateLimit?: ServerlessRateLimitOptions;
     registerRoutes?: (app: FastifyInstance, platform: BackendPlatformContext) => void;
   }
 >;
@@ -44,7 +49,13 @@ export type BackendPlatformContext = Readonly<{
 }>;
 
 export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
-  const { config = parseEnvironment({}), fetchImpl, registerRoutes, ...serverOptions } = options;
+  const {
+    config = parseEnvironment({}),
+    fetchImpl,
+    serverlessRateLimit,
+    registerRoutes,
+    ...serverOptions
+  } = options;
   let checkGlobalRateLimit:
     | ((request: FastifyRequest, reply: FastifyReply) => Promise<void>)
     | undefined;
@@ -92,9 +103,15 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
   registerRequestContext(app);
   registerErrorHandlers(app);
   registerSecurity(app);
-  registerRateLimit(app, config, (check) => {
-    checkGlobalRateLimit = check;
-  });
+  if (serverlessRateLimit) {
+    registerServerlessRateLimit(app, serverlessRateLimit, (check) => {
+      checkGlobalRateLimit = check;
+    });
+  } else {
+    registerRateLimit(app, config, (check) => {
+      checkGlobalRateLimit = check;
+    });
+  }
   registerCors(app, config.corsAllowedOrigins);
   registerHealthRoute(app);
   const createdCacheNamespaces = new Set<string>();

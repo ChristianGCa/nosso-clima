@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createVercelApp } from '../../src/vercel-app.js';
 import { RESERVE_QUOTA_SCRIPT } from '../../src/infrastructure/quota-reservation.js';
+import { SHARED_VISITOR_LIMIT_SCRIPT } from '../../src/infrastructure/shared-visitor-limit.js';
 import {
   CHECK_CIRCUIT_SCRIPT,
   TRIP_CIRCUIT_SCRIPT,
@@ -30,6 +31,16 @@ const productionEnvironment = {
   OPEN_METEO_429_COOLDOWN_MS: '60000',
   OPEN_METEO_PROBE_MS: '10000',
 } as const;
+const visitorHeaders = { 'x-vercel-forwarded-for': '203.0.113.10' };
+
+function withAllowedVisitorLimit(redis: UpstashRestClient): UpstashRestClient {
+  return {
+    eval: (script, keys, args) =>
+      script === SHARED_VISITOR_LIMIT_SCRIPT
+        ? Promise.resolve([1, 60_000, 59])
+        : redis.eval(script, keys, args),
+  };
+}
 
 let app: FastifyInstance | undefined;
 
@@ -42,10 +53,20 @@ describe('Vercel Fastify entry', () => {
   it('builds the existing app without listening or installing signal handlers', async () => {
     const sigintListeners = process.listenerCount('SIGINT');
     const sigtermListeners = process.listenerCount('SIGTERM');
-    app = createVercelApp(productionEnvironment);
+    app = createVercelApp(productionEnvironment, {
+      redis: withAllowedVisitorLimit({
+        eval: async () => {
+          throw new Error('Unexpected Redis command');
+        },
+      }),
+    });
 
     const health = await app.inject({ method: 'GET', url: '/health' });
-    const invalid = await app.inject({ method: 'GET', url: '/api/v1/locations?query=a' });
+    const invalid = await app.inject({
+      method: 'GET',
+      url: '/api/v1/locations?query=a',
+      headers: visitorHeaders,
+    });
 
     expect(app.server.listening).toBe(false);
     expect(process.listenerCount('SIGINT')).toBe(sigintListeners);
@@ -76,10 +97,12 @@ describe('Vercel Fastify entry', () => {
     const response = await app.inject({
       method: 'GET',
       url: '/api/v1/locations?query=Paris',
+      headers: visitorHeaders,
     });
     const forecast = await app.inject({
       method: 'GET',
       url: '/api/v1/forecast?latitude=-23.548&longitude=-46.636&timezone=America%2FSao_Paulo',
+      headers: visitorHeaders,
     });
 
     expect(response.statusCode).toBe(503);
@@ -138,18 +161,31 @@ describe('Vercel Fastify entry', () => {
         headers: { 'content-type': 'application/json' },
       });
     });
-    app = createVercelApp(productionEnvironment, { redis, providerFetch });
+    app = createVercelApp(productionEnvironment, {
+      redis: withAllowedVisitorLimit(redis),
+      providerFetch,
+    });
 
-    const locations = await app.inject({ method: 'GET', url: '/api/v1/locations?query=Paris' });
+    const locations = await app.inject({
+      method: 'GET',
+      url: '/api/v1/locations?query=Paris',
+      headers: visitorHeaders,
+    });
     const forecast = await app.inject({
       method: 'GET',
       url: '/api/v1/forecast?latitude=-23.548&longitude=-46.636&timezone=America%2FSao_Paulo',
+      headers: visitorHeaders,
     });
     const cachedLocations = await app.inject({
       method: 'GET',
       url: '/api/v1/locations?query=Paris',
+      headers: visitorHeaders,
     });
-    const invalid = await app.inject({ method: 'GET', url: '/api/v1/locations?query=a' });
+    const invalid = await app.inject({
+      method: 'GET',
+      url: '/api/v1/locations?query=a',
+      headers: visitorHeaders,
+    });
     const health = await app.inject({ method: 'GET', url: '/health' });
 
     expect(locations.statusCode).toBe(200);
@@ -171,12 +207,20 @@ describe('Vercel Fastify entry', () => {
       eval: async (script) => (script === CHECK_CIRCUIT_SCRIPT ? 1 : 0),
     };
     const providerFetch = vi.fn<typeof fetch>(async () => new Response('{}'));
-    app = createVercelApp(productionEnvironment, { redis, providerFetch });
+    app = createVercelApp(productionEnvironment, {
+      redis: withAllowedVisitorLimit(redis),
+      providerFetch,
+    });
 
-    const locations = await app.inject({ method: 'GET', url: '/api/v1/locations?query=Paris' });
+    const locations = await app.inject({
+      method: 'GET',
+      url: '/api/v1/locations?query=Paris',
+      headers: visitorHeaders,
+    });
     const forecast = await app.inject({
       method: 'GET',
       url: '/api/v1/forecast?latitude=-23.548&longitude=-46.636&timezone=America%2FSao_Paulo',
+      headers: visitorHeaders,
     });
 
     expect(locations.statusCode).toBe(503);
@@ -210,14 +254,26 @@ describe('Vercel Fastify entry', () => {
             headers: { 'content-type': 'application/json' },
           }),
     );
-    app = createVercelApp(productionEnvironment, { redis, providerFetch });
+    app = createVercelApp(productionEnvironment, {
+      redis: withAllowedVisitorLimit(redis),
+      providerFetch,
+    });
 
-    const first = await app.inject({ method: 'GET', url: '/api/v1/locations?query=Paris' });
+    const first = await app.inject({
+      method: 'GET',
+      url: '/api/v1/locations?query=Paris',
+      headers: visitorHeaders,
+    });
     const forecast = await app.inject({
       method: 'GET',
       url: '/api/v1/forecast?latitude=-23.548&longitude=-46.636&timezone=America%2FSao_Paulo',
+      headers: visitorHeaders,
     });
-    const second = await app.inject({ method: 'GET', url: '/api/v1/locations?query=Lisboa' });
+    const second = await app.inject({
+      method: 'GET',
+      url: '/api/v1/locations?query=Lisboa',
+      headers: visitorHeaders,
+    });
 
     expect(first.statusCode).toBe(503);
     expect(forecast.statusCode).toBe(200);

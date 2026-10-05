@@ -1,12 +1,12 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-04:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P4 estão implementadas localmente e P5–P11 continuam no plano ativo. Cloudflare e Render não fazem parte do plano ativo.
+**Estado em 2026-10-04:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P5 estão implementadas localmente e P6–P11 continuam no plano ativo. Cloudflare e Render não fazem parte do plano ativo.
 
 ## Estado por módulo
 
 | Módulo | Implementado e aprovado localmente | Proposto para produção Vercel | Depende de |
 |---|---|---|---|
-| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada e circuit breaker ligados às rotas; infraestrutura de cache compartilhado pronta para P6; HMAC temporário e limites compartilhados pendentes de P5 | — |
+| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada e circuit breaker ligados às rotas; infraestrutura de cache compartilhado pronta para P6; HMAC temporário, pré-limite e limites compartilhados ligados à entrada Function, sujeitos à prova real em P1 | — |
 | `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Consumir cache Redis e saída com reserva da plataforma; preservar contrato e TTL | `backend-platform` |
 | `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Consumir cache Redis e saída com reserva da plataforma; preservar contrato e TTL | `backend-platform` |
 | `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos e estados da interface | Usar `/api/v1/*` na origem web e validar configuração de build; mudanças de entrega em P7 | `location-search`, `weather-forecast` |

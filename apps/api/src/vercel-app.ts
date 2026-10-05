@@ -52,6 +52,7 @@ export function createVercelApp(
   return buildApp({
     config,
     fetchImpl,
+    serverlessRateLimit: { redis, hmacKey: environment.RATE_LIMIT_HMAC_KEY ?? '' },
     logger: { level: config.logLevel },
   });
 }
