@@ -8,6 +8,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import { buildApp } from '../../src/app.js';
 import { ApiError } from '../../src/errors/api-error.js';
+import { ProviderAccessFailure } from '../../src/infrastructure/reserved-open-meteo-fetch.js';
 import { ApiErrorResponseSchema } from '../../src/schemas/errors.js';
 
 let app: FastifyInstance | undefined;
@@ -166,6 +167,39 @@ describe('public error envelope', () => {
     expect(logText).toContain('errorType');
   });
 
+  it.each(['circuit_open', 'quota_denied', 'redis_unavailable', 'upstream_rate_limited'] as const)(
+    'classifies %s without logging request data',
+    async (reason) => {
+      const capture = createLogCapture();
+      app = buildApp({
+        logger: { level: 'info', stream: capture.stream },
+        registerRoutes: registerTestRoutes,
+      });
+
+      const response = await app.inject({
+        method: 'GET',
+        url: `/test/provider-failure/${reason}?query=private-city`,
+        headers: { 'x-test-canary': 'private-canary' },
+      });
+
+      expect(response.statusCode).toBe(503);
+      expect(response.json().error.code).toBe('SERVICE_UNAVAILABLE');
+      const logs = capture
+        .readText()
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line));
+      expect(logs).toContainEqual(
+        expect.objectContaining({
+          event: 'provider_access_rejected',
+          reason,
+          requestId: response.headers['x-request-id'],
+        }),
+      );
+      expect(capture.readText()).not.toMatch(/private-city|private-canary/);
+    },
+  );
+
   it('does not turn an unexpected error with status 400 into a validation error', async () => {
     app = buildApp({ registerRoutes: registerTestRoutes });
 
@@ -284,6 +318,13 @@ function registerTestRoutes(testApp: FastifyInstance): void {
   testApp.get('/test/unexpected-value', () => {
     throw 'private-thrown-value';
   });
+
+  testApp.get<{ Params: { reason: ProviderAccessFailure['kind'] } }>(
+    '/test/provider-failure/:reason',
+    (request) => {
+      throw new ProviderAccessFailure(request.params.reason);
+    },
+  );
 }
 
 function createLogCapture(): Readonly<{ stream: Writable; readText: () => string }> {

@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 
 import type { ApiErrorCode, ApiErrorResponse } from '../schemas/errors.js';
 import { ApiError, ERROR_DEFINITIONS } from './api-error.js';
+import { ProviderAccessFailure } from '../infrastructure/reserved-open-meteo-fetch.js';
 
 const SAFE_VALIDATION_DETAILS = [{ field: 'request', reason: 'invalid' }] as const;
 
@@ -11,6 +12,14 @@ export function registerErrorHandlers(app: FastifyInstance): void {
   app.setErrorHandler((error, request, reply) => {
     if (error instanceof ApiError) {
       return sendPublicError(reply, request, error.code);
+    }
+
+    if (error instanceof ProviderAccessFailure) {
+      request.log.warn(
+        { event: 'provider_access_rejected', reason: error.kind },
+        'provider access rejected',
+      );
+      return sendPublicError(reply, request, 'SERVICE_UNAVAILABLE');
     }
 
     if (isValidationFailure(error)) {
