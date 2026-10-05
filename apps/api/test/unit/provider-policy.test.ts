@@ -14,6 +14,32 @@ const valid = {
 };
 
 describe('provider policy configuration', () => {
+  it('uses conservative defaults only for missing Preview values', () => {
+    expect(parseProviderPolicy({ VERCEL_ENV: 'preview' })).toEqual({
+      limits: { minute: 1000, hour: 1000, day: 1000, month: 1000 },
+      costs: { geocoding: 1000, forecast: 1000 },
+      circuit: { cooldownMs: 60000, probeMs: 10000 },
+    });
+    expect(
+      parseProviderPolicy({
+        VERCEL_ENV: 'preview',
+        ...valid,
+      }),
+    ).toEqual(parseProviderPolicy(valid));
+  });
+
+  it('still requires explicit policy outside Preview', () => {
+    for (const vercelEnv of [undefined, 'production', 'development']) {
+      expect(() => parseProviderPolicy({ VERCEL_ENV: vercelEnv })).toThrow();
+    }
+  });
+
+  it('rejects an invalid explicit Preview value', () => {
+    expect(() =>
+      parseProviderPolicy({ VERCEL_ENV: 'preview', OPEN_METEO_MONTH_CREDITS: '0' }),
+    ).toThrow();
+  });
+
   it('accepts explicit integer credits and timing', () => {
     expect(parseProviderPolicy(valid)).toEqual({
       limits: { minute: 10000, hour: 50000, day: 100000, month: 200000 },

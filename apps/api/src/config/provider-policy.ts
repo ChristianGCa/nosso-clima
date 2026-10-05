@@ -16,14 +16,24 @@ export type ProviderPolicy = Readonly<{
 
 export function parseProviderPolicy(environment: EnvironmentInput): ProviderPolicy {
   const limits = {
-    minute: readPositiveInteger(environment, 'OPEN_METEO_MINUTE_CREDITS', MAX_LIMITS.minute),
-    hour: readPositiveInteger(environment, 'OPEN_METEO_HOUR_CREDITS', MAX_LIMITS.hour),
-    day: readPositiveInteger(environment, 'OPEN_METEO_DAY_CREDITS', MAX_LIMITS.day),
-    month: readPositiveInteger(environment, 'OPEN_METEO_MONTH_CREDITS', MAX_LIMITS.month),
+    minute: readPositiveInteger(environment, 'OPEN_METEO_MINUTE_CREDITS', MAX_LIMITS.minute, 1_000),
+    hour: readPositiveInteger(environment, 'OPEN_METEO_HOUR_CREDITS', MAX_LIMITS.hour, 1_000),
+    day: readPositiveInteger(environment, 'OPEN_METEO_DAY_CREDITS', MAX_LIMITS.day, 1_000),
+    month: readPositiveInteger(environment, 'OPEN_METEO_MONTH_CREDITS', MAX_LIMITS.month, 1_000),
   };
   const costs = {
-    geocoding: readPositiveInteger(environment, 'OPEN_METEO_GEOCODING_CREDITS'),
-    forecast: readPositiveInteger(environment, 'OPEN_METEO_FORECAST_CREDITS'),
+    geocoding: readPositiveInteger(
+      environment,
+      'OPEN_METEO_GEOCODING_CREDITS',
+      Number.MAX_SAFE_INTEGER,
+      1_000,
+    ),
+    forecast: readPositiveInteger(
+      environment,
+      'OPEN_METEO_FORECAST_CREDITS',
+      Number.MAX_SAFE_INTEGER,
+      1_000,
+    ),
   };
   if (
     costs.geocoding < 1_000 ||
@@ -33,8 +43,8 @@ export function parseProviderPolicy(environment: EnvironmentInput): ProviderPoli
     throw new Error('Invalid Open-Meteo credit policy');
   }
   const circuit = {
-    cooldownMs: readPositiveInteger(environment, 'OPEN_METEO_429_COOLDOWN_MS', 3_600_000),
-    probeMs: readPositiveInteger(environment, 'OPEN_METEO_PROBE_MS', 60_000),
+    cooldownMs: readPositiveInteger(environment, 'OPEN_METEO_429_COOLDOWN_MS', 3_600_000, 60_000),
+    probeMs: readPositiveInteger(environment, 'OPEN_METEO_PROBE_MS', 60_000, 10_000),
   };
   if (circuit.probeMs > circuit.cooldownMs) {
     throw new Error('Invalid Open-Meteo circuit timing');
@@ -45,9 +55,12 @@ export function parseProviderPolicy(environment: EnvironmentInput): ProviderPoli
 function readPositiveInteger(
   environment: EnvironmentInput,
   key: string,
-  maximum = Number.MAX_SAFE_INTEGER,
+  maximum: number,
+  previewDefault: number,
 ): number {
-  const raw = environment[key];
+  const raw =
+    environment[key] ??
+    (environment.VERCEL_ENV === 'preview' ? previewDefault.toString() : undefined);
   if (!raw || !/^[1-9][0-9]*$/.test(raw)) throw new Error(`Invalid ${key}`);
   const value = Number(raw);
   if (!Number.isSafeInteger(value) || value > maximum) throw new Error(`Invalid ${key}`);
