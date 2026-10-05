@@ -1,3 +1,5 @@
+import { resolveApiBaseUrl } from './base-url';
+
 export type RequestFailure = Readonly<{
   kind: 'rate_limited' | 'unavailable' | 'request_failed';
   requestId?: string;
@@ -30,7 +32,11 @@ export async function requestJson(
   try {
     let response: Response;
     try {
-      const base = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, '') ?? '';
+      const base = resolveApiBaseUrl(
+        import.meta.env.VITE_API_BASE_URL,
+        import.meta.env.PROD,
+        globalThis.location?.origin,
+      );
       response = await fetchImpl(`${base}${path}`, {
         signal: requestSignal,
         headers: { accept: 'application/json' },

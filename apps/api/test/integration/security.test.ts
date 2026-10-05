@@ -12,6 +12,26 @@ afterEach(async () => {
 });
 
 describe('HTTP hardening', () => {
+  it('marks success and error responses as uncacheable by browsers and the CDN', async () => {
+    app = buildApp({
+      registerRoutes(testApp) {
+        testApp.get('/test/cache', () => ({ ok: true }));
+      },
+    });
+
+    const success = await app.inject({ method: 'GET', url: '/test/cache' });
+    const validationError = await app.inject({ method: 'GET', url: '/api/v1/locations' });
+    const notFound = await app.inject({ method: 'GET', url: '/api/unknown' });
+
+    expect(success.statusCode).toBe(200);
+    expect(validationError.statusCode).toBe(400);
+    expect(notFound.statusCode).toBe(404);
+    for (const response of [success, validationError, notFound]) {
+      expect(response.headers['cache-control']).toBe('private, no-store');
+      expect(response.headers['vercel-cdn-cache-control']).toBe('no-store');
+    }
+  });
+
   it('adds CORS headers only for configured origins and permits only GET', async () => {
     const config = parseEnvironment({
       CORS_ALLOWED_ORIGINS: 'https://clima.example.com,http://localhost:4173',
