@@ -44,6 +44,10 @@ This file defines the minimum quality bar for NossoClima. A failing constraint b
 
 ## Exceptions
 
-No exceptions are approved.
+Approved exception, 2026-10-05:
+
+| Rule | Path / fingerprint | Reason | Owner | Expires |
+|---|---|---|---|---|
+| Secret scanning: Gitleaks `generic-api-key` historical finding only | `apps/api/test/unit/open-meteo-transport.test.ts`; commit `2c49d942cb70351192ab079b183bdca07227a9de`, line 27; exact fingerprint in `.gitleaksignore` | The old test used the Open-Meteo forecast host with port 8443 as a non-secret allowlist fixture. The current test builds this URL in parts, and a full current-tree scan is clean. The owner approved the one-fingerprint exception in this conversation on 2026-10-05. | ChristianGCa | 2026-12-31 |
 
 Any future exception must record the rule, path, reason, owner and an expiry date no more than 90 days away.

@@ -32,7 +32,27 @@ npm run build --workspace @nosso-clima/web
 npm audit --audit-level=high
 ```
 
-`npm run test:e2e`, `npm run test:performance` e Gitleaks são gates planejados, ainda não implementados/configurados. Registrar as versões reais usadas no build da Vercel em P1. Uma execução local bem-sucedida não prova o comportamento de Functions, CDN ou Redis.
+`npm run test:e2e`, `npm run test:performance` e o workflow de CI estão implementados localmente. Registrar as versões reais usadas no build da Vercel em P1. Uma execução local bem-sucedida não prova o comportamento de Functions, CDN ou Redis.
+
+## P9: gates locais e sinais operacionais — 2026-10-05
+
+Revisão de base `ab9c97d` com alterações de P9 ainda locais. O perfil `artifacts/performance.json` é gerado por `npm run test:performance`, ignorado no Git e publicado como artefato pela CI. O teste usa o web compilado, Chromium móvel 360×800 @2x, CPU 4× mais lenta, latência de 150 ms, download de 200.000 bytes/s, forecast em fixture e uma carga fria por cenário. Mede LCP e CLS com `PerformanceObserver`. Preview e condições reais de rede seguem para P1/Checkpoint B.
+
+| Gate | Resultado local |
+|---|---|
+| `npm ci` com npm 12.0.2 | Passou a partir do lockfile, sem alteração do lockfile; `npm run check` repetido com essa instalação passou |
+| `npm run check` | Passou: 495 testes da API, 90 do web, tipos, Biome e fronteiras |
+| `npm run test:coverage` | API 94,89%/91,23%/94,69%/97,91%; web 96,88%/89,84%/97,43%/98,94% (statements/branches/functions/lines) |
+| `npm run test:a11y` | Passou em neutro, estados interativos, dez imagens e desktop; contraste mínimo acima de 4,5:1 para texto comum |
+| `npm run test:e2e` | Passou: 5 testes com Function local e provedor simulado |
+| `npm run test:performance` | Neutro: LCP 1.000 ms, CLS 0,000; cidade restaurada: LCP 1.008 ms, CLS 0,000. Antes da reserva de altura no carregamento, CLS restaurado era 0,399 |
+| `npm audit --audit-level=high` | 0 vulnerabilidades |
+| Gitleaks 8.30.1 `dir --redact --no-banner` | Conteúdo atual sem achados |
+| Gitleaks 8.30.1 `detect --redact --no-banner` sem intervalo | Passou: 85 commits verificados; a exceção aprovada cobre somente o fingerprint histórico do teste de porta explícita no commit `2c49d94` |
+
+O workflow [ci.yml](../../.github/workflows/ci.yml) usa checkout completo, Node 24.21.0, npm 12.0.2, `npm ci`, checks, cobertura, auditoria, acessibilidade, E2E, performance e Gitleaks 8.30.1 com SHA-256 verificado. O scan examina a árvore atual e todo o histórico Git. A exceção de fingerprint único foi aprovada pelo proprietário em 2026-10-05, registrada em [CONSTRAINTS.md](../../CONSTRAINTS.md) com responsável e expiração em 2026-12-31. Sem Git remote, ainda não existe execução hospedada.
+
+Os logs da API usam `requestId` gerado pelo servidor e molde da rota. Para operação, contar `request_completed` por status e duração, `cache_hit`/`cache_miss`, `rate_limit_rejected` por origem local/compartilhada, `visitor_limit_unavailable`, `redis_unavailable`, `provider_access_rejected` por `reason` (`quota_denied`, `circuit_open`, `redis_unavailable`, `upstream_rate_limited`) e `geocoding_upstream_failed`/`forecast_upstream_failed` por categoria. Esses campos não contêm IP, digest, texto de busca, coordenadas, fuso, URL ou mensagem arbitrária. O WAF e os comandos mensais Upstash exigem métricas/alarme da conta em P1c; canal, limiares e recebimento da notificação ainda não foram testados. Em P1, distinguir `upstream_rate_limited` de `rate_limit_rejected` ao configurar alerta, e usar eventos de 503/negação de cota para investigar indisponibilidade.
 
 ## Projetos e ambientes propostos
 

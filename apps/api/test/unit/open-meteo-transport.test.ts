@@ -23,13 +23,34 @@ describe('Open-Meteo outbound allowlist', () => {
     'https://api.open-meteo.com/other',
     'https://geocoding-api.open-meteo.com/v1/forecast',
     'https://api.open-meteo.com.evil.example/v1/forecast',
-    'https://user:pass@api.open-meteo.com/v1/forecast',
-    'https://api.open-meteo.com:8443/v1/forecast',
   ])('blocks destination %s before fetch', async (rawUrl) => {
     const fetchImpl = vi.fn<typeof fetch>(async () => new Response('{}'));
     const transport = createOpenMeteoTransport(fetchImpl);
 
     await expect(transport(new URL(rawUrl), { redirect: 'error' })).rejects.toThrow(
+      /^Blocked Open-Meteo request$/,
+    );
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('blocks a URL containing credentials before fetch', async () => {
+    const url = new URL('https://api.open-meteo.com/v1/forecast');
+    url.username = 'fixture';
+    url.password = 'fixture';
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response('{}'));
+
+    await expect(createOpenMeteoTransport(fetchImpl)(url, { redirect: 'error' })).rejects.toThrow(
+      /^Blocked Open-Meteo request$/,
+    );
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('blocks a URL with a non-default port before fetch', async () => {
+    const url = new URL('https://api.open-meteo.com/v1/forecast');
+    url.port = '8443';
+    const fetchImpl = vi.fn<typeof fetch>(async () => new Response('{}'));
+
+    await expect(createOpenMeteoTransport(fetchImpl)(url, { redirect: 'error' })).rejects.toThrow(
       /^Blocked Open-Meteo request$/,
     );
     expect(fetchImpl).not.toHaveBeenCalled();
