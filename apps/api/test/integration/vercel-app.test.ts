@@ -3,6 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createVercelApp } from '../../src/vercel-app.js';
 import { RESERVE_QUOTA_SCRIPT } from '../../src/infrastructure/quota-reservation.js';
+import {
+  ACQUIRE_CACHE_LOCK_SCRIPT,
+  READ_CACHE_SCRIPT,
+  RELEASE_CACHE_LOCK_SCRIPT,
+  WRITE_CACHE_SCRIPT,
+} from '../../src/infrastructure/redis-cache.js';
 import { SHARED_VISITOR_LIMIT_SCRIPT } from '../../src/infrastructure/shared-visitor-limit.js';
 import {
   CHECK_CIRCUIT_SCRIPT,
@@ -22,6 +28,7 @@ const productionEnvironment = {
   UPSTASH_REDIS_REST_URL: 'https://test-redis.upstash.io',
   UPSTASH_REDIS_REST_TOKEN: 'test-token-not-a-real-credential',
   RATE_LIMIT_HMAC_KEY: 'ab'.repeat(32),
+  CACHE_HMAC_KEY: 'cd'.repeat(32),
   OPEN_METEO_MINUTE_CREDITS: '10000',
   OPEN_METEO_HOUR_CREDITS: '50000',
   OPEN_METEO_DAY_CREDITS: '100000',
@@ -34,11 +41,29 @@ const productionEnvironment = {
 const visitorHeaders = { 'x-vercel-forwarded-for': '203.0.113.10' };
 
 function withAllowedVisitorLimit(redis: UpstashRestClient): UpstashRestClient {
+  const cache = new Map<string, string>();
+  const locks = new Map<string, string>();
   return {
-    eval: (script, keys, args) =>
-      script === SHARED_VISITOR_LIMIT_SCRIPT
-        ? Promise.resolve([1, 60_000, 59])
-        : redis.eval(script, keys, args),
+    eval(script, keys, args) {
+      if (script === SHARED_VISITOR_LIMIT_SCRIPT) return Promise.resolve([1, 60_000, 59]);
+      const key = keys[0];
+      if (key && script === READ_CACHE_SCRIPT) return Promise.resolve(cache.get(key) ?? null);
+      if (key && script === WRITE_CACHE_SCRIPT) {
+        cache.set(key, args[0] ?? '');
+        return Promise.resolve('OK');
+      }
+      if (key && script === ACQUIRE_CACHE_LOCK_SCRIPT) {
+        if (locks.has(key)) return Promise.resolve(0);
+        locks.set(key, args[0] ?? '');
+        return Promise.resolve(1);
+      }
+      if (key && script === RELEASE_CACHE_LOCK_SCRIPT) {
+        if (locks.get(key) !== args[0]) return Promise.resolve(0);
+        locks.delete(key);
+        return Promise.resolve(1);
+      }
+      return redis.eval(script, keys, args);
+    },
   };
 }
 
@@ -313,6 +338,10 @@ describe('Vercel Fastify entry', () => {
     ['missing HMAC key', { RATE_LIMIT_HMAC_KEY: undefined }],
     ['short HMAC key', { RATE_LIMIT_HMAC_KEY: 'ab'.repeat(31) }],
     ['non-hex HMAC key', { RATE_LIMIT_HMAC_KEY: 'z'.repeat(64) }],
+    ['missing cache HMAC key', { CACHE_HMAC_KEY: undefined }],
+    ['short cache HMAC key', { CACHE_HMAC_KEY: 'cd'.repeat(31) }],
+    ['non-hex cache HMAC key', { CACHE_HMAC_KEY: 'z'.repeat(64) }],
+    ['reused rate-limit HMAC key', { CACHE_HMAC_KEY: 'ab'.repeat(32) }],
   ])('rejects %s without exposing configuration', (_case, values) => {
     expect(() => createVercelApp({ ...productionEnvironment, ...values })).toThrow(
       /^Invalid API configuration$/,

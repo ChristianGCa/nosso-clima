@@ -16,6 +16,7 @@ const environment = {
   UPSTASH_REDIS_REST_URL: 'https://test-redis.upstash.io',
   UPSTASH_REDIS_REST_TOKEN: 'test-token-not-a-real-credential',
   RATE_LIMIT_HMAC_KEY: 'ab'.repeat(32),
+  CACHE_HMAC_KEY: 'cd'.repeat(32),
   OPEN_METEO_MINUTE_CREDITS: '10000',
   OPEN_METEO_HOUR_CREDITS: '50000',
   OPEN_METEO_DAY_CREDITS: '100000',

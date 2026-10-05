@@ -8,6 +8,15 @@ export function assertServerlessCredentials(environment: EnvironmentInput): void
   if (!hmacKey || !/^[0-9a-f]{64}$/i.test(hmacKey)) {
     throw new Error('Invalid RATE_LIMIT_HMAC_KEY');
   }
+
+  const cacheKey = environment.CACHE_HMAC_KEY;
+  if (
+    !cacheKey ||
+    !/^[0-9a-f]{64}$/i.test(cacheKey) ||
+    cacheKey.toLowerCase() === hmacKey.toLowerCase()
+  ) {
+    throw new Error('Invalid CACHE_HMAC_KEY');
+  }
 }
 
 export function parseUpstashEndpoint(redisUrl: string | undefined): URL {

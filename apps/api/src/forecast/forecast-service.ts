@@ -1,7 +1,9 @@
 import { ApiError } from '../errors/api-error.js';
 import type { Cache } from '../infrastructure/cache.js';
 import type { BoundedExecutor } from '../infrastructure/concurrency.js';
+import type { RedisCache } from '../infrastructure/redis-cache.js';
 import type { SingleFlight } from '../infrastructure/single-flight.js';
+import { UpstashUnavailable } from '../infrastructure/upstash-rest.js';
 import { ForecastFailure, normalizeForecastResponse } from './open-meteo-forecast.js';
 import { canonicalizeForecastLocation, forecastCacheKey } from './forecast-query.js';
 import type { ForecastLocation, ForecastResponse } from './forecast-contract.js';
@@ -12,7 +14,7 @@ export type ForecastLogger = Readonly<{
   info(bindings: { event: 'cache_hit' | 'cache_miss' }, message: string): void;
   warn(
     bindings: {
-      event: 'forecast_upstream_failed' | 'upstream_saturation';
+      event: 'forecast_upstream_failed' | 'upstream_saturation' | 'redis_unavailable';
       failureKind?: ForecastFailure['kind'];
       upstreamStatus?: number;
     },
@@ -32,12 +34,13 @@ export function createForecastService(
   dependencies: Readonly<{
     client: ForecastClient;
     cache: Cache<string, ForecastResponse>;
+    sharedCache?: RedisCache<ForecastResponse>;
     singleFlight: SingleFlight;
     executor: BoundedExecutor;
     now?: () => Date;
   }>,
 ): ForecastService {
-  const { client, cache, singleFlight, executor } = dependencies;
+  const { client, cache, sharedCache, singleFlight, executor } = dependencies;
   const now = dependencies.now ?? (() => new Date());
 
   return {
@@ -45,6 +48,19 @@ export function createForecastService(
       const canonicalLocation = canonicalizeForecastLocation(location);
       const key = forecastCacheKey(canonicalLocation);
       try {
+        if (sharedCache) {
+          return await singleFlight.run(key, () =>
+            sharedCache.getOrLoad(
+              key,
+              FORECAST_TTL_MS,
+              async () => {
+                const payload = await executor.run(() => client.fetch(canonicalLocation), logger);
+                return normalizeForecastResponse(payload, canonicalLocation, now().toISOString());
+              },
+              logger,
+            ),
+          );
+        }
         const cached = cache.get(key, logger);
         if (cached !== undefined) return cached;
 
@@ -62,6 +78,10 @@ export function createForecastService(
           return normalized;
         });
       } catch (failure) {
+        if (failure instanceof UpstashUnavailable) {
+          logger?.warn({ event: 'redis_unavailable' }, 'redis unavailable');
+          throw new ApiError('SERVICE_UNAVAILABLE');
+        }
         if (!(failure instanceof ForecastFailure)) throw failure;
 
         logger?.warn(

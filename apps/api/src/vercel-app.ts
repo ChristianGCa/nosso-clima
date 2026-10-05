@@ -1,4 +1,5 @@
 import type { FastifyInstance } from 'fastify';
+import type { Writable } from 'node:stream';
 
 import { buildApp } from './app.js';
 import { type AppConfig, type EnvironmentInput, parseEnvironment } from './config/env.js';
@@ -12,6 +13,7 @@ import { createUpstreamCircuit } from './infrastructure/upstream-circuit.js';
 export type VercelAppDependencies = Readonly<{
   redis?: UpstashRestClient;
   providerFetch?: typeof fetch;
+  loggerStream?: Writable;
 }>;
 
 export function createVercelApp(
@@ -52,7 +54,11 @@ export function createVercelApp(
   return buildApp({
     config,
     fetchImpl,
+    sharedCache: { redis, secret: environment.CACHE_HMAC_KEY ?? '' },
     serverlessRateLimit: { redis, hmacKey: environment.RATE_LIMIT_HMAC_KEY ?? '' },
-    logger: { level: config.logLevel },
+    logger: {
+      level: config.logLevel,
+      ...(dependencies.loggerStream ? { stream: dependencies.loggerStream } : {}),
+    },
   });
 }

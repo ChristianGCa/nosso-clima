@@ -12,9 +12,11 @@ import { type AppConfig, parseEnvironment } from './config/env.js';
 import { ApiError } from './errors/api-error.js';
 import { registerErrorHandlers, sendPublicError } from './errors/error-handler.js';
 import { type Cache, createCache } from './infrastructure/cache.js';
+import { createRedisCache } from './infrastructure/redis-cache.js';
+import type { UpstashRestClient } from './infrastructure/upstash-rest.js';
 import { type BoundedExecutor, createBoundedExecutor } from './infrastructure/concurrency.js';
 import { createSingleFlight, type SingleFlight } from './infrastructure/single-flight.js';
-import type { Location } from './locations/location-contract.js';
+import { LocationSchema, type Location } from './locations/location-contract.js';
 import { createLocationSearchService } from './locations/location-search-service.js';
 import { createOpenMeteoGeocodingClient } from './locations/open-meteo-geocoding.js';
 import { registerCors } from './plugins/cors.js';
@@ -29,14 +31,19 @@ import { registerHealthRoute } from './routes/health.js';
 import { registerLocationRoute } from './routes/locations.js';
 import { createForecastService } from './forecast/forecast-service.js';
 import { fetchForecastJson } from './forecast/open-meteo-forecast.js';
-import type { ForecastResponse } from './forecast/forecast-contract.js';
+import { ForecastResponseSchema, type ForecastResponse } from './forecast/forecast-contract.js';
 import { registerForecastRoute } from './routes/forecast.js';
+import { Type } from 'typebox';
+import { Check } from 'typebox/value';
+
+const CachedLocationsSchema = Type.Array(LocationSchema, { maxItems: 5 });
 
 export type BuildAppOptions = Readonly<
   Pick<FastifyServerOptions, 'logger' | 'loggerInstance'> & {
     config?: AppConfig;
     fetchImpl?: typeof fetch;
     serverlessRateLimit?: ServerlessRateLimitOptions;
+    sharedCache?: Readonly<{ redis: UpstashRestClient; secret: string }>;
     registerRoutes?: (app: FastifyInstance, platform: BackendPlatformContext) => void;
   }
 >;
@@ -53,6 +60,7 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     config = parseEnvironment({}),
     fetchImpl,
     serverlessRateLimit,
+    sharedCache,
     registerRoutes,
     ...serverOptions
   } = options;
@@ -132,6 +140,15 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     createLocationSearchService({
       client: createOpenMeteoGeocodingClient(fetchImpl),
       cache: platform.createCache<readonly Location[]>('location-search'),
+      ...(sharedCache
+        ? {
+            sharedCache: createRedisCache<readonly Location[]>({
+              ...sharedCache,
+              namespace: 'location-search',
+              isValue: (value): value is readonly Location[] => Check(CachedLocationsSchema, value),
+            }),
+          }
+        : {}),
       singleFlight: platform.singleFlight,
       executor: platform.executor,
     }),
@@ -141,6 +158,15 @@ export function buildApp(options: BuildAppOptions = {}): FastifyInstance {
     createForecastService({
       client: { fetch: (location) => fetchForecastJson(location, fetchImpl) },
       cache: platform.createCache<ForecastResponse>('weather-forecast'),
+      ...(sharedCache
+        ? {
+            sharedCache: createRedisCache<ForecastResponse>({
+              ...sharedCache,
+              namespace: 'weather-forecast',
+              isValue: (value): value is ForecastResponse => Check(ForecastResponseSchema, value),
+            }),
+          }
+        : {}),
       singleFlight: platform.singleFlight,
       executor: platform.executor,
     }),
