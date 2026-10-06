@@ -16,6 +16,13 @@ export type VercelAppDependencies = Readonly<{
   loggerStream?: Writable;
 }>;
 
+const CREDENTIAL_FAILURE_CODES = new Map([
+  ['Invalid UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_URL'],
+  ['Invalid UPSTASH_REDIS_REST_TOKEN', 'UPSTASH_REDIS_REST_TOKEN'],
+  ['Invalid RATE_LIMIT_HMAC_KEY', 'RATE_LIMIT_HMAC_KEY'],
+  ['Invalid CACHE_HMAC_KEY', 'CACHE_HMAC_KEY'],
+]);
+
 export function createVercelApp(
   environment: EnvironmentInput,
   dependencies: VercelAppDependencies = {},
@@ -30,6 +37,7 @@ export function createVercelApp(
       : environment;
   let config: AppConfig;
   let policy: ProviderPolicy;
+  let validationStage = 'runtime_environment';
   try {
     if (
       !runtimeEnvironment.NODE_ENV ||
@@ -37,10 +45,18 @@ export function createVercelApp(
     ) {
       throw new Error('Invalid NODE_ENV');
     }
+    validationStage = 'application_environment';
     config = parseEnvironment(runtimeEnvironment);
+    validationStage = 'serverless_credentials';
     assertServerlessCredentials(runtimeEnvironment);
+    validationStage = 'provider_policy';
     policy = parseProviderPolicy(runtimeEnvironment);
-  } catch {
+  } catch (error) {
+    const credentialCode =
+      validationStage === 'serverless_credentials' && error instanceof Error
+        ? CREDENTIAL_FAILURE_CODES.get(error.message)
+        : undefined;
+    console.error(`API configuration invalid: ${credentialCode ?? validationStage}`);
     throw new Error('Invalid API configuration');
   }
 

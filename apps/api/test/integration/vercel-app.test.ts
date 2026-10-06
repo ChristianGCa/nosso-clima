@@ -94,6 +94,23 @@ describe('Vercel Fastify entry', () => {
     ).toThrow(/^Invalid API configuration$/);
   });
 
+  it.each([
+    ['application_environment', { CORS_ALLOWED_ORIGINS: 'sensitive-invalid-origin' }],
+    ['UPSTASH_REDIS_REST_URL', { UPSTASH_REDIS_REST_URL: 'sensitive-invalid-url' }],
+    ['provider_policy', { OPEN_METEO_MONTH_CREDITS: 'sensitive-invalid-credits' }],
+  ])('logs only a safe configuration failure code for %s', (code, patch) => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      expect(() =>
+        createVercelApp({ ...productionEnvironment, VERCEL_ENV: 'preview', ...patch }),
+      ).toThrow(/^Invalid API configuration$/);
+      expect(errorLog).toHaveBeenCalledWith(`API configuration invalid: ${code}`);
+      expect(JSON.stringify(errorLog.mock.calls)).not.toContain('sensitive-');
+    } finally {
+      errorLog.mockRestore();
+    }
+  });
+
   it('builds the existing app without listening or installing signal handlers', async () => {
     const sigintListeners = process.listenerCount('SIGINT');
     const sigtermListeners = process.listenerCount('SIGTERM');
