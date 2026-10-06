@@ -1,7 +1,5 @@
-import type { FastifyInstance } from 'fastify';
-
 import { createVercelApp } from './src/vercel-app.js';
 
-const app: FastifyInstance = createVercelApp(process.env);
+const app = createVercelApp(process.env);
 
-export default app;
+void app.listen({ port: 3000 });
