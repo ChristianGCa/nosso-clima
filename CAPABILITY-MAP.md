@@ -1,6 +1,6 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-04:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P6 estão implementadas localmente e P7–P11 continuam no plano ativo. Cloudflare e Render não fazem parte do plano ativo.
+**Estado em 2026-10-06:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P9 estão implementadas localmente. P1 em Preview protegido, P10–P11 e a decisão de publicação continuam pendentes. Cloudflare e Render não fazem parte do plano ativo.
 
 ## Estado por módulo
 
@@ -9,8 +9,8 @@
 | `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada, circuit breaker e cache compartilhado ligados às rotas; HMAC temporário, pré-limite e limites compartilhados ligados à entrada Function, sujeitos à prova real em P1 | — |
 | `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Cache Redis de 24 h e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
 | `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Cache Redis de 10 min e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
-| `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos e estados da interface | Usar `/api/v1/*` na origem web e validar configuração de build; mudanças de entrega em P7 | `location-search`, `weather-forecast` |
-| `production-delivery` | Planejamento e runbook preliminar; sem implantação ou gates hospedados concluídos | Dois projetos Vercel, rewrite web → API, WAF, headers/assets, E2E, performance, CI, privacidade, direitos, Preview e rollback | Todos os módulos acima |
+| `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Configuração de build local implementada; roteamento real depende de P1 | `location-search`, `weather-forecast` |
+| `production-delivery` | Configuração de rewrite/headers, E2E, performance e CI testadas localmente em P7–P9; sem gates hospedados concluídos | Dois projetos Vercel, WAF e CDN reais, privacidade, direitos, Preview e rollback dependem de P1 e P10–P11 | Todos os módulos acima |
 
 As specs de busca, previsão e UI descrevem os contratos locais vigentes e identificam as alterações propostas. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração; seu contrato local detalhado permanece referenciado no [baseline Node](docs/history/backend-platform-node-baseline-2026-09-23.md). Os itens concluídos dos módulos locais não comprovam a migração para Vercel.
 
@@ -23,7 +23,7 @@ backend-platform
                       ┘
 ```
 
-P0: aprovar specs e fronteiras → P2–P5: plataforma compartilhada local → P6: integrar busca e previsão (concluída localmente) → P7: roteamento web → P8–P9: E2E e gates locais → P1: provar viabilidade em Preview configurado pelo proprietário → P10–P11: pacote de release e rollback → decisão de publicação. O [plano](tasks/vercel-plan.md) detalha a sequência; o progresso é registrado somente na [lista ativa](tasks/vercel-todo.md). P1 continua obrigatório antes de exposição pública.
+P0: aprovar specs e fronteiras → P2–P9: implementação e gates locais (concluídos) → P1: provar viabilidade em Preview configurado pelo proprietário → P10–P11: pacote de release e rollback → decisão de publicação. O [plano](tasks/vercel-plan.md) detalha a sequência; o progresso atual é registrado na [lista ativa](tasks/vercel-todo.md), com evidências antigas em `docs/history/`. P1 continua obrigatório antes de exposição pública.
 
 ## Regras de fronteira
 

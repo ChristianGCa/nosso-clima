@@ -17,16 +17,16 @@ P4 cache Redis + deduplicação ── P5 limite HMAC temporário
   ↓                              ↓
 P6 integrar busca e previsão preservando os contratos
   ↓
-P7 web, rewrite e cabeçalhos → checkpoint A local
+P7 web, rewrite e cabeçalhos
   ↓
 P8 E2E local → P9 performance, CI e segurança locais
   ↓
 P1 configuração manual e prova em Preview protegido: topologia, Redis,
-   WAF, custo, `429` externo, IP e cache → checkpoint B
+   WAF, custo, IP e cache; simular `429` externo
   ↓
 P10 privacidade, direitos, orçamento e runbook
   ↓
-P11 smoke e rollback dos dois projetos → checkpoint C → decisão de publicação
+P11 smoke e rollback dos dois projetos → decisão de publicação
 ```
 
 P4 e P5 podem ser desenvolvidos em fatias independentes depois de P3, com integração em `buildApp()` revisada em P6. Cada fatia deve primeiro criar testes comportamentais para a lógica alterada, implementar apenas o necessário e rodar os checks relevantes. Não criar duas versões de produção permanentes; `server.ts` local fica como entrada de desenvolvimento enquanto a Function se torna a entrada de deploy. Antes de P1, dependências externas são simuladas e a entrada de produção deve falhar fechada sem configuração completa. Resultados locais não comprovam comportamento da Vercel ou Upstash.
@@ -42,11 +42,11 @@ Depois da implementação e verificação local P2–P9, o proprietário configu
 | Fatia | Prova a executar | Evidência para concluir |
 |---|---|---|
 | P1a — Topologia e build | Dois projetos, Node 24/npm 12, `npm ci`, builds independentes, diretórios raiz, entrada Fastify, API direta e rewrite; Preview web pareado à API Preview; 404 JSON para `/api` desconhecida, CORS/Origin e headers/cache efetivos | Configuração sem segredos, versões, URLs e respostas observadas; demonstração de que Preview não usa API Production nem retorna HTML da SPA para erro de API |
-| P1b — Redis e cota do provedor | HTTPS, segredos por ambiente, região, script atômico nas quatro janelas, lock/TTL, contenção, timeout e falha; confirmar peso exato de geocodificação e da previsão com `hourly.weather_code`, além do tamanho da nova resposta; esclarecer termos versus preços (300.000/mês) e calcular margens | Testes da implementação final em Preview, peso e tamanho medidos para as URLs reais, fontes datadas e tetos internos propostos por minuto/hora/dia/mês; nenhuma chamada externa sem reserva |
-| P1c — Proteção e custo Free | Regra WAF Hobby antes da Function, API direta e rewrite, contadores por região, pedidos permitidos e bloqueados; pré-limite em memória; comandos Upstash por hit/miss/lock/reserva/limite/negação, estimativa normal e adversarial; alarme mensal com canal testado | Limites gratuitos confirmados, bloqueios sem invocação da Function nem comando Redis, modelo de consumo medido e notificação de alarme recebida |
-| P1d — Identidade, saída e falha externa | Anti-spoof do IP recebido pela Function nos dois caminhos; saída ao eco sem IP/canário do visitante, com contagem de chamadas reais; taxa de `429` Open-Meteo por rota, distinguida dos limites próprios, e circuit breaker com cooldown/reabertura | Relatório de presença/ausência sem IP bruto, taxa externa observada e política/limiar de aceitação registrados; ensaio do circuit breaker e falha fechada |
+| P1b — Redis e cota do provedor | HTTPS, segredos por ambiente, script atômico nas quatro janelas, cache/TTL, contenção e falha; confirmar peso das consultas atuais e uma amostra de previsão dentro de 64 KiB | Testes da implementação final em Preview, fontes datadas e tetos internos por minuto/hora/dia/mês; nenhuma chamada externa sem reserva |
+| P1c — Proteção e custo Free | Regra WAF Hobby antes da Function na API direta e no rewrite; amostras representativas de comandos Upstash e estimativa normal/adversarial; acompanhar o consumo no painel Free sem upgrade automático | Limites gratuitos confirmados, bloqueios sem invocação da Function nem comando Redis e estimativa mensal com margem; orçamento/alarme do plano pago por uso não é gate do Free |
+| P1d — Identidade, saída e falha externa | Anti-spoof do IP recebido pela Function nos dois caminhos; saída ao eco sem IP/canário do visitante; `429` externo e circuit breaker testados com fixture | Relatório de presença/ausência sem IP bruto e ensaio do circuit breaker/falha fechada; registrar `429` real se ocorrer, sem provocá-lo como gate |
 
-P1b inclui a pendência da alteração de previsão de 2026-10-04. P1c usa o custo dos mecanismos medidos em P1b; P1d usa a topologia de P1a. Testes automatizados usam fixtures e nunca Open-Meteo real; medições externas são manuais, limitadas e registradas. O ensaio integrado P1 só termina com as quatro fatias comprovadas. Se o caminho incluir IP do visitante, a proteção de custo falhar, a taxa de `429` for incompatível com a disponibilidade aceitável ou a quota não for demonstrável, voltar à P0 para redesenho antes de publicação.
+P1b inclui o custo da consulta de previsão com `hourly.weather_code`; P1c usa amostras representativas dos mecanismos medidos em P1b; P1d usa a topologia de P1a. Testes automatizados usam fixtures e nunca Open-Meteo real; medições externas são manuais, limitadas e registradas. Não pressupor dois bancos Upstash Free simultâneos. Se o caminho incluir IP do visitante, a proteção de custo falhar ou a quota não for demonstrável, voltar à P0 para redesenho antes de publicação.
 
 Registrar configurações e resultados no [runbook](../docs/deploy/vercel-upstash-runbook.md), com data e versão testada, e vincular a evidência na [lista ativa](vercel-todo.md). Diferenças entre hipóteses locais e parâmetros medidos exigem correção e novos testes antes do release; a prova de IP ocorre nas duas rotas finais em P1/P11.
 
@@ -64,13 +64,13 @@ P4 adiciona cache Upstash versionado com chaves opacas e TTL 24 h/10 min, valore
 
 `production-delivery` coordena estas etapas; a validação do cliente em P7 pertence a `weather-ui`.
 
-P7 versiona a configuração proposta dos dois projetos, rewrite, regra WAF obrigatória nas rotas API, paths relativos, CORS exato, segurança web e política explícita do CDN. Validar `VITE_API_BASE_URL`: em Production deve estar ausente ou ser da própria origem HTTPS; rejeitar HTTP, loopback e origem divergente. Inspecionar URLs/segredos no build estático. A verificação de ambos os domínios, Preview e resposta em cache/erro ocorre em P1. Checkpoint A exige contratos de API, configuração de roteamento, `npm run check`, builds, cobertura e boundaries verdes localmente.
+P7 versiona a configuração proposta dos dois projetos, rewrite, regra WAF obrigatória nas rotas API, paths relativos, CORS exato, segurança web e política explícita do CDN. Validar `VITE_API_BASE_URL`: em Production deve estar ausente ou ser da própria origem HTTPS; rejeitar HTTP, loopback e origem divergente. Inspecionar URLs/segredos no build estático. Os contratos, checks, builds e cobertura passaram localmente; a verificação dos dois domínios, Preview e resposta em cache/erro ocorre em P1.
 
-P8 implementa `npm run test:e2e` com navegador real, artefatos de web e API final e provedor em fixture. Cobrir fluxo neutro, cidade salva, busca, previsão, sete dias, falhas, 429/503, teclado, créditos e nenhuma requisição externa do navegador. O teste de IP real nas duas rotas finais e a contagem de chamadas recebidas pelo eco ocorrem em P1d, incluindo domínio direto da API e rewrite. P9 implementa `npm run test:performance` nos limiares atuais, configuração de CI para checkout limpo, `gitleaks --redact`, auditoria e telemetria sem dados pessoais. Checkpoint B exige os gates hospedados e de custo medidos em P1; sem Git remote, CI hospedada fica pendente e B não passa.
+P8 implementa `npm run test:e2e` com navegador real, artefatos de web e API final e provedor em fixture. Cobrir fluxo neutro, cidade salva, busca, previsão, sete dias, falhas, 429/503, teclado, créditos e nenhuma requisição externa do navegador. O teste de IP real nas duas rotas finais e a contagem de chamadas recebidas pelo eco ocorrem em P1d, incluindo domínio direto da API e rewrite. P9 implementa `npm run test:performance` nos limiares atuais, configuração de CI para checkout limpo, `gitleaks --redact`, auditoria e telemetria sem dados pessoais. CI hospedada, custo Free e comportamento real continuam pendentes até a revisão final em P1/P10; não há Git remote neste checkout.
 
 ## P10–P11 — Pacote de release
 
-P10 registra termos Open-Meteo vigentes, peso e tetos internos de minuto/hora/dia/mês com margem, taxa de `429` externo, custo Upstash/Vercel Free, região e retenção, aviso de privacidade, direitos dos dez fundos/logo, licença MIT, URL real, variáveis por ambiente (nomes apenas), alarmes e procedimento de falha. P11 faz Preview protegido e ensaio de rollback dos **dois** projetos e dos formatos Redis versionados, com smoke e evidência datada. Checkpoint C entrega pacote para decisão **separada** do proprietário sobre publicação pública.
+P10 registra termos Open-Meteo vigentes, peso e tetos internos de minuto/hora/dia/mês com margem, custo Upstash/Vercel Free, região e retenção, aviso de privacidade, direitos dos dez fundos/logo, licença MIT, URL real, variáveis por ambiente (nomes apenas), monitoramento disponível no plano e procedimento de falha. P11 faz smoke protegido e ensaio de rollback dos **dois** projetos para deployments de Preview conhecidos, preservando formatos Redis versionados. A revisão final entrega o pacote para decisão **separada** do proprietário sobre publicação pública; compatibilidade com versão pública anterior só se aplica depois do primeiro lançamento.
 
 ## Verificação e riscos a acompanhar
 
@@ -78,8 +78,8 @@ P10 registra termos Open-Meteo vigentes, peso e tetos internos de minuto/hora/di
 |---|---|
 | Escala de Functions rompe cache/rate limit local | Hits e limites compartilhados entre instâncias, com cota agregada independente |
 | Janelas fixas deixam escapar rajada na fronteira | Testes com tempo falso e concorrência nas janelas móveis |
-| Reserva local não vê uso do IP compartilhado | Taxa real de `429` externo por rota na Vercel; classificação própria e circuit breaker |
-| Redis Free esgota por abuso ou locks | WAF antes da Function, pré-limite em memória, modelo de comandos por pedido, ensaio e alarme mensal; bloqueio de outbound em falha |
+| Reserva local não vê uso do IP compartilhado | Classificação de `429` externo, circuit breaker testado com fixture e monitoramento de ocorrências reais após abertura |
+| Redis Free esgota por abuso ou locks | WAF antes da Function, pré-limite em memória, estimativa conservadora de comandos, conferência do painel Free e bloqueio de outbound em falha |
 | Rewrite ou CDN servem payload incorreto/vencido | Requests reais em Preview e inspeção de `Cache-Control` em sucesso/erro |
 | IP do visitante atravessa adapter/infra | Canário e IP falsificado em ambas as rotas, por ambos os domínios, com contagem no eco |
 | Domínio API direto contorna política web | Mesma validação, limites e quota no backend público |

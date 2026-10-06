@@ -10,5 +10,6 @@ Estes documentos preservam decisões, planos e evidências anteriores. O estado 
 | [Spec anterior de entrega](production-delivery-pre-p0-2026-10-03.md) | Planejamento Node e transição considerada para Cloudflare, substituídos pela proposta Vercel |
 | [Pesquisa Cloudflare](cloudflare-research-2026-10-01.md) | Alternativa descartada, sem implementação |
 | [Auditoria de 2026-10-03](release-audit-2026-10-03.md) | Resultados locais daquela data e diagnóstico da alternativa Cloudflare |
+| [Evidências locais Vercel até 2026-10-06](vercel-local-evidence-2026-10-06.md) | Resultados históricos de P0 e P2–P9, retirados da lista ativa; hashes anteriores à reescrita do histórico |
 
 Trechos no futuro ou pedidos de aprovação dentro desses registros pertencem à data do documento. Só o baseline Node, nos pontos referenciados pela spec vigente, continua descrevendo o contrato local a preservar. Nenhum arquivo desta pasta é um plano ativo de deploy. Preços, limites e termos citados são registros datados.

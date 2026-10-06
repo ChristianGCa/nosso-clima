@@ -7,7 +7,7 @@
 
 ## Alcance desta spec
 
-O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. A adaptação para Vercel está descrita abaixo como proposta de P7; seu progresso é registrado em [tasks/vercel-todo.md](tasks/vercel-todo.md). A entrega local não conclui os gates de produção.
+O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. A configuração de build de P7 também foi implementada localmente; seu roteamento e os demais gates de produção dependem de P1 em Preview, conforme [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -32,7 +32,7 @@ For rate limiting, show a specific friendly message for `429 RATE_LIMITED` and a
 
 The frontend calls the same configured API base URL for both routes and uses `URLSearchParams` for query values. The base URL comes from build configuration, never from a search term or server response. Development may use a Vite proxy; production origin and CORS configuration belong to `production-delivery`.
 
-**Migração Vercel — P0 aprovada, implementação local em P7 e publicação pendente de P1:** o build de produção usa `/api/v1/*` na origem web, com rewrite para a API. A configuração prevista deixa `VITE_API_BASE_URL` ausente; se a variável for fornecida, a validação deve aceitar somente a própria origem HTTPS e rejeitar HTTP, loopback e outra origem. Essa validação ainda não existe no cliente atual. O rewrite, CORS e os headers de entrega seguem [Production Delivery](SPEC-production-delivery.md); contratos HTTP e comportamento visual continuam os descritos nesta spec.
+**Migração Vercel — implementação local de P7 concluída, publicação pendente de P1:** o build de produção usa `/api/v1/*` na origem web, com rewrite para a API. A configuração deixa `VITE_API_BASE_URL` ausente; se a variável for fornecida, a validação aceita somente a própria origem HTTPS e rejeita HTTP, loopback e outra origem. O rewrite, CORS e os headers de entrega seguem [Production Delivery](SPEC-production-delivery.md) e precisam de prova em Preview; contratos HTTP e comportamento visual continuam os descritos nesta spec.
 
 The HTTP boundary also rejects a forecast whose first daily date is not the date in `current.validAtLocal`, or whose returned timezone differs from the explicitly selected city's timezone. Such a response uses the unavailable state instead of labelling a mismatched date “HOJE” or presenting a time for the wrong zone.
 

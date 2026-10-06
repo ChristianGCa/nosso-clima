@@ -9,11 +9,11 @@
 
 Os sete cartões passam a mostrar a **condição predominante**, calculada na API a partir de `hourly.weather_code`, sem alterar o formato público da resposta. Para cada data local, contar horas por categoria (`clear`, `cloudy`, `rain`, `snow`, `storm`) e escolher a categoria com mais horas; empate é resolvido pela primeira ocorrência no dia. Dentro dela, escolher o código WMO mais frequente, também com desempate pela primeira ocorrência. Isso evita que uma tempestade isolada represente um dia predominantemente nublado. A previsão atual continua usando `current.weather_code`.
 
-Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code` e a lista de variáveis externas. `daily.weather_code` sai da consulta; `hourly.weather_code` entra. O custo ponderado e o tamanho reais da nova consulta devem ser medidos no P1 antes da entrega de produção. A migração Redis/Vercel foi aprovada para implementação na P0 e ainda depende da prova P1.
+Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code` e a lista de variáveis externas. `daily.weather_code` sai da consulta; `hourly.weather_code` entra. O custo ponderado da consulta deve ser confirmado no P1 antes da entrega de produção; o tamanho da resposta deve permanecer dentro do limite de 64 KiB do transporte. A migração Redis/Vercel foi implementada localmente após a aprovação P0 e ainda depende da prova P1.
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local abaixo estão implementados e aprovados. A seção **Cache: contrato local e migração proposta** identifica separadamente o cache atual e a alteração Vercel + Upstash aprovada para implementação, ainda pendente da prova P1. Os critérios concluídos registram a entrega local; a migração de produção é acompanhada em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local abaixo estão implementados e aprovados. A seção **Cache: contrato local e migração proposta** identifica separadamente o cache de desenvolvimento e a integração Vercel + Upstash implementada localmente em P4/P6, ainda pendente da prova P1. A migração de produção é acompanhada em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -146,7 +146,7 @@ The namespaced cache key includes canonical coordinates and timezone; it is neve
 
 O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para previsão validada, com TTL máximo de 10 minutos, sem IP ou identificador do visitante. A chave opaca é derivada com segredo da API das coordenadas arredondadas para três casas e do fuso canônico; o valor preserva a resposta pública, inclusive `retrievedAtUtc`, durante o TTL. Não há histórico, dado vencido nem cache de falhas. Cache e reserva agregada são infraestrutura de `backend-platform`; parâmetros Open-Meteo, sete dias, contrato HTTP, validação e créditos desta spec não mudam.
 
-Esta alteração foi aprovada para implementação na P0; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime existente. P4 implementa a infraestrutura de cache e P6 integra este módulo localmente; só essa migração verificada e aprovada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
+Esta alteração foi aprovada para implementação na P0 e integrada localmente em P4/P6; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime de desenvolvimento. Só a migração verificada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
 
 Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 10 minutos são preservados. A aceitação da migração exige testes entre instâncias, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs, conforme a [lista ativa](tasks/vercel-todo.md).
 
