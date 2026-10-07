@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { createServer } from 'node:http';
+import { once } from 'node:events';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 
-import { createVercelApp } from '../apps/api/dist/vercel-app.js';
 import {
   ACQUIRE_CACHE_LOCK_SCRIPT,
   READ_CACHE_SCRIPT,
@@ -241,17 +242,59 @@ async function chooseCity(page, query, name, beforeSelect = () => {}) {
   await field.press('Enter');
 }
 
-test('P8: browser, production adapter and fixture provider', async (suite) => {
+test('P8: browser, default Vercel handler and fixture provider', async (suite) => {
   const fixture = createFixture();
-  const api = createVercelApp(environment, {
-    redis: fixture.redis,
-    providerFetch: fixture.providerFetch,
-  });
+  const previousEnvironment = { ...process.env };
+  const previousFetch = globalThis.fetch;
+  let api;
   let web;
   let browser;
   const externalRequests = [];
   try {
-    const apiOrigin = await api.listen({ host: '127.0.0.1', port: 0 });
+    Object.assign(process.env, environment);
+    // Match the detection expression in Vercel's official Fastify builder.
+    const compiledEntry = await readFile(path.join(root, 'artifacts/vercel-entry/app.js'), 'utf8');
+    assert.match(compiledEntry, /(?:from|require|import)\s*(?:\(\s*)?["']fastify["']\s*(?:\))?/);
+    globalThis.fetch = async (input, init) => {
+      const url = new URL(String(input));
+      if (url.origin === environment.UPSTASH_REDIS_REST_URL) {
+        const [command, script, keyCount, ...parameters] = JSON.parse(init.body);
+        assert.equal(command, 'EVAL');
+        const result = await fixture.redis.eval(
+          script,
+          parameters.slice(0, keyCount),
+          parameters.slice(keyCount),
+        );
+        return Response.json({ result });
+      }
+      return fixture.providerFetch(input, init);
+    };
+    const { default: handler } = await import('../artifacts/vercel-entry/app.js');
+    assert.equal(typeof handler, 'function', 'Vercel entry must export a request handler');
+    globalThis.fetch = previousFetch;
+    for (const key of Object.keys(environment)) {
+      if (previousEnvironment[key] === undefined) delete process.env[key];
+      else process.env[key] = previousEnvironment[key];
+    }
+    api = createServer((request, response) => {
+      handler(request, response).catch(() => {
+        response.statusCode = 500;
+        response.end();
+      });
+    });
+    api.listen(0, '127.0.0.1');
+    await once(api, 'listening');
+    const apiAddress = api.address();
+    assert.ok(apiAddress && typeof apiAddress !== 'string');
+    const apiOrigin = `http://127.0.0.1:${apiAddress.port}`;
+    const health = await fetch(`${apiOrigin}/health`);
+    assert.equal(health.status, 200);
+    assert.deepEqual(await health.json(), { status: 'ok' });
+    const unknown = await fetch(`${apiOrigin}/api/unknown`, {
+      headers: { 'x-vercel-forwarded-for': '203.0.113.10' },
+    });
+    assert.equal(unknown.status, 404);
+    assert.equal((await unknown.json()).error.code, 'NOT_FOUND');
     web = await preview({
       configFile: false,
       root: webRoot,
@@ -395,6 +438,14 @@ test('P8: browser, production adapter and fixture provider', async (suite) => {
       await new Promise((resolve, reject) =>
         web.httpServer.close((error) => (error ? reject(error) : resolve())),
       );
-    await api.close();
+    if (api)
+      await new Promise((resolve, reject) =>
+        api.close((error) => (error ? reject(error) : resolve())),
+      );
+    globalThis.fetch = previousFetch;
+    for (const key of Object.keys(environment)) {
+      if (previousEnvironment[key] === undefined) delete process.env[key];
+      else process.env[key] = previousEnvironment[key];
+    }
   }
 });

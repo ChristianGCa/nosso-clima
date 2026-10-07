@@ -1,0 +1,9 @@
+{
+  "extends": "../apps/api/tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "../apps/api",
+    "outDir": "../artifacts/vercel-entry"
+  },
+  "include": ["../apps/api/app.ts", "../apps/api/src/**/*.ts"],
+  "exclude": ["../apps/api/test", "../apps/api/dist", "../apps/api/coverage"]
+}

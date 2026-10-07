@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 
-// biome-ignore lint/correctness/noUnusedImports: Required for Vercel's framework detection
-import Fastify from 'fastify';
+// Vercel detects Fastify from this runtime import; a type-only import is erased.
+import 'fastify';
 import { createVercelApp } from './src/vercel-app.js';
 
 const app = createVercelApp(process.env);
