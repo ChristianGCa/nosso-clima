@@ -1,6 +1,6 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-06:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P9 estão implementadas localmente. P1 em Preview protegido, P10–P11 e a decisão de publicação continuam pendentes. Cloudflare e Render não fazem parte do plano ativo.
+**Estado em 2026-10-07:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P9 estão implementadas localmente. P1 em Preview protegido, P10–P11 e a decisão de publicação continuam pendentes. Cloudflare e Render não fazem parte do plano ativo. O remoto GitHub existe; o proprietário confirmou que a entrada atual funcionou na Vercel e que excluiu o deploy. A retomada deve registrar os gates hospedados ainda sem evidência completa.
 
 ## Estado por módulo
 

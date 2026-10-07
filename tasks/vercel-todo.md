@@ -1,6 +1,6 @@
 # Entrega Vercel + Upstash — lista ativa
 
-**Estado em 2026-10-06:** P0 e P2–P9 estão concluídas **localmente**. A `main` ainda não tem remoto Git; CI hospedada, Preview real e publicação pública não foram comprovados. A publicação depende de decisão separada do proprietário. Ver [spec de entrega](../SPEC-production-delivery.md), [plano](vercel-plan.md) e [runbook](../docs/deploy/vercel-upstash-runbook.md).
+**Estado em 2026-10-07:** P0 e P2–P9 estão concluídas **localmente**. O remoto `origin` aponta para `ChristianGCa/nosso-clima`. O proprietário confirmou que a entrada atual funcionou na Vercel e que excluiu o deploy. O relato de funcionamento não substitui as evidências completas de P1; CI hospedada e gates restantes precisam ser conferidos para a revisão da retomada. A publicação depende de decisão separada do proprietário. Ver [spec de entrega](../SPEC-production-delivery.md), [plano](vercel-plan.md) e [runbook](../docs/deploy/vercel-upstash-runbook.md).
 
 ## Concluído localmente
 
@@ -10,9 +10,9 @@
 
 As [evidências históricas](../docs/history/vercel-local-evidence-2026-10-06.md) preservam os resultados por fatia; seus hashes são anteriores à reescrita do histórico Git. Reexecutar os gates na revisão que for implantada.
 
-## 1. Primeiro Preview protegido — P1a
+## 1. Retomada do Preview protegido — P1a
 
-- [ ] Publicar a revisão em repositório privado, obter CI verde e importar o mesmo monorepo em dois projetos Vercel: `apps/api` e `apps/web`, com acesso ao lockfile da raiz, Node 24/npm 12 e autenticação em **todos** os deployments antes dos testes.
+- [ ] Usar o repositório GitHub existente, confirmar sua visibilidade privada, obter CI verde da revisão escolhida e importar o mesmo monorepo em dois projetos Vercel: `apps/api` e `apps/web`, com acesso ao lockfile da raiz, Node 24/npm 12 e autenticação em **todos** os deployments antes dos testes.
 - [ ] Conectar uma Upstash Free somente à API Preview; configurar URL/token REST, duas chaves HMAC distintas e CORS. Implantar a API com os padrões provisórios de Preview, sem consulta válida à Open-Meteo; verificar `/health`, erro de validação e 404 JSON.
 - [ ] Apontar `API_ORIGIN` do web Preview para a API Preview da mesma revisão, manter `VITE_API_BASE_URL` ausente e ajustar o CORS da API à origem web. Verificar API direta/rewrite, cabeçalhos e cache de sucesso/erro, sem segredo no bundle e sem HTML da SPA nas rotas `/api` desconhecidas.
 
