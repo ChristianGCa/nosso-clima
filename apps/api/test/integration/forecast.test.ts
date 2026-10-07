@@ -4,7 +4,7 @@ import Fastify from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 
-import { buildApp } from '../../src/app.js';
+import { buildApp } from '../../src/backend-app.js';
 import { parseEnvironment } from '../../src/config/env.js';
 import {
   FORECAST_ATTRIBUTION,

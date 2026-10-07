@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import type { Writable } from 'node:stream';
 
-import { buildApp } from './app.js';
+import { buildApp } from './backend-app.js';
 import { type AppConfig, type EnvironmentInput, parseEnvironment } from './config/env.js';
 import { type ProviderPolicy, parseProviderPolicy } from './config/provider-policy.js';
 import { assertServerlessCredentials } from './config/serverless-credentials.js';

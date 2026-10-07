@@ -2,7 +2,7 @@ import { Writable } from 'node:stream';
 
 import { describe, expect, it } from 'vitest';
 
-import { type BackendPlatformContext, buildApp } from '../../src/app.js';
+import { type BackendPlatformContext, buildApp } from '../../src/backend-app.js';
 import { parseEnvironment } from '../../src/config/env.js';
 import { createCache } from '../../src/infrastructure/cache.js';
 

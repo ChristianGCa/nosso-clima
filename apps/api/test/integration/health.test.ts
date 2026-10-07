@@ -3,7 +3,7 @@ import { Writable } from 'node:stream';
 import type { FastifyInstance } from 'fastify';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { buildApp } from '../../src/app.js';
+import { buildApp } from '../../src/backend-app.js';
 
 let app: FastifyInstance | undefined;
 
