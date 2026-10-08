@@ -3,13 +3,13 @@
 - **Estado local:** implementado e aprovado em 2026-09-23.
 - **Estado da migração:** P0 aprovada em 2026-10-04; integração implementada e com smoke hospedado em Preview. Em 2026-10-08, a validação continua em `chore/vercel-p1`; P1 é parcial e permanece obrigatória antes da publicação.
 - **Módulo:** `backend-platform`; consumidores: `location-search`, `weather-forecast`, `production-delivery`.
-- **Histórico:** [Node/Fastify aprovado para execução local](docs/history/backend-platform-node-baseline-2026-09-23.md). A alternativa Cloudflare foi descartada.
+- **Contrato local detalhado:** [Node/Fastify aprovado para execução local](docs/architecture/backend-local-baseline.md). A alternativa Cloudflare foi descartada.
 
 ## Contrato local vigente
 
 `apps/api/src/backend-app.ts` compõe Fastify, configuração, HTTP, erros, logs, cache LRU, `SingleFlight`, executor limitado e rate limits locais. `server.ts` controla `listen` e shutdown no desenvolvimento local. A entrada Vercel existe em `apps/api/app.ts`, constrói o mesmo Fastify, exporta um handler default e inclui um import do Fastify (exigência do construtor da Vercel para detectar o framework Fastify); valida configuração Redis/HMAC e a política de créditos. O módulo interno não usa um nome reconhecido como entrypoint automático do Fastify, evitando que a Vercel o publique como uma segunda Function. A fábrica compartilhada continua sem escutar por conta própria, o que mantém os testes e o lifecycle local explícitos. Nas duas rotas, o transporte verifica o circuito compartilhado, reserva a cota agregada e só então chama a Open-Meteo pela allowlist. P4/P6 integram aos serviços o cache Redis versionado, com deduplicação entre instâncias e segredo próprio para as chaves opacas. P5 integra HMAC temporário, pré-limite em memória e limites Redis compartilhados à entrada Function; o LRU e a entrada de desenvolvimento local mantêm os limites anteriores. A Function hospedada, o cabeçalho confiável e os pesos/tetos finais ainda dependem das provas P1 em Preview.
 
-O [baseline Node aprovado](docs/history/backend-platform-node-baseline-2026-09-23.md) continua sendo a referência detalhada do contrato local: health, envelopes de erro, request IDs, limites de entrada, configuração, segurança, cache, fila e lifecycle. Os contratos de busca e previsão estão nas respectivas specs atuais. A localização do baseline em `docs/history/` preserva o documento original; não revoga essas garantias.
+O [baseline Node aprovado](docs/architecture/backend-local-baseline.md) continua sendo a referência detalhada do contrato local: health, envelopes de erro, request IDs, limites de entrada, configuração, segurança, cache, fila e lifecycle. Os contratos de busca e previsão estão nas respectivas specs atuais. O baseline está em `docs/architecture/` por integrar a documentação do contrato vigente.
 
 ## Alcance da proposta de migração
 

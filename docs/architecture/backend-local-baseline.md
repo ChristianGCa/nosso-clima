@@ -1,4 +1,6 @@
-# Spec: Backend Platform
+# Backend Platform — baseline local aprovado
+
+Este documento preserva o baseline aprovado em 2026-09-23. Os contratos locais continuam vinculantes nos pontos referenciados pela [spec vigente](../../SPEC-backend-platform.md); a entrada Vercel e as alterações posteriores são definidas nessa spec. Estrutura de arquivos, versões e comandos abaixo registram o baseline original; para executar o checkout atual, use o [README](../../README.md).
 
 Status: Complete; corrective implementation reviewed and approved by owner on 2026-09-23
 Module id: `backend-platform`

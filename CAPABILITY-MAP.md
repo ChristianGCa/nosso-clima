@@ -1,6 +1,6 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-08:** módulos locais e P2–P9 implementados, com as correções consolidadas na `main` e validação ativa em `chore/vercel-p1`. O fluxo Preview de busca/previsão/cache foi confirmado; a CLI conferiu `All Deployments` nos dois projetos e diagnosticou negações da cota interna em amostras de 503. O proprietário ajustou os tetos de teste e relatou melhora. A [continuidade de P1](docs/deploy/preview-progress-2026-10-08.md) registra esses avanços sem URLs reais ou IDs. P1 permanece parcial; runtime Production, P10–P11 e decisão de publicação continuam pendentes. Vercel + Upstash é o único plano ativo; Cloudflare e Render foram descartados.
+Os módulos locais estão implementados. Vercel + Upstash é o plano de produção aprovado; a [lista ativa](tasks/vercel-todo.md) concentra progresso, evidências e pendências. Este mapa define responsabilidades e dependências; não comprova prontidão para publicação.
 
 ## Estado por módulo
 
@@ -12,7 +12,7 @@
 | `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Fluxo pelo rewrite confirmado em Preview pelo proprietário; matriz completa de headers/CDN e release continuam em P1 | `location-search`, `weather-forecast` |
 | `production-delivery` | P7–P9 locais e smoke hospedado de API/web, CORS permitido e fluxo de busca/previsão/cache; P1 parcial | Completar P1a/P1b, WAF/CDN, identidade/saída, privacidade, direitos e rollback antes da publicação | Todos os módulos acima |
 
-As specs de busca, previsão e UI descrevem os contratos locais vigentes e identificam as alterações propostas. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração; seu contrato local detalhado permanece referenciado no [baseline Node](docs/history/backend-platform-node-baseline-2026-09-23.md). Os itens concluídos dos módulos locais não comprovam a migração para Vercel.
+As specs de busca, previsão e UI descrevem os contratos locais vigentes e identificam as alterações propostas. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração; seu contrato local detalhado permanece referenciado no [baseline Node](docs/architecture/backend-local-baseline.md). Os itens concluídos dos módulos locais não comprovam a migração para Vercel.
 
 ## Grafo e ordem
 

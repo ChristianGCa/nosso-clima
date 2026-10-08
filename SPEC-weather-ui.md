@@ -63,7 +63,7 @@ The city picker has a persistent accessible name without a separate visible labe
 
 ## Tech Stack and Commands
 
-The frontend is a separate `@nosso-clima/web` npm workspace using React, Vite and strict TypeScript, as recorded in `docs/ideas/nosso-clima.md`. It uses native `fetch`, `AbortController` and `Intl` without a client state or HTTP library. Vitest and React Testing Library cover state and component behavior. A browser-based axe check supplies the active `npm run test:a11y` gate. Exact dependency versions are pinned in the committed lockfile.
+The frontend is a separate `@nosso-clima/web` npm workspace using React, Vite and strict TypeScript. It uses native `fetch`, `AbortController` and `Intl` without a client state or HTTP library. Vitest and React Testing Library cover state and component behavior. A browser-based axe check supplies the active `npm run test:a11y` gate. Exact dependency versions are pinned in the committed lockfile.
 
 The web workspace provides these commands:
 
@@ -143,7 +143,7 @@ type ForecastViewState =
 
 ## Success Criteria — implementação local
 
-The checked items record the local handoff approved on 2026-09-24, subsequent owner-approved amendments through 2026-10-04 and the completed corrective verification below. Current contrast evidence is in [the 2026-10-04 report](docs/quality/contrast-2026-10-04.md); the earlier report preserves the original method and measurement.
+The checked items record the local handoff approved on 2026-09-24, subsequent owner-approved amendments through 2026-10-04 and the completed corrective verification below. Current contrast evidence is in [the 2026-10-04 report](docs/quality/contrast-2026-10-04.md); the same report preserves the original method and summarizes the earlier measurement.
 
 - [x] A first visit without a saved city makes no location or forecast request and shows a useful neutral state.
 - [x] Reopening with a valid saved city shows its name and requests a fresh forecast without geocoding; corrupt or blocked storage falls back safely to the neutral state.
@@ -159,7 +159,7 @@ The checked items record the local handoff approved on 2026-09-24, subsequent ow
 
 - [x] The web forecast boundary rejects a response whose first daily date differs from `current.validAtLocal`'s local date, or whose timezone differs from the selected city's canonical timezone. Regression tests cover both cases.
 - [x] HTTP failures other than `429 RATE_LIMITED` and `503 SERVICE_UNAVAILABLE` use the generic failure state. Boundary and component tests cover unrelated statuses and keep provider diagnostics hidden.
-- [x] Mobile and desktop contrast was measured for all ten bundled backgrounds against computed text and control surfaces. The reproducible browser check and its numeric evidence are in `apps/web/test/contrast.mjs` and `docs/quality/contrast-2026-10-01.md`.
+- [x] Mobile and desktop contrast was measured for all ten bundled backgrounds against computed text and control surfaces. The reproducible browser check and its numeric evidence are in `apps/web/test/contrast.mjs` and `docs/quality/contrast-2026-10-04.md`.
 
 ## Decisions and Approval Record
 

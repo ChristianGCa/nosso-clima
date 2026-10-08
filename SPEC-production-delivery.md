@@ -2,13 +2,13 @@
 
 - **Estado:** P0 aprovada para implementação pelo proprietário em 2026-10-04; publicação pública depende de decisão separada.
 - **Módulo:** `production-delivery`; depende de `backend-platform`, `location-search`, `weather-forecast`, `weather-ui`.
-- **Histórico:** [plano original Node](docs/history/production-delivery-pre-p0-2026-10-03.md). A alternativa Cloudflare foi descartada.
+- **Histórico:** [marcos e planos encerrados](docs/history/README.md). A alternativa Cloudflare foi descartada.
 - **Pesquisa:** [viabilidade e fontes oficiais](docs/deploy/vercel-research-2026-10-04.md).
 - **Execução:** [plano P0–P11](tasks/vercel-plan.md) e [lista ativa de tarefas/evidências](tasks/vercel-todo.md).
 
 ## Estado e alcance
 
-P2–P9 estão implementadas e testadas localmente; o fluxo Preview foi verificado em 2026-10-07. Em 2026-10-08, as correções foram consolidadas na `main` e o proprietário passou a validar `chore/vercel-p1`, executando pessoalmente os ajustes no painel. A CLI confirmou `All Deployments` nos dois projetos; o novo ensaio identificou `quota_denied` em amostras de falhas intermitentes, e o proprietário relatou melhora após atualizar os tetos. O [andamento atual](docs/deploy/preview-progress-2026-10-08.md) complementa a [evidência inicial](docs/deploy/preview-evidence-2026-10-07.md), sem encerrar P1. Builds Production Ready e erros de inicialização fornecidos nos logs ainda exigem revisão do runtime antes da publicação. `production-delivery` coordena os gates; o runtime continua em [Backend Platform](SPEC-backend-platform.md).
+O progresso e as pendências de Preview/Production estão na [lista ativa](tasks/vercel-todo.md), com links para as evidências datadas. Esta spec define os gates de entrega; o runtime continua em [Backend Platform](SPEC-backend-platform.md). Aprovação P0 e builds Ready não equivalem a autorização de publicação.
 
 ## Resultado pretendido
 

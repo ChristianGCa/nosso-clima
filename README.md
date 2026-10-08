@@ -1,59 +1,67 @@
 # NossoClima
 
-Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias. Monorepo com React/Vite em `apps/web` e Fastify/Node em `apps/api`, usando dados da Open-Meteo.
+Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias, usando dados da Open-Meteo. Na primeira visita, a tela começa neutra; depois da seleção, o navegador guarda apenas a última cidade e consulta uma previsão nova nas visitas seguintes. Limpar os dados do site remove essa preferência.
 
-**Estado em 2026-10-08:** as correções foram integradas à `main`; `chore/vercel-p1` é a branch ativa para concluir P1. API/web funcionam em Preview, e ambos os projetos tiveram `All Deployments` confirmado pela CLI. Os 503 intermitentes amostrados foram diagnosticados como `quota_denied`; o proprietário ampliou o orçamento de testes e relatou melhora. O [andamento atual](docs/deploy/preview-progress-2026-10-08.md) complementa a [evidência inicial](docs/deploy/preview-evidence-2026-10-07.md). P1, o runtime Production e os gates de publicação continuam parcialmente pendentes.
+**Entrega:** o fluxo já foi testado em Preview protegido; a publicação pública ainda depende dos gates e da decisão do proprietário. A [lista ativa](tasks/vercel-todo.md) concentra o estado atual e o próximo trabalho.
 
-## Como continuar
+## Executar localmente
 
-1. Leia o [mapa de capacidades](CAPABILITY-MAP.md) e as [restrições](CONSTRAINTS.md).
-2. Consulte a spec do módulo que será alterado na tabela abaixo.
-3. Siga o [plano Vercel + Upstash](tasks/vercel-plan.md) e a [lista ativa de tarefas](tasks/vercel-todo.md). A próxima etapa completa as evidências de P1a/P1b no Preview existente antes de WAF, privacidade e publicação.
-
-| Documento | Fonte para |
-|---|---|
-| [Backend Platform](SPEC-backend-platform.md) | Plataforma local, contratos a preservar e proposta serverless/Redis |
-| [Location Search](SPEC-location-search.md) | Contrato de busca e alteração proposta de cache |
-| [Weather Forecast](SPEC-weather-forecast.md) | Contrato de previsão, condição predominante e alteração proposta de cache |
-| [Weather UI](SPEC-weather-ui.md) | Comportamento da interface e adaptação proposta de origem da API |
-| [Production Delivery](SPEC-production-delivery.md) | Topologia Vercel, gates e critérios de publicação |
-| [ADR 0001](docs/decisions/0001-vercel-upstash.md) | Motivos e alternativas da proposta Vercel + Upstash |
-| [Pesquisa Vercel](docs/deploy/vercel-research-2026-10-04.md) | Fontes datadas e perguntas de viabilidade |
-| [Runbook preliminar](docs/deploy/vercel-upstash-runbook.md) | Procedimentos a completar com evidência de Preview |
-
-As specs definem requisitos; o plano organiza a execução; a lista de tarefas registra conclusão e evidência. Pesquisas, ideias e [documentos históricos](docs/history/README.md) não autorizam implementação. O baseline Node arquivado continua sendo referência do contrato local nos pontos explicitamente citados pela spec da plataforma. Uma proposta só substitui o contrato vigente após sua aprovação e implementação verificadas.
-
-## Desenvolvimento local
-
-Use Node `>=24.15.0 <25` e npm `12.0.2`, conforme `package.json`, e instale a partir da raiz:
+Use Node `>=24.15.0 <25` e npm `12.0.2`, conforme [package.json](package.json). Na raiz:
 
 ```bash
 npm ci
 ```
 
-Confira `node --version` e `npm --version`. Se o npm padrão for outra versão, use
-`npx --yes npm@12.0.2 ci` e `npx --yes npm@12.0.2 run check`, como na configuração Vercel.
-
-Inicie a API e o web em terminais separados:
+Inicie cada aplicação em um terminal:
 
 ```bash
 npm run dev --workspace @nosso-clima/api
 npm run dev --workspace @nosso-clima/web
 ```
 
-O Vite encaminha `/api` para `http://127.0.0.1:3000`. Veja os exemplos de configuração em [apps/api/.env.example](apps/api/.env.example) e [apps/web/.env.example](apps/web/.env.example), e as instruções do [web](apps/web/README.md).
+Abra `http://127.0.0.1:5173` (ou a porta indicada pelo Vite). A API escuta em `http://127.0.0.1:3000`; `GET /health` verifica o processo sem consultar serviços externos. O Vite encaminha `/api` à API. O desenvolvimento local usa cache em memória e não exige Redis; consultas manuais usam a Open-Meteo, enquanto os testes usam dados simulados.
 
-## Verificação
+Os valores padrão bastam para começar. [apps/api/.env.example](apps/api/.env.example) lista a configuração da API, que recebe variáveis do ambiente do processo; copiar o arquivo para `.env` não o carrega automaticamente. Para alterar uma opção, por exemplo: `LOG_LEVEL=debug npm run dev --workspace @nosso-clima/api`. No web, deixe `VITE_API_BASE_URL` ausente para usar o proxy; uma origem separada é opcional apenas no desenvolvimento. Em build de produção, valor vazio ou origem divergente é rejeitado. Veja [apps/web/.env.example](apps/web/.env.example).
 
-| Comando existente | Finalidade |
+Confira `node --version` e `npm --version`. Se o npm instalado for diferente, use `npx --yes npm@12.0.2 ci` e `npx --yes npm@12.0.2 run check`.
+
+## Estrutura e contratos
+
+| Caminho | Responsabilidade |
 |---|---|
-| `npm run check` | Tipos, lint, formato, testes e fronteiras entre aplicações |
+| `apps/web` | React/Vite: busca, seleção de cidade, apresentação e armazenamento local |
+| `apps/api` | Fastify/Node: validação, contratos HTTP e acesso à Open-Meteo |
+| `scripts` | Fronteiras de código, configuração de entrega, E2E e performance |
+| `backgrounds`, `logo` | Originais visuais; as variantes distribuídas ficam no web |
+
+O web consome `GET /api/v1/locations` e `GET /api/v1/forecast`, sem importar runtime da API. Na Vercel, dois projetos são ligados por rewrite e a API usa Upstash para cache, limites e reserva de cota. A [ADR 0001](docs/decisions/0001-vercel-upstash.md) explica essa escolha; o [runbook](docs/deploy/vercel-upstash-runbook.md) descreve configuração, diagnóstico e procedimentos de entrega.
+
+## Verificar mudanças
+
+| Comando na raiz | Verificação |
+|---|---|
+| `npm run check` | Tipos, lint, formato, testes, fronteiras e configuração de entrega |
 | `npm run test:coverage` | Cobertura mínima por aplicação |
-| `npm run build --workspace @nosso-clima/api` | Build da API local |
-| `npm run build --workspace @nosso-clima/web` | Build estático do web |
-| `npm run test:a11y` | Acessibilidade e contraste em Chromium; requer navegador Playwright instalado |
-| `npm run test:e2e` | Fluxos completos com navegador, handler default Vercel compilado e Redis/provedor simulados |
-| `npm run test:performance` | LCP e CLS em Chromium móvel nos cenários neutro e cidade restaurada; grava `artifacts/performance.json` |
+| `npm run build --workspaces` | Builds independentes da API e do web |
+| `npm run test:a11y` | Acessibilidade e contraste nos dez fundos, em mobile e desktop |
+| `npm run test:e2e` | Fluxos de navegador com a entrada Vercel compilada e serviços simulados |
+| `npm run test:performance` | LCP e CLS móveis; resultado em `artifacts/performance.json` |
 | `npm audit --audit-level=high` | Auditoria de dependências |
 
-O [workflow de CI](.github/workflows/ci.yml) está configurado e o remoto `origin` existe. A execução hospedada deve ser conferida no GitHub para a revisão que será implantada; resultados locais não comprovam CI hospedada. Os scans Gitleaks históricos passaram com uma exceção restrita e aprovada, registrada no [runbook](docs/deploy/vercel-upstash-runbook.md#p9-gates-locais-e-sinais-operacionais--2026-10-05). Resultados históricos de testes não substituem a verificação da próxima mudança.
+Os testes de navegador exigem Chromium: `npx playwright install chromium`. A [CI](.github/workflows/ci.yml) também executa builds e Gitleaks. Os limiares e momentos de execução estão em [CONSTRAINTS.md](CONSTRAINTS.md); resultados antigos não comprovam a revisão atual.
+
+## Onde documentar
+
+Antes de alterar código, leia [AGENTS.md](AGENTS.md), o [mapa de capacidades](CAPABILITY-MAP.md), as [restrições](CONSTRAINTS.md) e a spec do módulo:
+
+- [Plataforma](SPEC-backend-platform.md), incluindo o [contrato local detalhado](docs/architecture/backend-local-baseline.md).
+- [Busca](SPEC-location-search.md), [previsão](SPEC-weather-forecast.md) e [interface](SPEC-weather-ui.md).
+- [Entrega de produção](SPEC-production-delivery.md).
+
+Cada informação tem um lugar: requisitos nas specs; motivos na ADR; sequência no [plano](tasks/vercel-plan.md); progresso e pendências na [lista ativa](tasks/vercel-todo.md); procedimentos no runbook. Evidências datadas registram o que foi observado, sem se tornar outro plano. O [histórico resumido](docs/history/README.md) preserva aprovações e explica como recuperar documentos encerrados pelo Git.
+
+Atualize o documento responsável em vez de copiar o mesmo status para vários arquivos. Ao encerrar um plano, mantenha o resumo das decisões e use o Git para os detalhes antigos. Logs brutos, builds, cobertura e relatórios gerados ficam nos caminhos já ignorados pelo `.gitignore`; specs, exemplos de ambiente e evidências selecionadas continuam versionados. Nunca inclua credenciais ou identificadores reais de infraestrutura nos relatos.
+
+## Licenças e publicação
+
+O código usa [MIT](LICENSE). Dados e ícones têm [licenças próprias](apps/web/public/third-party-licenses.txt). Os originais de fundos e marca são mantidos para rastreabilidade; a revisão dos direitos de publicação está no [inventário visual](docs/deploy/image-rights.md). Região, retenção, privacidade e rollback ainda fazem parte dos gates de entrega.

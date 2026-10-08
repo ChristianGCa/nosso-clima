@@ -1,6 +1,6 @@
 # Plano de implementação: Vercel + Upstash — 2026-10-04
 
-**Estado em 2026-10-08:** único plano ativo, aprovado em P0. O código foi consolidado na `main`; `chore/vercel-p1` é a branch temporária para concluir as provas hospedadas. O proprietário executa os ajustes/deployments atuais; o agente auxilia com revisão e leitura da CLI. O [andamento de 2026-10-08](../docs/deploy/preview-progress-2026-10-08.md) complementa a evidência inicial. P1 permanece parcial e publicação exige decisão separada. As specs de cada módulo e `CONSTRAINTS.md` continuam vigentes; o progresso está somente em [vercel-todo.md](vercel-todo.md).
+Plano aprovado em P0, em 2026-10-04. As specs de cada módulo e `CONSTRAINTS.md` continuam vigentes; progresso, branch de validação e pendências são registrados somente na [lista ativa](vercel-todo.md). A publicação exige decisão separada.
 
 ## Resultado e sequência
 
@@ -86,6 +86,6 @@ P10 registra termos Open-Meteo vigentes, peso e tetos internos de minuto/hora/di
 | Builds incompatíveis com npm 12/Node 24 | Registro de versões e instalação limpa por projeto, sem enfraquecer `engines` |
 | Mudança de contrato ou dado pessoal no Redis/log | Testes de paridade, TTL, chaves opacas e inspeção de logs/privacy |
 
-## Dependências externas abertas
+## Dependências externas
 
-O remoto GitHub `ChristianGCa/nosso-clima` existe. Depois de excluir o deploy anterior, o proprietário criou novos Previews; a correção assistida de escopos, o pareamento de URLs e o smoke de busca/previsão/cache foram registrados na [evidência de 2026-10-07](../docs/deploy/preview-evidence-2026-10-07.md). As pendências mensuráveis de P1/P10 incluem versões/CI, proteção, números efetivos de quota, peso Open-Meteo, região/retenção e testes de concorrência, custo, CDN e privacidade. O procedimento continua sendo coordenado com o proprietário; não aprova publicação pública. Ver [pesquisa datada](../docs/deploy/vercel-research-2026-10-04.md).
+O proprietário coordena a configuração e os deployments; a lista ativa registra as pendências e o alcance da assistência do agente. A [pesquisa datada](../docs/deploy/vercel-research-2026-10-04.md) preserva as hipóteses de viabilidade, que precisam de prova na revisão implantada.
