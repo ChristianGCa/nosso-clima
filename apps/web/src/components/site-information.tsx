@@ -16,9 +16,20 @@ export function SiteInformation() {
             novamente a previsão dessa cidade.
           </p>
           <p>
-            Guardamos somente a última cidade escolhida neste navegador. Ela é substituída quando
+            Neste navegador, guardamos somente a última cidade escolhida. Ela é substituída quando
             você escolhe outra cidade e pode ser removida ao limpar os dados deste site no
             navegador. Não pedimos acesso à localização do dispositivo nem criamos uma conta.
+          </p>
+          <p>
+            Na hospedagem Vercel, o servidor recebe o IP da conexão. Para limitar consultas em
+            excesso, a API cria um identificador temporário derivado desse IP, renovado a cada
+            minuto. O IP original não é guardado nesse contador nem nos logs da aplicação.
+          </p>
+          <p>
+            A Upstash guarda resultados de busca por até 24 horas e previsões por até 10 minutos,
+            além dos contadores temporários de consultas. Esses resultados podem incluir nomes,
+            coordenadas e fuso da cidade. As consultas à Open-Meteo são feitas pelo nosso servidor,
+            sem encaminhar os cabeçalhos com o IP do visitante.
           </p>
           <p>
             A Open-Meteo informa que seu serviço gratuito pode manter logs com coordenadas por até
@@ -39,6 +50,9 @@ export function SiteInformation() {
             O NossoClima apresenta condições atuais e uma previsão de sete dias em linguagem
             simples. Os dados meteorológicos e as localidades são fornecidos pela Open-Meteo e
             adaptados para esta interface.
+          </p>
+          <p>
+            <a href="https://github.com/ChristianGCa/nosso-clima">Repositório no GitHub</a>.
           </p>
         </section>
         <section id="licencas-e-creditos" aria-labelledby="licencas-e-creditos-titulo">

@@ -24,7 +24,9 @@ describe('neutral first screen', () => {
     expect(screen.getByRole('heading', { name: 'Seus dados' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Sobre o projeto' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Licenças e créditos' })).toBeTruthy();
-    expect(screen.queryByRole('link', { name: /repositório/i })).toBeNull();
+    expect(screen.getByRole('link', { name: 'Repositório no GitHub' }).getAttribute('href')).toBe(
+      'https://github.com/ChristianGCa/nosso-clima',
+    );
     expect(
       screen.getByRole('link', { name: 'christiangca.dev@gmail.com' }).getAttribute('href'),
     ).toBe('mailto:christiangca.dev@gmail.com');

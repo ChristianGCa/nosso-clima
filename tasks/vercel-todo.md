@@ -1,6 +1,6 @@
 # Entrega Vercel + Upstash — lista ativa
 
-**Estado em 2026-10-06:** P0 e P2–P9 estão concluídas **localmente**. A `main` ainda não tem remoto Git; CI hospedada, Preview real e publicação pública não foram comprovados. A publicação depende de decisão separada do proprietário. Ver [spec de entrega](../SPEC-production-delivery.md), [plano](vercel-plan.md) e [runbook](../docs/deploy/vercel-upstash-runbook.md).
+**Estado em 2026-10-07 (ensaio até 2026-10-08 UTC):** P0 e P2–P9 estão concluídas **localmente**. API e web estão Ready em Preview; busca, previsão de sete dias, cache hit e CORS permitido foram verificados pela CLI, e o proprietário confirmou o funcionamento no navegador. P1 está parcialmente verificada; CI hospedada e provas restantes continuam abertas. A [evidência do ensaio](../docs/deploy/preview-evidence-2026-10-07.md) registra configuração e resultados sem URLs reais nem IDs de infraestrutura; esses dados permanecem no painel Vercel. Publicação depende de decisão separada. Ver [spec](../SPEC-production-delivery.md), [plano](vercel-plan.md) e [runbook](../docs/deploy/vercel-upstash-runbook.md).
 
 ## Concluído localmente
 
@@ -10,15 +10,22 @@
 
 As [evidências históricas](../docs/history/vercel-local-evidence-2026-10-06.md) preservam os resultados por fatia; seus hashes são anteriores à reescrita do histórico Git. Reexecutar os gates na revisão que for implantada.
 
-## 1. Primeiro Preview protegido — P1a
+## 1. Preview existente — P1a parcial
 
-- [ ] Publicar a revisão em repositório privado, obter CI verde e importar o mesmo monorepo em dois projetos Vercel: `apps/api` e `apps/web`, com acesso ao lockfile da raiz, Node 24/npm 12 e autenticação em **todos** os deployments antes dos testes.
-- [ ] Conectar uma Upstash Free somente à API Preview; configurar URL/token REST, duas chaves HMAC distintas e CORS. Implantar a API com os padrões provisórios de Preview, sem consulta válida à Open-Meteo; verificar `/health`, erro de validação e 404 JSON.
-- [ ] Apontar `API_ORIGIN` do web Preview para a API Preview da mesma revisão, manter `VITE_API_BASE_URL` ausente e ajustar o CORS da API à origem web. Verificar API direta/rewrite, cabeçalhos e cache de sucesso/erro, sem segredo no bundle e sem HTML da SPA nas rotas `/api` desconhecidas.
+- [x] Dois projetos do mesmo monorepo Ready em Preview: API (`apps/api`) e web (`apps/web`); resultados documentados de forma anonimizada e identificadores consultáveis no painel Vercel.
+- [x] API direta responde `/health` 200, consulta inválida 400 JSON e rota desconhecida 404 JSON; proprietário também testou o caminho pelo frontend.
+- [x] Criar o web Preview pela CLI com `API_ORIGIN` local e `--build-env`, usando o alias de branch da API; `VITE_API_BASE_URL` ausente na listagem do web. Confirmar que o frontend alcança a API e exibe o fluxo de busca/previsão, segundo teste do proprietário.
+- [x] Corrigir os escopos Preview dos tetos Open-Meteo e de `API_ORIGIN`; definir overrides de URL da branch; redeployar a API e confirmar CORS permitido para a origem web atual.
+- [ ] Conferir pareamento dos SHAs hospedados, visibilidade privada do GitHub, CI verde da revisão e versões efetivas Node 24/npm 12 e instalação pelo lockfile da raiz nos dois builds.
+- [ ] Confirmar proteção de **todos** os deployments e configuração efetiva dos planos gratuitos, região e vinculação Upstash somente à API.
+- [ ] Completar a matriz de headers/CSP, assets e cache/CDN em sucesso e erro, API direta e rewrite, incluindo repetição sem `HIT` e 404 sem fallback SPA. O cache `private, no-store` foi observado na consulta inválida direta.
+- [ ] Testar CORS com origem ausente/divergente e inspecionar o bundle sem segredos. O teste positivo da origem permitida já passou.
 
 ## 2. Viabilidade antes de acesso público — P1b–P1d
 
+- [x] P1b, smoke limitado: busca e previsão retornaram 200; repetição da previsão retornou 200 com `cache_hit` Redis confirmado. O bloqueio anterior por `quota_denied` foi diagnosticado e resolvido pela correção dos escopos e redeploy.
 - [ ] Confirmar nos termos/calculador da Open-Meteo o custo das consultas atuais e, com amostra de previsão, o limite de resposta de 64 KiB; definir tetos conservadores de minuto, hora, dia e mês. Provar no Redis real reserva atômica, cache/TTL e falha fechada; estimar o limite mensal de comandos Upstash com amostras representativas e margem para tráfego adversarial. Não pressupor dois bancos Free simultâneos.
+- [ ] Conferir os números efetivos de créditos cadastrados com o proprietário: os valores gerais são Secret e não foram extraídos pela CLI. A proposta de testes da conversa não comprova a política final nem os valores de Production.
 - [ ] Configurar o rate limit do WAF em **ambos** os projetos. Verificar API direta e rewrite, bloqueio antes da Function/Redis e limites da conta Hobby. Manter o plano Free sem upgrade automático e acompanhar o consumo no painel; não exigir alarme de orçamento indisponível no Free.
 - [ ] Com eco controlado e sem cache, provar nas duas rotas e nos dois domínios que IP/canário do visitante não chegam ao destino; testar falsificação e ausência de identidade confiável. Testar `429` externo e reabertura do circuit breaker com fixture, registrar incidentes reais se ocorrerem e monitorá-los após a abertura, sem provocar bloqueio do provedor como gate.
 

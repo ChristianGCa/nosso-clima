@@ -6,7 +6,7 @@ import { Type } from 'typebox';
 import { Value } from 'typebox/value';
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { buildApp } from '../../src/app.js';
+import { buildApp } from '../../src/backend-app.js';
 import { ApiError } from '../../src/errors/api-error.js';
 import { ProviderAccessFailure } from '../../src/infrastructure/reserved-open-meteo-fetch.js';
 import { ApiErrorResponseSchema } from '../../src/schemas/errors.js';

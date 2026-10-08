@@ -32,3 +32,7 @@ O proprietário forneceu os SVGs sob `logo/svg/`, os PNGs sob `logo/png/` e `log
 - Registrar para cada arquivo distribuído a decisão de uso público pretendido, eventual crédito exigido e a relação comprovável com seu original. Se algum arquivo não puder ser liberado, selecionar substituto aprovado antes do build público.
 
 Este inventário atende à parte de **proveniência informada** da tarefa P10 na [lista ativa Vercel](../../tasks/vercel-todo.md). A revisão de direitos e a aprovação final para publicação continuam abertas em [Production Delivery](../../SPEC-production-delivery.md).
+
+## Conferência das fontes em 2026-10-07
+
+Os [termos gerais do Google](https://policies.google.com/terms), vigentes desde 2026-07-30 na página consultada, mantêm a declaração de que o Google não reivindica propriedade do conteúdo original gerado. Os [termos de consumidor da Anthropic](https://www.anthropic.com/legal/consumer-terms), seção 4, mantêm a atribuição ao usuário dos direitos que a Anthropic eventualmente tenha sobre os outputs, sob cumprimento dos termos. A conferência atualiza as fontes deste inventário; não cria uma licença MIT para os ativos nem comprova cadeias de exportação que não foram fornecidas. A origem declarada e a decisão de uso do proprietário permanecem registradas acima. O deploy anterior foi excluído, conforme relato do proprietário em 2026-10-07; a evidência final de publicação será vinculada à revisão da retomada.

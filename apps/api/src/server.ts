@@ -1,6 +1,6 @@
 import { setDefaultAutoSelectFamilyAttemptTimeout } from 'node:net';
 
-import { buildApp } from './app.js';
+import { buildApp } from './backend-app.js';
 import {
   type AppConfig,
   type EnvironmentInput,

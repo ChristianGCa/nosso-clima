@@ -179,7 +179,7 @@ No verification test contacts the live provider or uses a real sleep.
 
 ```text
 SPEC-weather-forecast.md
-apps/api/src/app.ts                         one weather cache and route composition
+apps/api/src/backend-app.ts                 one weather cache and route composition
 apps/api/src/forecast/forecast-contract.ts  public schema and types
 apps/api/src/forecast/forecast-query.ts     raw-key and coordinate/timezone validation
 apps/api/src/forecast/wmo-condition.ts      WMO condition mappings
