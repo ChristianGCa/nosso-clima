@@ -2,7 +2,7 @@
 
 Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias. Monorepo com React/Vite em `apps/web` e Fastify/Node em `apps/api`, usando dados da Open-Meteo.
 
-**Estado em 2026-10-07 (ensaio até 2026-10-08 UTC):** P2–P9 estão implementadas localmente. API e web estão Ready em Preview; busca, previsão de sete dias, cache hit e CORS da origem web foram verificados pela CLI, e o proprietário confirmou o funcionamento no navegador. A [evidência de Preview](docs/deploy/preview-evidence-2026-10-07.md) registra a correção de `quota_denied`, os escopos e os deployments. P1 continua parcialmente aberta; não houve liberação pública nesta correção.
+**Estado em 2026-10-08:** as correções foram integradas à `main`; `chore/vercel-p1` é a branch ativa para concluir P1. API/web funcionam em Preview, e ambos os projetos tiveram `All Deployments` confirmado pela CLI. Os 503 intermitentes amostrados foram diagnosticados como `quota_denied`; o proprietário ampliou o orçamento de testes e relatou melhora. O [andamento atual](docs/deploy/preview-progress-2026-10-08.md) complementa a [evidência inicial](docs/deploy/preview-evidence-2026-10-07.md). P1, o runtime Production e os gates de publicação continuam parcialmente pendentes.
 
 ## Como continuar
 

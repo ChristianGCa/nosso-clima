@@ -13,7 +13,7 @@ Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code`
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local abaixo estão implementados e aprovados. A seção **Cache: contrato local e migração proposta** identifica separadamente o cache de desenvolvimento e a integração Vercel + Upstash implementada localmente em P4/P6, ainda pendente da prova P1. A migração de produção é acompanhada em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local estão implementados e aprovados. Redis e reserva compartilhada estão integrados à entrada Vercel, com previsão de sete dias e cache hit observados em Preview. A [continuidade de P1](docs/deploy/preview-progress-2026-10-08.md) registra esse smoke e negações de cota; peso, tamanho da amostra, expiração e concorrência permanecem gates. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; o progresso está em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -134,7 +134,7 @@ JSON begins as `unknown`. Permit extra provider fields but validate every consum
 
 Only daily precipitation probability permits `null`; a missing array, missing entry or `null` in any other consumed field remains an invalid upstream response.
 
-## Cache: contrato local e migração proposta
+## Cache: desenvolvimento local e Redis em Preview
 
 ### Implementado localmente
 
@@ -142,7 +142,7 @@ Use `BackendPlatformContext.createCache('weather-forecast')` exactly once from `
 
 The namespaced cache key includes canonical coordinates and timezone; it is never logged. Each miss consumes one executor slot for the bounded outbound operation. Distinct places may run independently within the shared concurrency ceiling. Cache and in-flight state are process-local and disposable, not an aggregate usage-quota mechanism.
 
-### Migração Vercel + Upstash — P0 aprovada, pendente de P1
+### Redis na entrada Vercel — implementado; P1 parcial
 
 O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para previsão validada, com TTL máximo de 10 minutos, sem IP ou identificador do visitante. A chave opaca é derivada com segredo da API das coordenadas arredondadas para três casas e do fuso canônico; o valor preserva a resposta pública, inclusive `retrievedAtUtc`, durante o TTL. Não há histórico, dado vencido nem cache de falhas. Cache e reserva agregada são infraestrutura de `backend-platform`; parâmetros Open-Meteo, sete dias, contrato HTTP, validação e créditos desta spec não mudam.
 
@@ -152,7 +152,7 @@ Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circ
 
 ## Observability, Privacy and Licensing
 
-- Expected provider failures emit one bounded `forecast_upstream_failed` warning with the bound `requestId`, a fixed failure kind (`timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, `invalid_response`) and optional numeric upstream status. The public response remains generic.
+- Expected provider failures emit one bounded `forecast_upstream_failed` warning with the bound `requestId`, a fixed failure kind (`timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, `invalid_response`, plus platform categories `quota_denied`, `circuit_open`, `redis_unavailable`, `upstream_rate_limited` in the Vercel entry) and optional numeric upstream status. The public response remains generic.
 - Reuse platform cache hit/miss and saturation events. Never log or attach to telemetry the raw query, coordinates, timezone, cache key, complete URL, provider text/body, daily values or client IP.
 - Coordinates and timezone are sent to Open-Meteo. `production-delivery` must describe this transfer and provider retention in the public privacy notice. It must also verify attribution and current licensing terms.
 - The free endpoint is only for non-commercial use within Open-Meteo's limits. Public deployment is blocked until `production-delivery` approves an application-wide aggregate budget for geocoding **and** forecasting; per-IP inbound limits are not a substitute. Commercial deployment requires an approved paid endpoint, API-key handling and licensing/privacy review.

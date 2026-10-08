@@ -7,7 +7,7 @@
 
 ## Alcance desta spec
 
-O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. A configuração de build de P7 também foi implementada localmente; seu roteamento e os demais gates de produção dependem de P1 em Preview, conforme [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. Build, rewrite e fluxo pelo navegador foram verificados em Preview; em 2026-10-08, o proprietário confirmou o funcionamento em `chore/vercel-p1` e melhora após ajustar o orçamento agregado. Os estados 503 continuam seguindo o contrato existente. A [continuidade de P1](docs/deploy/preview-progress-2026-10-08.md) registra isso, com a matriz de headers/CDN e os demais gates ainda em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -185,3 +185,7 @@ On 2026-10-03 the owner identified Claude personal Free as the logo tool and sai
 ## Correções autorizadas em 2026-10-07
 
 O proprietário pediu a correção das inconsistências da revisão e confirmou que a entrada existente funciona na Vercel. O exemplo de ambiente mantém `VITE_API_BASE_URL` ausente para permitir build com caminhos relativos. O rodapé inclui o remoto GitHub existente e descreve o recebimento do IP pela Vercel, o identificador temporário por minuto e os TTLs de busca/previsão na Upstash. A revisão final de regiões e retenção do host permanece em `production-delivery`; esses valores não são inferidos de um deploy já excluído.
+
+## Continuidade documental em 2026-10-08
+
+O fluxo na nova branch foi confirmado pelo proprietário. A reserva ponderada da plataforma, compartilhada por busca/previsão, pode negar misses com 503 mesmo quando hits ainda respondem 200. Isso é independente do rate limit por visitante e continua usando o estado de indisponibilidade existente. O proprietário ajustou o orçamento de testes e relatou melhora; debounce, retries explícitos, seleção, armazenamento e mensagens da UI não foram alterados. Os avisos CSP dos recursos Vercel no Preview são separados desse diagnóstico. A [evidência atual](docs/deploy/preview-progress-2026-10-08.md) mantém os dados operacionais anonimizados.

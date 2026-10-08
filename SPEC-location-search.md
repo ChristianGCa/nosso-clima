@@ -7,7 +7,7 @@
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local abaixo estão implementados e aprovados. A seção **Cache: contrato local e migração proposta** identifica separadamente o cache de desenvolvimento e a integração Vercel + Upstash implementada localmente em P4/P6, ainda pendente da prova P1. A migração de produção é acompanhada em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local estão implementados e aprovados. O cache Redis e a reserva compartilhada também estão integrados à entrada Vercel, com buscas e hits observados em Preview. A [continuidade de P1](docs/deploy/preview-progress-2026-10-08.md) registra o smoke e negações de cota, sem concluir expiração, concorrência ou aceite de produção. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; os gates estão em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -170,7 +170,7 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 - Text fields used publicly are trimmed, limited to 256 Unicode code points, and rejected if they contain C0 controls or DEL. JSON encoding, not HTML markup, is returned.
 - If an accepted candidate is missing or violates a consumed field, the entire upstream response is rejected. The API does not silently manufacture coordinates, country data, or timezone values.
 
-## Cache: contrato local e migração proposta
+## Cache: desenvolvimento local e Redis em Preview
 
 ### Implementado localmente
 
@@ -185,7 +185,7 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 
 The canonical query exists transiently in process memory as the request, cache key, and outbound parameter. It is not persisted. Hashing the cache key would not anonymize low-entropy city names and is therefore not represented as a privacy control.
 
-### Migração Vercel + Upstash — P0 aprovada, pendente de P1
+### Redis na entrada Vercel — implementado; P1 parcial
 
 O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para resultados normalizados de busca, inclusive vazios, com TTL máximo de 24 horas, sem IP ou identificador do visitante. A busca canônica passa a gerar uma chave opaca derivada com segredo da API; a chave não expõe o texto diretamente. O valor pode conter nomes e coordenadas dos resultados, pois são necessários ao contrato de busca. Falhas continuam fora do cache. O cache e a reserva agregada pertencem a `backend-platform`, não a este módulo; o contrato HTTP, canonicalização, timeout, filtro e créditos desta spec permanecem iguais.
 
@@ -195,7 +195,7 @@ Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circ
 
 ## Observability, Privacy, and Licensing
 
-- Expected provider failures produce one structured warning named `geocoding_upstream_failed` with `requestId` and a bounded `failureKind`: `timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, or `invalid_response`. A redirect rejected by `fetch` is classified as `network`; the implementation must not inspect unstable exception text to distinguish it.
+- Expected provider failures produce one structured warning named `geocoding_upstream_failed` with `requestId` and a bounded `failureKind`: `timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, `invalid_response`, plus the platform categories `quota_denied`, `circuit_open`, `redis_unavailable` and `upstream_rate_limited` in the Vercel entry. A redirect rejected by `fetch` is classified as `network`; the implementation must not inspect unstable exception text to distinguish it.
 - An upstream status failure may include the numeric `upstreamStatus`; it must not include status text or response content.
 - Existing cache hit/miss and executor-saturation events remain keyless and payload-free.
 - Never log or attach to telemetry the query, canonical query, cache key, full URL, coordinates, location names, raw upstream body, client IP, or environment values.

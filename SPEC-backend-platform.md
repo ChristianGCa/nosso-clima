@@ -1,7 +1,7 @@
 # Spec: Backend Platform — estado local e migração Vercel + Upstash
 
 - **Estado local:** implementado e aprovado em 2026-09-23.
-- **Estado da migração:** P0 aprovada para implementação pelo proprietário em 2026-10-04; código e testes locais precedem a prova P1 em Preview, obrigatória antes da publicação.
+- **Estado da migração:** P0 aprovada em 2026-10-04; integração implementada e com smoke hospedado em Preview. Em 2026-10-08, a validação continua em `chore/vercel-p1`; P1 é parcial e permanece obrigatória antes da publicação.
 - **Módulo:** `backend-platform`; consumidores: `location-search`, `weather-forecast`, `production-delivery`.
 - **Histórico:** [Node/Fastify aprovado para execução local](docs/history/backend-platform-node-baseline-2026-09-23.md). A alternativa Cloudflare foi descartada.
 
@@ -13,7 +13,7 @@ O [baseline Node aprovado](docs/history/backend-platform-node-baseline-2026-09-2
 
 ## Alcance da proposta de migração
 
-As seções seguintes definem o destino Vercel + Upstash e seus critérios de aceitação. A P0 autorizou as mudanças locais no runtime, implementadas em P2–P6; sua publicação depende da viabilidade P1 em Preview. O estado e a evidência estão em [tasks/vercel-todo.md](tasks/vercel-todo.md). Os contratos locais permanecem válidos; a integração hospedada ainda precisa ser verificada.
+As seções seguintes definem o destino Vercel + Upstash e seus critérios de aceitação. A P0 autorizou as mudanças locais no runtime, implementadas em P2–P6; sua publicação depende da viabilidade P1 em Preview. O estado e a evidência estão em [tasks/vercel-todo.md](tasks/vercel-todo.md). Os contratos locais permanecem válidos; o smoke hospedado já foi registrado, mas a matriz completa de P1 ainda precisa ser verificada.
 
 ## Objetivo e fronteira
 
@@ -42,6 +42,12 @@ A exigência do proprietário é não enviar o IP do visitante à Open-Meteo. N�
 - Estado local LRU, `SingleFlight` e executor limitado podem continuar como otimização, dentro das garantias aprovadas de timeout/fila. Uma falha de leitura Redis nunca vira miss que permita chamada externa sem reserva. Se Redis estiver indisponível, não consultar Open-Meteo; servir somente um hit local ainda válido e comprovado seria uma otimização opcional a especificar e testar separadamente. A implementação inicial retorna `503`.
 
 ## Cota agregada Open-Meteo
+
+A implementação usa uma escala inteira: 1.000 créditos correspondem a uma unidade de chamada de peso 1. Custos de busca/previsão e tetos agregados são configuráveis; créditos não representam dinheiro nem o total de pedidos HTTP recebidos. Hits e entradas inválidas não reservam novos créditos do provedor. Os limites por visitante são independentes desse orçamento.
+
+A reserva atual usa Redis TIME e janelas móveis de 60 segundos, uma hora, 24 horas e 31 dias. O consumo é compartilhado por busca e previsão e pelos deployments que usam a mesma base/namespace Redis; redeploys e branches novas não o zeram. Uma negação em qualquer janela resulta em 503 antes do fetch. A liberação gradual de reservas antigas permite alternância entre misses 200 e 503 sob pressão de cota, enquanto hits válidos continuam disponíveis.
+
+Em 2026-10-08, a CLI confirmou negações de cota em amostras de busca/previsão, e o proprietário relatou melhora após ampliar o orçamento de testes. Os valores efetivos e a janela que negou a reserva não foram auditados. O [andamento de P1](docs/deploy/preview-progress-2026-10-08.md) registra essas limitações. O proprietário decidiu manter a instrumentação existente, sem adicionar janela, custo solicitado ou saldo aos logs.
 
 - Antes de **cada** chamada externa efetiva de geocodificação ou previsão, reservar atomicamente seu custo ponderado em um orçamento comum de minuto, hora, dia e mês. A operação verifica as quatro janelas e só registra a reserva se todas comportarem o custo; nenhuma janela parcial. A [tabela de preços](https://open-meteo.com/en/pricing/) lista 300.000/mês para Free, embora a seção de uso não comercial dos [termos](https://open-meteo.com/en/terms/) enumere somente minuto, hora e dia. Tratar o limite mensal como aplicável até esclarecimento verificável no P1. Com 31 dias, 10.000/dia alcançariam 310.000; tetos internos precisam de margem em todas as janelas.
 - Usar política que proteja também os limites em janelas móveis, inclusive rajadas junto à troca de minuto/hora/dia/mês. A escolha do algoritmo e os tetos numéricos dependem do peso confirmado no calculador oficial, da semântica Upstash, do consumo de comandos e de teste concorrente em P1. Não assumir que o custo de 13 variáveis seja uma chamada.

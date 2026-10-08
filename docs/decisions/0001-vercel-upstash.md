@@ -8,7 +8,7 @@
 
 O NossoClima já tem web Vite e API Fastify/Node. O cache e os limites atuais vivem num único processo, portanto múltiplas Functions não os compartilham. A Open-Meteo tem limites por IP de saída, com risco documentado em hospedagem compartilhada, e o proprietário exige que ela nunca receba o IP do visitante. A alternativa Cloudflare foi **descartada**, sem aprovação para implementação. Não há script, log ou resultado reproduzível do ensaio anterior de Preview neste pacote; ele não integra a evidência da P0.
 
-## Decisão proposta
+## Decisão aprovada
 
 Usar **dois projetos Vercel no mesmo repositório**: estáticos em `apps/web`, Function Fastify em `apps/api`, com `/api/*` reescrito do domínio web ao domínio da API. Usar **Upstash Redis via HTTPS** do Marketplace, somente em planos gratuitos, para cache de busca de até 24 h, cache de previsão de até 10 min, contadores de rate limit por HMAC de IP com vida aproximada de 1 min e reserva atômica da cota ponderada Open-Meteo nas janelas de minuto, hora, dia e mês. Exigir regra WAF antes da Function, pré-limite em memória e alarme mensal de comandos. O Redis fica acessível apenas à API; IP bruto não é armazenado. Uma chamada Open-Meteo só ocorre após reserva; em falha/cota esgotada, a API não faz nova chamada externa. `429` externo abre circuit breaker compartilhado e impede novo miss durante cooldown. O navegador usa caminho de API relativo, sem credencial nem fetch direto aos fornecedores.
 
@@ -32,3 +32,11 @@ Ambas as rotas reais precisam de teste com eco e canário em Preview e caminho f
 - Planos gratuitos podem interromper o serviço. Não há upgrade automático nem cobrança aceita. Dimensionamento inclui comandos de Redis, invocações, banda, armazenamento e pedidos WAF sob abuso. P1 mede comandos por pedido, eficácia do WAF em ambos os caminhos, alarme mensal e taxa de `429` externo; se a proteção não for viável, a P0 é reaberta.
 - CDN/rewrite podem alterar caching e headers; Preview deve demonstrar a política real. O teste de ausência de IP é específico ao código e ao caminho final.
 - Todos os limiares de `CONSTRAINTS.md` continuam ativos. A P0 foi aprovada para implementação em 2026-10-04; cada gate posterior conserva seu próprio critério de aceite.
+
+## Alinhamento com os contratos ativos — 2026-10-08
+
+A decisão de dois projetos, Redis, reserva e WAF permanece. A implementação já passou pelo smoke em Preview, foi integrada à `main` e continua em `chore/vercel-p1`, conforme o [andamento](../deploy/preview-progress-2026-10-08.md); isso não conclui P1 nem autoriza publicação. O cache local citado no contexto é o baseline de desenvolvimento, não a infraestrutura única da entrada Vercel atual.
+
+As referências originais a alarme mensal devem ser lidas junto de [Production Delivery](../../SPEC-production-delivery.md): acompanhar consumo e indisponibilidade no Free, usar alertas onde disponíveis e registrar um procedimento manual; o alarme de orçamento do plano pago por uso não é gate. Essa nota alinha a terminologia aos requisitos ativos já existentes, sem habilitar cobrança nem retirar o controle de custo.
+
+Os documentos versionados usam placeholders e resultados anonimizados; dados reais de infraestrutura ficam no painel do proprietário. O diagnóstico usa as categorias de log existentes. A proposta de incluir janela, custo e saldo foi cancelada pelo proprietário antes de implementação.

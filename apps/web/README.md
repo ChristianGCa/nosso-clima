@@ -20,3 +20,7 @@ The browser accessibility command checks all ten backgrounds at mobile and deskt
 The footer explains browser storage, Vercel's receipt of the connection IP, temporary visitor counters, and Upstash search/forecast cache TTLs. It includes the project contact, the GitHub repository and separate code, data and icon licences. The release review must still confirm the selected hosting regions and hosting log retention.
 
 The owner-supplied brand variants live in the repository's `logo/` directory. The dark-header vector wordmark is copied into `src/assets/brand/`; the supplied favicon and touch/home-screen icons are copied into `public/`. The page loads only the header wordmark and browser-selected icons.
+
+## Hosted Preview status (2026-10-08)
+
+The changes are consolidated in `main`; `chore/vercel-p1` is the active validation branch. The owner confirmed the web flow and improved operation after increasing the test quota. Both projects have All Deployments protection. The [current record](../../docs/deploy/preview-progress-2026-10-08.md) explains branch URL pairing, local `API_ORIGIN` for CLI config compilation, skipped unchanged builds and the distinction between request rate limits and weighted provider credits. A 503 with `quota_denied` blocks a cache miss before the provider fetch; valid cache hits remain available. CSP messages for the Vercel Toolbar/SSO manifest are separate. P1 and public-release gates remain open; the owner performs the dashboard changes.

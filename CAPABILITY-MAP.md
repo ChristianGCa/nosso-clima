@@ -1,6 +1,6 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-07 (ensaio até 2026-10-08 UTC):** os quatro módulos locais e P2–P9 estão implementados. A adaptação para **Vercel + Upstash** permanece o único plano ativo de deploy, autorizado em P0. API e web estão Ready em Preview; busca, previsão de sete dias, cache hit e CORS da origem web foram verificados pela CLI, com confirmação do proprietário no navegador. A [evidência](docs/deploy/preview-evidence-2026-10-07.md) registra a correção dos escopos que causavam `quota_denied`. P1 está parcialmente verificada; P10–P11 e a decisão de publicação seguem pendentes. Cloudflare e Render foram descartados.
+**Estado em 2026-10-08:** módulos locais e P2–P9 implementados, com as correções consolidadas na `main` e validação ativa em `chore/vercel-p1`. O fluxo Preview de busca/previsão/cache foi confirmado; a CLI conferiu `All Deployments` nos dois projetos e diagnosticou negações da cota interna em amostras de 503. O proprietário ajustou os tetos de teste e relatou melhora. A [continuidade de P1](docs/deploy/preview-progress-2026-10-08.md) registra esses avanços sem URLs reais ou IDs. P1 permanece parcial; runtime Production, P10–P11 e decisão de publicação continuam pendentes. Vercel + Upstash é o único plano ativo; Cloudflare e Render foram descartados.
 
 ## Estado por módulo
 

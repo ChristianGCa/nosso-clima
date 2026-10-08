@@ -1,6 +1,6 @@
 # Plano de implementação: Vercel + Upstash — 2026-10-04
 
-**Estado:** único plano ativo de deploy, aprovado em 2026-10-04. Em 2026-10-07, o proprietário autorizou a correção de escopos pela CLI e o redeploy da API Preview; o fluxo hospedado foi verificado e confirmado no navegador. P1 permanece parcial, conforme [evidência](../docs/deploy/preview-evidence-2026-10-07.md); publicação pública é uma decisão separada. Cloudflare foi descartada. Requisitos: [mapa](../CAPABILITY-MAP.md), [restrições](../CONSTRAINTS.md), [plataforma](../SPEC-backend-platform.md), [entrega](../SPEC-production-delivery.md), [busca](../SPEC-location-search.md), [previsão](../SPEC-weather-forecast.md) e [UI](../SPEC-weather-ui.md). O progresso é registrado somente em [vercel-todo.md](vercel-todo.md).
+**Estado em 2026-10-08:** único plano ativo, aprovado em P0. O código foi consolidado na `main`; `chore/vercel-p1` é a branch temporária para concluir as provas hospedadas. O proprietário executa os ajustes/deployments atuais; o agente auxilia com revisão e leitura da CLI. O [andamento de 2026-10-08](../docs/deploy/preview-progress-2026-10-08.md) complementa a evidência inicial. P1 permanece parcial e publicação exige decisão separada. As specs de cada módulo e `CONSTRAINTS.md` continuam vigentes; o progresso está somente em [vercel-todo.md](vercel-todo.md).
 
 ## Resultado e sequência
 
