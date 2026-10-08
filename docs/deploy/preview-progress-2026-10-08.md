@@ -60,3 +60,27 @@ Os avisos CSP da Toolbar e do manifesto redirecionado ao SSO pertencem aos recur
 Completar P1a com SHAs, CI, versões, headers/CDN, CORS negativo e bundle; P1b com valores efetivos, calculador, amostra limitada, TTL, contenção e falha fechada; P1c com WAF e custo Free; P1d com eco/anti-spoof e circuit breaker. Revisar também a inicialização Production, privacidade, direitos e rollback em P10–P11 antes de uma decisão de exposição pública.
 
 Fontes de procedimento: [Git](https://vercel.com/docs/git), [skip em monorepos](https://vercel.com/docs/monorepos#skipping-unaffected-projects), [URLs geradas](https://vercel.com/docs/deployments/generated-urls), [proteção](https://vercel.com/docs/deployment-protection), [preços/pesos Open-Meteo](https://open-meteo.com/en/pricing) e [termos](https://open-meteo.com/en/terms). O progresso vigente está na [lista ativa](../../tasks/vercel-todo.md).
+
+## Verificação adicional de P1a e CI
+
+Consultas autenticadas em 2026-10-08 confirmaram os dois Previews Ready da branch `chore/vercel-p1` na mesma revisão `0c6d090cb39a0ea51ba30bcf84760d9cc803f254`. Os projetos têm roots `apps/api` e `apps/web`, frameworks Fastify/Vite, plano Hobby e proteção `All Deployments`. O vínculo Git registra o repositório como privado. Os logs dos dois builds confirmam Node `24.21.0`, npm `12.0.2`, instalação com `npm ci --include=dev` e build concluído. A Function API está na região Vercel `iad1`; isso não confirma região, plano ou retenção da Upstash.
+
+O proprietário confirmou que a execução **Quality gates** dessa revisão está verde, com warning de Node 20 deprecado. Esse resultado é relato do proprietário; o agente não acessou a execução privada do GitHub. O workflow local foi atualizado para `checkout@v5`, `setup-node@v5` e `upload-artifact@v6`, cujos manifests oficiais declaram runtime Node 24. Node da aplicação, permissões e todos os gates foram preservados. A atualização ainda precisa de CI hospedada depois de ser enviada ao GitHub. Fontes: [checkout](https://raw.githubusercontent.com/actions/checkout/v5/action.yml), [setup-node](https://raw.githubusercontent.com/actions/setup-node/v5/action.yml) e [upload-artifact](https://raw.githubusercontent.com/actions/upload-artifact/v6/action.yml).
+
+| Caminho testado | Resultado observado |
+|---|---|
+| API direta, `/health` | 200 JSON, `status: ok`, `Cache-Control: private, no-store`, `x-vercel-cache: MISS` |
+| API direta, busca inválida e repetição | 400 JSON `VALIDATION_ERROR`, `private, no-store`, `MISS` nas duas respostas |
+| API direta, rota desconhecida | 404 JSON `NOT_FOUND`, `private, no-store`, `MISS` |
+| API direta, CORS | Alias web de branch recebe a origem exata permitida; origem ausente/divergente não recebe `Access-Control-Allow-Origin`; `Vary: Origin` presente |
+| Web, HTML e manifesto | 200; `public, max-age=0, must-revalidate` |
+| Web, JS e CSS com hash | 200; `public, max-age=31536000, immutable` |
+| Web, segurança | CSP com `connect-src 'self'`, HSTS, `Referrer-Policy`, `nosniff` e `X-Frame-Options: DENY` presentes |
+| Web, bundle entregue | Sem nomes dos segredos Redis/HMAC, hosts conhecidos da API ou URL Upstash encontrados no JS inspecionado; somente `API_ORIGIN` consta nos nomes de env do projeto web |
+| Web, rota desconhecida no navegador do proprietário | JSON `NOT_FOUND` confirmado; status e cabeçalhos dessa resposta não foram coletados |
+
+A [CLI `vercel curl`](https://vercel.com/docs/cli/curl) acessou API direta e arquivos web usando seu mecanismo de proteção por projeto. No caminho reescrito, esse cliente recebeu 302 para `/sso-api`; o resultado não foi tratado como resposta da aplicação nem como prova de erro do fluxo autenticado. O JSON fornecido pelo proprietário confirma o rewrite no navegador. A matriz de sucesso/erro e cache/CDN pelo web continua pendente de captura com sessão autorizada para os dois projetos. O cabeçalho `Vercel-CDN-Cache-Control` não apareceu nas respostas públicas diretas; isso não demonstra ausência na saída da Function, conforme a [documentação de cache](https://vercel.com/docs/caching/cache-control-headers), a Vercel consome esse cabeçalho antes de enviar a resposta ao cliente. `Cache-Control` e o estado do CDN observados estão na tabela.
+
+A leitura de `/v1/security/firewall/config/active` retornou **Config not found** nos dois projetos. O proprietário confirmou que ainda não configurou as regras WAF. P1c continua aberta: criar e publicar uma regra por projeto conforme o [runbook](vercel-upstash-runbook.md#roteamento-cache-e-waf-da-p7), depois provar bloqueio antes da Function/Redis nos caminhos direto e reescrito. Não foi feita nova consulta válida ao provedor nem alterada variável de ambiente nesta verificação.
+
+Os gates locais desta fatia passaram com npm 12: `npm run check` (505 testes API e 90 web), `npm run test:coverage` e `npm audit --audit-level=high` (zero vulnerabilidades). O YAML foi validado e a comparação estrutural confirmou mudança apenas nas três referências de actions. Esses resultados não substituem a nova execução hospedada nem as provas abertas de P1b–P1d.
