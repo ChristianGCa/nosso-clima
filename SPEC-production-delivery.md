@@ -8,7 +8,7 @@
 
 ## Estado e alcance
 
-P2–P9 estão implementadas e testadas localmente. Em 2026-10-07, o proprietário confirmou o repositório GitHub, o funcionamento da entrada atual na Vercel e a exclusão do deploy. Os gates hospedados sem artefatos completos precisam ser registrados na retomada. `production-delivery` coordena os gates e a implantação, enquanto os requisitos de runtime compartilhado são definidos em [Backend Platform](SPEC-backend-platform.md). O proprietário configura a Vercel e executa P1 em Preview protegido com a implementação final. Evidência local não conclui P1 nem autoriza publicação.
+P2–P9 estão implementadas e testadas localmente. Em 2026-10-07, após a exclusão do deploy anterior, foram criados novos Previews API/web e corrigidos os escopos de variáveis que causavam `quota_denied`. A CLI verificou busca, previsão de sete dias, cache hit e CORS permitido; o proprietário confirmou o funcionamento no navegador. A [evidência de Preview](docs/deploy/preview-evidence-2026-10-07.md) distingue esses resultados das provas ainda abertas de P1. `production-delivery` coordena os gates; o runtime pertence a [Backend Platform](SPEC-backend-platform.md). O proprietário autorizou o agente a editar a configuração e redeployar a API em Preview durante o ensaio. A publicação pública continua dependendo de decisão separada e de todos os gates vigentes.
 
 ## Resultado pretendido
 

@@ -1,6 +1,6 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-07:** os quatro módulos do fluxo local estão implementados. A adaptação para **Vercel + Upstash** é o único plano ativo de deploy. O proprietário autorizou a implementação P0 em 2026-10-04; P2–P9 estão implementadas localmente. P1 em Preview protegido, P10–P11 e a decisão de publicação continuam pendentes. Cloudflare e Render não fazem parte do plano ativo. O remoto GitHub existe; o proprietário confirmou que a entrada atual funcionou na Vercel e que excluiu o deploy. A retomada deve registrar os gates hospedados ainda sem evidência completa.
+**Estado em 2026-10-07 (ensaio até 2026-10-08 UTC):** os quatro módulos locais e P2–P9 estão implementados. A adaptação para **Vercel + Upstash** permanece o único plano ativo de deploy, autorizado em P0. API e web estão Ready em Preview; busca, previsão de sete dias, cache hit e CORS da origem web foram verificados pela CLI, com confirmação do proprietário no navegador. A [evidência](docs/deploy/preview-evidence-2026-10-07.md) registra a correção dos escopos que causavam `quota_denied`. P1 está parcialmente verificada; P10–P11 e a decisão de publicação seguem pendentes. Cloudflare e Render foram descartados.
 
 ## Estado por módulo
 
@@ -9,8 +9,8 @@
 | `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada, circuit breaker e cache compartilhado ligados às rotas; HMAC temporário, pré-limite e limites compartilhados ligados à entrada Function, sujeitos à prova real em P1 | — |
 | `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Cache Redis de 24 h e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
 | `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Cache Redis de 10 min e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
-| `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Configuração de build local implementada; roteamento real depende de P1 | `location-search`, `weather-forecast` |
-| `production-delivery` | Configuração de rewrite/headers, E2E, performance e CI testadas localmente em P7–P9; sem gates hospedados concluídos | Dois projetos Vercel, WAF e CDN reais, privacidade, direitos, Preview e rollback dependem de P1 e P10–P11 | Todos os módulos acima |
+| `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Fluxo pelo rewrite confirmado em Preview pelo proprietário; matriz completa de headers/CDN e release continuam em P1 | `location-search`, `weather-forecast` |
+| `production-delivery` | P7–P9 locais e smoke hospedado de API/web, CORS permitido e fluxo de busca/previsão/cache; P1 parcial | Completar P1a/P1b, WAF/CDN, identidade/saída, privacidade, direitos e rollback antes da publicação | Todos os módulos acima |
 
 As specs de busca, previsão e UI descrevem os contratos locais vigentes e identificam as alterações propostas. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração; seu contrato local detalhado permanece referenciado no [baseline Node](docs/history/backend-platform-node-baseline-2026-09-23.md). Os itens concluídos dos módulos locais não comprovam a migração para Vercel.
 

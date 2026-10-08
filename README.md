@@ -2,13 +2,13 @@
 
 Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias. Monorepo com React/Vite em `apps/web` e Fastify/Node em `apps/api`, usando dados da Open-Meteo.
 
-**Estado em 2026-10-07:** o fluxo local está implementado e aprovado, incluindo restauração da última cidade e condição diária predominante. O repositório está no GitHub em `ChristianGCa/nosso-clima`. O proprietário confirmou que a entrada atual funciona na Vercel e informou que excluiu o deploy. P2–P9 estão implementadas localmente; a retomada em Preview deve registrar os gates hospedados ainda sem evidência completa.
+**Estado em 2026-10-07 (ensaio até 2026-10-08 UTC):** P2–P9 estão implementadas localmente. API e web estão Ready em Preview; busca, previsão de sete dias, cache hit e CORS da origem web foram verificados pela CLI, e o proprietário confirmou o funcionamento no navegador. A [evidência de Preview](docs/deploy/preview-evidence-2026-10-07.md) registra a correção de `quota_denied`, os escopos e os deployments. P1 continua parcialmente aberta; não houve liberação pública nesta correção.
 
 ## Como continuar
 
 1. Leia o [mapa de capacidades](CAPABILITY-MAP.md) e as [restrições](CONSTRAINTS.md).
 2. Consulte a spec do módulo que será alterado na tabela abaixo.
-3. Siga o [plano Vercel + Upstash](tasks/vercel-plan.md) e registre o progresso na [lista ativa de tarefas](tasks/vercel-todo.md). O próximo gate é P1 no Preview configurado pelo proprietário antes da publicação.
+3. Siga o [plano Vercel + Upstash](tasks/vercel-plan.md) e a [lista ativa de tarefas](tasks/vercel-todo.md). A próxima etapa completa as evidências de P1a/P1b no Preview existente antes de WAF, privacidade e publicação.
 
 | Documento | Fonte para |
 |---|---|

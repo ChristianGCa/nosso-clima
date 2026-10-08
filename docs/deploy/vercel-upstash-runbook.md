@@ -1,6 +1,14 @@
 # Runbook preliminar: Vercel + Upstash
 
-**Estado em 2026-10-07:** instruções para a retomada do Preview protegido. O repositório GitHub existe; o proprietário confirmou que a entrada atual funcionou na Vercel e informou a exclusão do deploy. P2–P9 passaram localmente; nomes reais de projetos, região, cotas, variáveis finais, CI hospedada e rollback ainda dependem de Preview e revisão final. A publicação pública exige decisão separada do proprietário. Ver [lista ativa](../../tasks/vercel-todo.md), [plano](../../tasks/vercel-plan.md) e [pesquisa](vercel-research-2026-10-04.md).
+**Estado em 2026-10-07 (ensaio até 2026-10-08 UTC):** API e web estão Ready em Preview, com busca/previsão funcionando após correção dos escopos e CORS. O proprietário confirmou o resultado no navegador. A [evidência hospedada anonimizada](preview-evidence-2026-10-07.md) registra os testes e as correções; identificadores e URLs reais permanecem no painel Vercel; P1 permanece parcial. Completar as provas restantes, CI hospedada, política Production e rollback antes da decisão de publicação. Ver [lista ativa](../../tasks/vercel-todo.md), [plano](../../tasks/vercel-plan.md) e [pesquisa](vercel-research-2026-10-04.md).
+
+## Continuação do Preview existente
+
+O frontend usa `apps/web` e a API usa `apps/api`. Os resultados observados estão na [evidência anonimizada de 2026-10-07](preview-evidence-2026-10-07.md); nomes de conta, IDs e URLs reais devem ser consultados no painel da Vercel. Os campos `OPEN_METEO_*` agora incluem Preview, e existem overrides de `API_ORIGIN` e `CORS_ALLOWED_ORIGINS` para `fix/vercel-review-consistency`. O fluxo foi verificado; os valores gerais Secret foram preservados sem leitura pela CLI, portanto não confundir a proposta numérica de testes com valores efetivos auditados.
+
+Ao usar a CLI, `API_ORIGIN` precisa estar disponível também no terminal para a compilação local de `vercel.mjs`. O procedimento com `export`, `--build-env` e `--target preview` está na [evidência](preview-evidence-2026-10-07.md#procedimento-reproduzível-pela-cli). Recriar o web exige confirmar sua origem e atualizar o override CORS correspondente: a URL individual atual tem hash e nenhum alias de branch web foi comprovado. O alias de branch da API foi confirmado e acompanha seus redeploys.
+
+Próxima etapa: completar as pendências de P1a/P1b na [lista ativa](../../tasks/vercel-todo.md). As instruções abaixo preservam a preparação original; os padrões de 1.000 créditos e o CORS placeholder pertencem ao bootstrap inicial, e não devem substituir a configuração de Preview já corrigida.
 
 ## P1a: preparação local em 2026-10-04
 
