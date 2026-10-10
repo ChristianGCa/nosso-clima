@@ -40,3 +40,11 @@ A decisão de dois projetos, Redis, reserva e WAF permanece. A implementação j
 As referências originais a alarme mensal devem ser lidas junto de [Production Delivery](../../SPEC-production-delivery.md): acompanhar consumo e indisponibilidade no Free, usar alertas onde disponíveis e registrar um procedimento manual; o alarme de orçamento do plano pago por uso não é gate. Essa nota alinha a terminologia aos requisitos ativos já existentes, sem habilitar cobrança nem retirar o controle de custo.
 
 Os documentos versionados usam placeholders e resultados anonimizados; dados reais de infraestrutura ficam no painel do proprietário. O diagnóstico usa as categorias de log existentes. A proposta de incluir janela, custo e saldo foi cancelada pelo proprietário antes de implementação.
+
+## Alinhamento com a simplificação de P1 — 2026-10-10
+
+O proprietário aprovou transferir a prova hospedada extensa de Lua, concorrência e expiração após 24 h, bem como a reconciliação mensal exata e a projeção adversarial, para acompanhamento após a abertura. A reserva atômica em quatro janelas, a falha fechada, o WAF, a política própria de Production e os limites de `CONSTRAINTS.md` continuam exigidos. Testes locais e amostras de Preview sustentam o escopo registrado, sem comprovar atomicidade entre instâncias nem garantir capacidade contínua no Free.
+
+A saída sem IP do visitante foi aceita pela revisão do transporte que constrói a requisição Open-Meteo sem headers recebidos e pela amostra parcial de eco em Preview. O ingresso bloqueou ou alterou alguns controles; a amostra não é prova hospedada completa. Um novo eco depende de mudança relevante no transporte ou na topologia. A verificação contra falsificação do header de identidade nos caminhos direto e reescrito continua pendente e separada da privacidade da saída.
+
+Esta seção atualiza os gates da decisão original. O progresso e as pendências vigentes ficam somente em `tasks/vercel-todo.md`.

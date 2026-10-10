@@ -71,7 +71,7 @@ Para começar uma sessão, basta ler `AGENTS.md`, esta página e `tasks/vercel-t
 | `SPEC-*.md`, `CAPABILITY-MAP.md`, `CONSTRAINTS.md` | Contratos, fronteiras e qualidade antes de implementar |
 | `docs/deploy/vercel-upstash-runbook.md` | Configuração, diagnóstico e procedimento de release/rollback |
 | `docs/deploy/preview-probe-guide.md` | Ensaio complementar de eco somente quando a pendência exigir |
-| `docs/deploy/image-rights.md` | Origem dos ativos e direitos ainda abertos |
+| `docs/deploy/image-rights.md` | Origem, revisão e limites dos direitos dos ativos |
 | `docs/history/preview-evidence-2026-10.md` | Coletas de Preview de 7–10 de outubro, consolidadas; ler só a seção necessária |
 | `docs/history/README.md`, `docs/decisions/`, `docs/architecture/`, `docs/quality/` | Aprovações anteriores, motivos, contrato local e medidas de contraste |
 
@@ -85,4 +85,4 @@ Antes de versionar uma evidência, confira o diff e os links locais e revise cad
 
 ## Licenças e publicação
 
-O código usa [MIT](LICENSE). Dados e ícones têm [licenças próprias](apps/web/public/third-party-licenses.txt). Os originais de fundos e marca são mantidos para rastreabilidade; a revisão dos direitos de publicação está no [inventário visual](docs/deploy/image-rights.md). Região, retenção, privacidade e rollback ainda fazem parte dos gates de entrega.
+O código usa [MIT](LICENSE). Dados e ícones têm [licenças próprias](apps/web/public/third-party-licenses.txt). Os originais de fundos e marca são mantidos para rastreabilidade; a revisão dos direitos de publicação está no [inventário visual](docs/deploy/image-rights.md). Região, retenção e aviso de privacidade foram revisados no alcance da lista ativa. Configuração Production, gates finais, acesso público ao repositório e rollback continuam pendentes.

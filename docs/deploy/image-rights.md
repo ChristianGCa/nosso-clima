@@ -33,6 +33,6 @@ O proprietário forneceu os SVGs sob `logo/svg/`, os PNGs sob `logo/png/` e `log
 
 Este inventário conclui a revisão de origem, termos e crédito dos ativos para a tarefa P10 na [lista ativa Vercel](../../tasks/vercel-todo.md), no alcance declarado e observado. A aprovação final de publicação do site continua separada em [Production Delivery](../../SPEC-production-delivery.md).
 
-## Conferência das fontes em 2026-10-07
+## Conferência das fontes em 2026-10-07 e 2026-10-10
 
 Os [termos gerais do Google](https://policies.google.com/terms), vigentes desde 2026-07-30 na página consultada, mantêm a declaração de que o Google não reivindica propriedade do conteúdo original gerado. Os [termos de consumidor da Anthropic](https://www.anthropic.com/legal/consumer-terms), seção 4, mantêm a atribuição ao usuário dos direitos que a Anthropic eventualmente tenha sobre os outputs, sob cumprimento dos termos. A conferência foi renovada em 2026-10-10 e não encontrou exigência de atribuir crédito ao Gemini/Claude para os outputs aqui descritos. Ela não cria licença MIT para os ativos nem comprova cadeias de exportação não fornecidas. O deploy anterior foi excluído, conforme relato do proprietário em 2026-10-07; a evidência final de publicação será vinculada à revisão da retomada.

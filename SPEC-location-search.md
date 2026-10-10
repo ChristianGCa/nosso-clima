@@ -1,13 +1,13 @@
 # Spec: Location Search
 
-- **Status:** Complete; Checkpoint L-B approved by owner on 2026-09-23. Public and commercial deployment gates remain open under `production-delivery`.
+- **Status:** Complete; Checkpoint L-B approved by owner on 2026-09-23. Public deployment gates remain open under `production-delivery`; the owner confirmed noncommercial use.
 - **Module id:** `location-search`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local estão implementados e aprovados. O cache Redis e a reserva compartilhada também estão integrados à entrada Vercel, com buscas e hits observados em Preview. O histórico `docs/history/preview-evidence-2026-10.md` registra o smoke, negações de cota e deduplicação concorrente na amostra de eco; expiração da busca, múltiplas instâncias, reserva sob contenção e aceite de produção continuam pendentes. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; os gates estão em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local estão implementados e aprovados. O cache Redis e a reserva compartilhada também estão integrados à entrada Vercel, com buscas e hits observados em Preview. O histórico `docs/history/preview-evidence-2026-10.md` registra o smoke, negações de cota e deduplicação concorrente na amostra de eco. A expiração da busca após 24 h e a reserva hospedada sob contenção/entre instâncias não foram comprovadas; a decisão de 2026-10-10 na lista ativa as transferiu para acompanhamento, sem alterar a implementação da reserva atômica. O aceite de Production permanece aberto. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; os gates estão em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -191,7 +191,7 @@ O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash tem
 
 Esta alteração foi aprovada para implementação na P0 e integrada localmente em P4/P6; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime de desenvolvimento. Só a migração verificada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
 
-Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 24 horas são preservados. A aceitação da migração exige testes entre instâncias, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs, conforme a [lista ativa](tasks/vercel-todo.md).
+Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 24 horas são preservados. A migração exige testes locais de concorrência, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs; o ensaio hospedado entre instâncias e após 24 horas segue o acompanhamento aprovado na [lista ativa](tasks/vercel-todo.md).
 
 ## Observability, Privacy, and Licensing
 

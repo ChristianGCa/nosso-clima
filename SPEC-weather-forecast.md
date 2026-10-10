@@ -13,7 +13,7 @@ Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code`
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local estão implementados e aprovados. Redis e reserva compartilhada estão integrados à entrada Vercel, com previsão de sete dias, hit e renovação após o TTL observados em Preview. O histórico `docs/history/preview-evidence-2026-10.md` também registra peso estimado e deduplicação concorrente na amostra de eco; não comprova corpo bruto ≤64 KiB, reserva atômica sob contenção, múltiplas instâncias ou política final Production. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; o progresso está em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local estão implementados e aprovados. Redis e reserva compartilhada estão integrados à entrada Vercel, com previsão de sete dias, hit e renovação após o TTL observados em Preview. O histórico `docs/history/preview-evidence-2026-10.md` registra peso estimado e deduplicação concorrente na amostra de eco. O limite de 64 KiB foi aceito pela revisão do transporte e testes de fronteira, sem medição do corpo bruto dessa chamada hospedada. A reserva sob contenção/entre instâncias não foi comprovada em hospedagem e passou a acompanhamento pela decisão de 2026-10-10. Peso oficial da consulta e política final Production permanecem pendentes. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; o progresso está em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -148,7 +148,7 @@ O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash tem
 
 Esta alteração foi aprovada para implementação na P0 e integrada localmente em P4/P6; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime de desenvolvimento. Só a migração verificada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
 
-Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 10 minutos são preservados. A aceitação da migração exige testes entre instâncias, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs, conforme a [lista ativa](tasks/vercel-todo.md).
+Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 10 minutos são preservados. A migração exige testes locais de concorrência, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs; a amostra Preview já observou renovação após o TTL, enquanto o ensaio hospedado entre instâncias segue o acompanhamento aprovado na [lista ativa](tasks/vercel-todo.md).
 
 ## Observability, Privacy and Licensing
 

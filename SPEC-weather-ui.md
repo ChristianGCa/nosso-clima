@@ -189,3 +189,7 @@ O proprietário pediu a correção das inconsistências da revisão e confirmou 
 ## Continuidade documental em 2026-10-08
 
 O fluxo na nova branch foi confirmado pelo proprietário. A reserva ponderada da plataforma, compartilhada por busca/previsão, pode negar misses com 503 mesmo quando hits ainda respondem 200. Isso é independente do rate limit por visitante e continua usando o estado de indisponibilidade existente. O proprietário ajustou o orçamento de testes e relatou melhora; debounce, retries explícitos, seleção, armazenamento e mensagens da UI não foram alterados. Os avisos CSP dos recursos Vercel no Preview são separados desse diagnóstico. A evidência atual (`docs/history/preview-evidence-2026-10.md`) mantém os dados operacionais anonimizados.
+
+## Estado documental em 2026-10-10
+
+O aviso de privacidade foi revisado com a configuração de região da Function obtida pela CLI, a região Redis e a ausência de backup periódico informadas pelo proprietário, além dos TTLs do aplicativo; prazos gerais de logs dos fornecedores não foram presumidos. Os direitos dos fundos/logo foram revisados no alcance do inventário, e os créditos permanecem na interface. O link GitHub existente respondeu 404 sem autenticação; o proprietário pretende tornar o repositório público, com conferência anônima antes da abertura. As pendências vigentes ficam em `tasks/vercel-todo.md`.

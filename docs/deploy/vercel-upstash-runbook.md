@@ -63,10 +63,10 @@ Toolbar/CSP, SSO e manifesto não demonstram falha de quota. Redirect/401/403 de
 
 ## Cache, TTL, reserva e consumo
 
-- Cache Redis autoritativo: busca até 24 h, previsão até 10 min, chaves opacas com HMAC, namespace/versão, entradas normalizadas ≤24 KiB, sem erro/vencido; resposta REST Redis ≤64 KiB. O corpo bruto do provedor também tem limite de 64 KiB e precisa de prova própria.
+- Cache Redis autoritativo: busca até 24 h, previsão até 10 min, chaves opacas com HMAC, namespace/versão, entradas normalizadas ≤24 KiB, sem erro/vencido; resposta REST Redis ≤64 KiB. O corpo bruto do provedor também tem limite de 64 KiB, aceito pela revisão do transporte e testes de fronteira; a amostra hospedada não mediu esse tamanho.
 - Lock de miss: 12 s com token e liberação condicional; outras instâncias aguardam até 6,3 s. Cada saída real exige reserva, mesmo se deduplicação falhar. Quatro concorrentes da mesma chave não provam múltiplas instâncias nem atomicidade de reservas distintas.
 - Medir miss/hit/renovação sem limpar chaves: comparar igualdade/mudança de timestamp, nova reserva e comandos categorizados. Hit não estende TTL. A previsão já foi renovada após o prazo; expiração da busca permanece pendente.
-- Hits/misses medidos no Monitor tiveram nove/29 registros. Reconciliar `EVAL` e Lua com métricas mensais antes da projeção final. Incluir validação/negações, falhas, contenção, manutenção e abuso; WAF por IP e quota Open-Meteo não estabelecem teto mensal agregado de comandos Redis.
+- Hits/misses medidos no Monitor tiveram nove/29 registros. A estimativa preliminar de 431.520 comandos para o cenário informado não é uma garantia: `EVAL`, comandos internos, validação/negações, falhas, contenção, manutenção e abuso podem aumentar o consumo. A decisão de 2026-10-10 postergou a reconciliação mensal exata para acompanhamento. Conferir o painel Free durante a operação e aceitar pausa por cota; WAF por IP e quota Open-Meteo não estabelecem teto mensal agregado de comandos Redis.
 - Confirmar plano/limites/região e procedimento de conferência do Free, sem upgrade automático. Usar alertas gratuitos onde disponíveis; alarme de orçamento pago não é requisito. Pausas por cota são aceitáveis, sem dispensar gates.
 
 ## WAF e headers
@@ -89,7 +89,7 @@ O teste de token inválido e recuperação já está no histórico. Não alterar
 
 ## Release, operação e rollback
 
-1. Reaproveitar a revisão de privacidade, fundos/logo e termos/créditos no alcance registrado. Confirmar custo Free e política Production antes da abertura; reconferir região e retenção apenas se a configuração ou o plano mudar.
+1. Reaproveitar a revisão de privacidade, fundos/logo e termos/créditos no alcance registrado. Confirmar peso da previsão, custo Free e política Production antes da abertura; reconferir região e retenção apenas se a configuração ou o plano mudar. O proprietário pretende tornar o repositório público; confirmar acesso anônimo ao link da interface no release.
 2. Conferir configuração Production, sem eco/segredos no web; executar gates finais locais/CI da revisão escolhida e smoke protegido. Confirmar que a revisão final mantém o transporte de saída aceito e registrar a prova separada de confiança da identidade. Gate ausente/falho continua aberto.
 3. Ensaiar reversão de API e web para deployments existentes/verificados, com ordem e smoke dos dois caminhos. IDs/URLs/comandos com valores reais ficam no painel/registro privado; no Git, usar placeholders/resultados resumidos. Preservar formatos Redis; deployment API excluído não é destino de rollback.
 4. Obter decisão explícita do proprietário para abertura pública. Após abertura, acompanhar categorias 503/negação, `upstream_rate_limited` versus limites próprios, cache hit/miss e consumo dos planos Free sem dados pessoais.
