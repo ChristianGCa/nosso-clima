@@ -75,6 +75,57 @@ afterEach(async () => {
 });
 
 describe('Vercel Fastify entry', () => {
+  it('routes both Preview providers to the echo without visitor headers', async () => {
+    const redis: UpstashRestClient = { eval: async () => 1 };
+    const providerFetch = vi.fn<typeof fetch>(async (input) =>
+      Response.json(String(input).includes('/v1/search') ? { results: [] } : forecastWithHourly),
+    );
+    app = createVercelApp(
+      {
+        ...productionEnvironment,
+        VERCEL_ENV: 'preview',
+        UPSTREAM_TEST_BASE: 'https://echo.example.test',
+        UPSTREAM_TEST_TOKEN: 'fixture-only-'.repeat(4),
+      },
+      { redis: withAllowedVisitorLimit(redis), providerFetch },
+    );
+    for (const url of [
+      '/api/v1/locations?query=Fixture',
+      '/api/v1/forecast?latitude=-23.548&longitude=-46.636&timezone=America%2FSao_Paulo',
+    ]) {
+      const response = await app.inject({
+        method: 'GET',
+        url,
+        headers: {
+          ...visitorHeaders,
+          'x-test-canary': 'visitor-canary',
+          cookie: 'visitor-cookie',
+          forwarded: 'for=203.0.113.10',
+        },
+      });
+      expect(response.statusCode).toBe(200);
+      expect(response.headers['x-nosso-clima-preview-upstream']).toBe('echo-v1');
+    }
+    expect(providerFetch).toHaveBeenCalledTimes(2);
+    for (const [input, init] of providerFetch.mock.calls) {
+      expect(new URL(String(input)).origin).toBe('https://echo.example.test');
+      expect([...new Headers(init?.headers).keys()]).toEqual(['authorization']);
+      expect(JSON.stringify(init)).not.toMatch(/visitor-canary|visitor-cookie|203\.0\.113\.10/);
+    }
+  });
+  it('marks the isolated Preview and rejects test settings in Production', async () => {
+    const settings = {
+      UPSTREAM_TEST_BASE: 'https://echo.example.test',
+      UPSTREAM_TEST_TOKEN: 'fixture-only-'.repeat(4),
+    };
+    expect(() =>
+      createVercelApp({ ...productionEnvironment, ...settings, VERCEL_ENV: 'production' }),
+    ).toThrow(/^Invalid API configuration$/);
+    app = createVercelApp({ ...productionEnvironment, ...settings, VERCEL_ENV: 'preview' });
+    const health = await app.inject({ method: 'GET', url: '/health' });
+    expect(health.headers['x-nosso-clima-preview-upstream']).toBe('echo-v1');
+    expect(health.json()).toEqual({ status: 'ok' });
+  });
   it('starts Preview without process-only settings or an explicit provisional provider policy', async () => {
     const previewEnvironment = Object.fromEntries(
       Object.entries(productionEnvironment).filter(

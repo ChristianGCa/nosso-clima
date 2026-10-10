@@ -64,6 +64,16 @@ Em 2026-10-08, a CLI confirmou negações de cota em amostras de busca/previsão
 
 ## Saída externa e registros seguros
 
+### Ensaio isolado de Preview — preparação de 2026-10-10
+
+O destino de teste já previsto nesta spec usa `UPSTREAM_TEST_BASE` e `UPSTREAM_TEST_TOKEN`, ambos somente na API de Preview isolado. A inicialização rejeita qualquer uma dessas variáveis fora de `VERCEL_ENV=preview`, inclusive configuração parcial/vazia. A origem deve ser HTTPS raiz, sem credenciais, porta não padrão, caminho, query ou fragmento; IP literal, loopback e hosts Open-Meteo não são destinos de teste. O token contém de 32 a 256 caracteres alfanuméricos, underscore ou hífen e nunca entra em logs ou no web.
+
+O transporte continua validando o destino original Open-Meteo, verificando o circuito e reservando créditos antes de remapear caminho/query para o eco. A saída é reconstruída com GET, redirect proibido, sinal de cancelamento e apenas a autenticação do receptor. Nenhum header do visitante é copiado. As respostas mantêm validadores e limites de tamanho dos adapters.
+
+Somente nesse modo, as respostas da Function recebem `x-nosso-clima-preview-upstream: echo-v1`; o corpo de `/health` não muda. O executor de `production-delivery` verifica a marca por entradas inválidas nos dois caminhos antes de consultas válidas. A marca informa modo de teste, sem revelar destino ou segredo. Remover as duas variáveis antes do release e restaurar o segredo de cache do Preview funcional para evitar mistura de fixtures com resultados reais.
+
+Testes locais não concluem confiança do header de identidade, atomicidade no Redis hospedado nem o gate de IP em P1. O procedimento agrupado está em `docs/deploy/preview-probe-guide.md`.
+
 - Construir do zero URL e opções de `fetch` para os dois hosts HTTPS fixos da Open-Meteo; cabeçalhos de saída por allowlist, sem espalhar/copiar `req.headers`, cookies, `Forwarded`, IP, referer ou request ID. `redirect: 'error'`, timeout de 5 s e leitura limitada de 64 KiB seguem os contratos existentes. O escape de teste do destino externo pode existir só em Preview isolado, protegido, com configuração impossível em Production.
 - Logs estruturados incluem apenas ID gerado no servidor, método, molde de rota, status, duração e categorias operacionais limitadas. Nunca registrar IP bruto, digest HMAC, busca, coordenadas, fuso, URL completa, corpo, chaves, token, resposta externa ou mensagens de exceção arbitrárias. Distinguir hit/miss, limite WAF/local/compartilhado, reserva negada, pane Redis, `upstream_rate_limited`, circuit breaker e demais falhas externas por categorias sem dados pessoais.
 
