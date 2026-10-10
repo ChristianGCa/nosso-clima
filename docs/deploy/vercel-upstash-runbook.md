@@ -36,7 +36,18 @@ Na continuação de 2026-10-10, os seis campos de custos/tetos foram cadastrados
 
 O proprietário excluiu os seis campos gerais anteriores e o deployment antigo da API. Production ficou sem os seis nomes, conforme consulta CLI: definir e aprovar a política desse ambiente antes de inicializá-lo. Não assumir o deployment excluído como rollback disponível. Os dois Previews foram reconfirmados Ready e protegidos em `0c6d090`; a API nova foi criada após o cadastro. Não houve nova CI conferida nesta continuação.
 
-Próxima etapa: [contabilização Upstash e projeção mensal](../../tasks/vercel-todo.md#retomada-na-próxima-sessão), seguidas das demais pendências de headers/CDN, contenção/falhas, identidade/saída e Production. As seções datadas abaixo preservam o bootstrap e ensaios anteriores; os padrões de 1.000 créditos e o CORS placeholder não devem substituir a configuração atual.
+Continuação registrada em `preview-cost-redis-failure-2026-10-10.md`: cenário normal preliminar aceito, painel Free sem método de pagamento na integração, ensaio de token Redis inválido e recuperação relatada pelo proprietário. A reconciliação dos contadores e o cenário adversarial continuam pendentes. Preparar eco controlado e ensaios agrupados de concorrência antes da próxima rodada manual, conforme `tasks/vercel-todo.md`. As seções datadas abaixo preservam o bootstrap e ensaios anteriores; os padrões de 1.000 créditos e o CORS placeholder não devem substituir a configuração atual.
+
+## Ensaio de autenticação Redis em Preview
+
+1. O proprietário confere o escopo da variável `UPSTASH_REDIS_REST_TOKEN`, o modo de recuperar seu valor padrão e a revisão do Preview. Preferir override específico da branch quando disponível; editar a variável geral de Preview afeta novos deployments desse escopo. Não remover a integração nem redefinir credenciais do banco para esse ensaio.
+2. Usar temporariamente um token fictício não vazio e sem espaços, somente em Preview. Criar um novo deployment da API na branch de ensaio; uma variável alterada não modifica deployments anteriores. Preservar a proteção e verificar o destino do alias usado pelo rewrite.
+3. Agrupar a coleta: health direto, busca inválida para diagnóstico e consultas válidas de busca/previsão nos caminhos direto e reescrito. Health deve responder 200; as rotas limitadas devem responder 503 seguro. Registrar status, código público, headers de cache e eventos resumidos, sem URLs operacionais, argumentos ou identificadores. Explicitar os campos não coletados.
+4. Abrir os detalhes da invocação para correlacionar `visitor_limit_unavailable` e `request_completed`. A listagem pode mostrar somente a conclusão; manter todos os níveis visíveis, pois o nível JSON da aplicação não precisa coincidir com o filtro de nível da plataforma.
+5. Restaurar o token padrão na variável editada e criar outro Preview. Se foi criado um override temporário, removê-lo para voltar ao valor geral preservado. O valor de `KV_REST_API_TOKEN` corresponde ao token padrão REST usado em `UPSTASH_REDIS_REST_TOKEN`; o token somente leitura não permite as escritas necessárias. Valores no painel Vercel são colados sem as aspas do exemplo de arquivo de ambiente.
+6. Manter a URL REST HTTPS já funcional. `KV_REST_API_URL` corresponde a `UPSTASH_REDIS_REST_URL`; não converter uma conexão `KV_URL` ou `REDIS_URL` apenas trocando o esquema. Registrar a recuperação observada ou relatada sem pedir repetição de uma coleta suficiente.
+
+O ensaio verifica a falha de autenticação no primeiro acesso Redis. Outros pontos de falha, esgotamento de cota, atomicidade e contagem independente de saída exigem provas próprias. Pausas por cota são aceitáveis ao proprietário; não habilitar plano pago nem dispensar privacidade ou publicação. Não adicionar novos links aos registros, conforme `AGENTS.md`.
 
 ## P1a: preparação local em 2026-10-04
 
