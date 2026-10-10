@@ -1,6 +1,6 @@
 # Runbook preliminar: Vercel + Upstash
 
-**Estado em 2026-10-08:** correções consolidadas na `main`; `chore/vercel-p1` é a branch ativa. Ambos os projetos tiveram `All Deployments` confirmado pela CLI. O proprietário ajustou os Previews e relatou melhora após ampliar o orçamento de testes; amostras de 503 foram confirmadas como `quota_denied`. P1 continua parcial e o runtime Production ainda requer revisão. Ver [andamento atual](preview-progress-2026-10-08.md), [evidência inicial](preview-evidence-2026-10-07.md), [lista ativa](../../tasks/vercel-todo.md) e [plano](../../tasks/vercel-plan.md).
+O estado vigente e as pendências estão na [lista ativa](../../tasks/vercel-todo.md). A [retomada de P1a em 2026-10-09](revision-review-2026-10-09.md) registra a revisão local e a limitação de acesso às consultas hospedadas; as [evidências de 2026-10-08](preview-progress-2026-10-08.md) e [2026-10-07](preview-evidence-2026-10-07.md) preservam os ensaios anteriores. Este runbook descreve os procedimentos do [plano](../../tasks/vercel-plan.md); P1 permanece obrigatória antes da publicação.
 
 ## Continuação do Preview existente
 
@@ -11,6 +11,14 @@ As variáveis gerais de Preview precisam ser conferidas junto dos overrides de `
 O primeiro push sem mudança de código não criou novos Previews; `Skip deployment` estava ativo nos dois projetos. Quando necessário, o proprietário pode desativar temporariamente o skip e usar Deployments → Create Deployment com a referência completa da branch. Conferir branch Git e ambiente: um Preview pode ter sido criado a partir de `main` e não aplicar as variáveis de `chore/vercel-p1`. A CLI também permite escolher explicitamente `--target preview`.
 
 Ao usar a CLI, disponibilizar `API_ORIGIN` no terminal antes da compilação local de `vercel.mjs`, além de fornecê-lo ao build remoto. O [procedimento com placeholders](preview-evidence-2026-10-07.md#procedimento-reproduzível-pela-cli) explica `export` e `--build-env`. `VITE_API_BASE_URL` permanece ausente. Os endpoints da Open-Meteo são fixos no backend e não exigem uma variável com o link do provedor.
+
+## Conferência de revisão e CI
+
+1. No checkout, consultar `git status --short --branch` e `git rev-parse HEAD`. A referência `origin/chore/vercel-p1` representa a última sincronização registrada localmente; ela não indica o resultado da CI nem qual revisão está implantada.
+2. No GitHub autenticado, abrir Actions → Quality gates e localizar a execução da branch e do SHA escolhidos. Conferir que todos os gates obrigatórios terminaram com sucesso. Registrar somente data, SHA, nome do workflow e resultado; não copiar logs brutos, URLs privadas ou identificadores da execução. Se não houver execução ou acesso, manter o item pendente.
+3. No painel autenticado da Vercel, conferir separadamente API e web: ambiente Preview, branch, SHA, roots, versões efetivas do build e proteção. Comparar os dois deployments da revisão escolhida e o destino efetivo do rewrite. Um alias pode apontar para um deployment anterior, e `Ready` não comprova que o runtime responde corretamente.
+4. Registrar somente os resultados permitidos pelo [README](../../README.md#onde-documentar). URLs, IDs e valores de ambiente permanecem no painel. Se algum projeto tiver sido pulado ou usar outra revisão, descrever a divergência e apresentar o ajuste ao proprietário antes de redeployar.
+5. Depois de confirmar CI e pareamento, concluir a matriz de status/headers/cache de P1a em sessão autorizada. Consultas sem acesso não encerram gates nem justificam retirar a proteção. Configuração de WAF, variáveis, deploys e publicação continuam sujeitos à confirmação do proprietário.
 
 ## Diagnóstico de 503 e créditos
 

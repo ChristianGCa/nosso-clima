@@ -62,6 +62,10 @@ Cada informação tem um lugar: requisitos nas specs; motivos na ADR; sequência
 
 Atualize o documento responsável em vez de copiar o mesmo status para vários arquivos. Ao encerrar um plano, mantenha o resumo das decisões e use o Git para os detalhes antigos. Logs brutos, builds, cobertura e relatórios gerados ficam nos caminhos já ignorados pelo `.gitignore`; specs, exemplos de ambiente e evidências selecionadas continuam versionados. Nunca inclua credenciais ou identificadores reais de infraestrutura nos relatos.
 
+A documentação será publicada junto com o repositório. Nas evidências operacionais, registre apenas data, revisão Git, papel de cada aplicação, versões, nomes de variáveis, status HTTP, códigos públicos de erro e resultados resumidos. Use domínios de exemplo e placeholders nos procedimentos. Endereços reais de deployments/Redis, IDs de projetos ou contas, valores de ambiente, tokens, cookies, headers de autenticação, IPs, digests HMAC, consultas reais e coordenadas de visitantes ficam fora do Git. O link do repositório, fontes oficiais, contato de publicação já aprovado e exemplos públicos dos contratos têm finalidade pública própria.
+
+Antes de versionar uma evidência, confira o diff e os links locais e revise cada campo para publicação. Remova dados operacionais de capturas e não acrescente exports ou logs brutos, mesmo em caminhos hoje ignorados. Diferencie resultado observado, relato do proprietário e verificação pendente; ausência de acesso e resultados de outra revisão não comprovam um gate concluído.
+
 ## Licenças e publicação
 
 O código usa [MIT](LICENSE). Dados e ícones têm [licenças próprias](apps/web/public/third-party-licenses.txt). Os originais de fundos e marca são mantidos para rastreabilidade; a revisão dos direitos de publicação está no [inventário visual](docs/deploy/image-rights.md). Região, retenção, privacidade e rollback ainda fazem parte dos gates de entrega.
