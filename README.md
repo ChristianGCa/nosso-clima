@@ -4,6 +4,8 @@ Consulta meteorológica em português com busca de cidades, condições atuais e
 
 **Entrega:** o fluxo já foi testado em Preview protegido; a publicação pública ainda depende dos gates e da decisão do proprietário. A [lista ativa](tasks/vercel-todo.md) concentra o estado atual e o próximo trabalho.
 
+O teste de falha Redis e a recuperação já foram registrados; a rodada normal no eco também passou. O Preview voltou a consultar dados reais, com proteção mantida e variáveis de eco removidas. Preservar Redis e consultar a lista ativa antes de repetir ensaios. Production ainda exige configuração e validação próprias.
+
 ## Executar localmente
 
 Use Node `>=24.15.0 <25` e npm `12.0.2`, conforme [package.json](package.json). Na raiz:
@@ -60,9 +62,24 @@ Antes de alterar código, leia [AGENTS.md](AGENTS.md), o [mapa de capacidades](C
 
 Cada informação tem um lugar: requisitos nas specs; motivos na ADR; sequência no [plano](tasks/vercel-plan.md); progresso e pendências na [lista ativa](tasks/vercel-todo.md); procedimentos no runbook. Evidências datadas registram o que foi observado, sem se tornar outro plano. O [histórico resumido](docs/history/README.md) preserva aprovações e explica como recuperar documentos encerrados pelo Git.
 
+Para começar uma sessão, basta ler `AGENTS.md`, esta página e `tasks/vercel-todo.md`; antes de código, acrescentar mapa, constraints e spec do módulo. A auditoria documental, o alcance dos testes reaproveitados e os bloqueios de produção estão na lista ativa.
+
+| Documento | Quando consultar |
+|---|---|
+| `tasks/vercel-todo.md` | Estado atual, concluídos, pendências e decisão de publicação |
+| `tasks/vercel-plan.md` | Etapas P0–P11 e critérios do plano aprovado |
+| `SPEC-*.md`, `CAPABILITY-MAP.md`, `CONSTRAINTS.md` | Contratos, fronteiras e qualidade antes de implementar |
+| `docs/deploy/vercel-upstash-runbook.md` | Configuração, diagnóstico e procedimento de release/rollback |
+| `docs/deploy/preview-probe-guide.md` | Ensaio complementar de eco somente quando a pendência exigir |
+| `docs/deploy/image-rights.md` | Origem dos ativos e direitos ainda abertos |
+| `docs/history/preview-evidence-2026-10.md` | Coletas de Preview de 7–10 de outubro, consolidadas; ler só a seção necessária |
+| `docs/history/README.md`, `docs/decisions/`, `docs/architecture/`, `docs/quality/` | Aprovações anteriores, motivos, contrato local e medidas de contraste |
+
+Os seis relatos de Preview antes espalhados em `docs/deploy/` foram consolidados em um histórico em 2026-10-10. Seus próximos passos antigos podem estar superados; não os tratar como tarefas ativas. A pesquisa datada `docs/deploy/vercel-research-2026-10-04.md` registra fontes/hipóteses da P0, não o estado atual da conta.
+
 Atualize o documento responsável em vez de copiar o mesmo status para vários arquivos. Ao encerrar um plano, mantenha o resumo das decisões e use o Git para os detalhes antigos. Logs brutos, builds, cobertura e relatórios gerados ficam nos caminhos já ignorados pelo `.gitignore`; specs, exemplos de ambiente e evidências selecionadas continuam versionados. Nunca inclua credenciais ou identificadores reais de infraestrutura nos relatos.
 
-A documentação será publicada junto com o repositório. Nas evidências operacionais, registre apenas data, revisão Git, papel de cada aplicação, versões, nomes de variáveis, status HTTP, códigos públicos de erro e resultados resumidos. Use domínios de exemplo e placeholders nos procedimentos. Endereços reais de deployments/Redis, IDs de projetos ou contas, valores de ambiente, tokens, cookies, headers de autenticação, IPs, digests HMAC, consultas reais e coordenadas de visitantes ficam fora do Git. O link do repositório, fontes oficiais, contato de publicação já aprovado e exemplos públicos dos contratos têm finalidade pública própria.
+A documentação será publicada junto com o repositório. Nas evidências operacionais, registre apenas data, revisão Git, papel de cada aplicação, versões, nomes de variáveis, status HTTP, códigos públicos de erro e resultados resumidos. Use domínios de exemplo e placeholders nos procedimentos. Endereços reais de deployments/Redis, IDs de projetos ou contas, valores de ambiente, tokens, cookies, headers de autenticação, IPs, digests HMAC, consultas reais e coordenadas de visitantes ficam fora do Git. Contato de publicação já aprovado e exemplos públicos dos contratos têm finalidade pública própria. Referências novas usam nome de arquivo, título de fonte ou nome de tela, sem hyperlinks, conforme `AGENTS.md`; links antigos não autorizam novos links.
 
 Antes de versionar uma evidência, confira o diff e os links locais e revise cada campo para publicação. Remova dados operacionais de capturas e não acrescente exports ou logs brutos, mesmo em caminhos hoje ignorados. Diferencie resultado observado, relato do proprietário e verificação pendente; ausência de acesso e resultados de outra revisão não comprovam um gate concluído.
 

@@ -2,6 +2,8 @@
 
 Preparação de 2026-10-10. Este guia executa parte das pendências de `tasks/vercel-todo.md`; não constitui evidência hospedada nem autorização de publicação. O proprietário conduz configurações e deployments. Manter todos os valores operacionais fora do Git.
 
+**Uso após a rodada já concluída:** oito perfis normais passaram e o modo de eco foi retirado do Preview. Não iniciar este roteiro por padrão nem trocar URL/token Redis para repetir o teste de falha já documentado. Consultar a lista ativa e definir uma lacuna concreta antes de montar outro ensaio; o Quick Tunnel usado não fechou a prova de privacidade.
+
 ## Preparar uma vez
 
 1. Usar uma branch/override de Preview isolado e conferir proteção dos dois projetos. Preservar o cadastro original de `CACHE_HMAC_KEY` sem editar seu valor: variáveis Sensitive não são legíveis após criação. Se a chave original é geral de Preview, criar outro cadastro com o mesmo nome, um novo segredo e escopo somente na branch do ensaio. Ao encerrar, remover apenas esse override para voltar à chave geral; não é necessário conhecer o segredo original. Se já existir uma chave específica na mesma branch, não sobrescrevê-la: escolher outra branch isolada e conferir o pareamento e todas as variáveis necessárias, inclusive a política provisória aprovada. Fixtures também passam pelos caches normais; não misturá-las com dados reais. A cota e os circuitos continuam compartilhados conforme o namespace existente; não apagar suas chaves para obter aprovação.
@@ -52,7 +54,7 @@ Interrupções informam somente código fixo, etapa, caminho, status HTTP e nome
 
 ## Falha fechada e demais controles
 
-Decisão do proprietário nesta continuação de 2026-10-10: preservar a configuração Redis e não retomar alterações de URL/token agora. Ele informou que já havia ensaiado URL inválida e que a restauração foi trabalhosa. O ensaio documentado de token inválido e sua recuperação continuam válidos no alcance registrado em `preview-cost-redis-failure-2026-10-10.md`. Reaproveitar essas evidências; a falta de contagem independente de saída nesse ensaio permanece explicitada e não autoriza uma repetição automática da rodada. Nenhum gate ou constraint foi dispensado.
+Decisão do proprietário nesta continuação de 2026-10-10: preservar a configuração Redis e não retomar alterações de URL/token agora. Ele informou que já havia ensaiado URL inválida e que a restauração foi trabalhosa. O ensaio documentado de token inválido e sua recuperação continuam válidos no alcance registrado em `docs/history/preview-evidence-2026-10.md`. Reaproveitar essas evidências; a falta de contagem independente de saída nesse ensaio permanece explicitada e não autoriza uma repetição automática da rodada. Nenhum gate ou constraint foi dispensado.
 
 Após a rodada normal, esperar a próxima janela de visitante. O perfil `PROBE_SCENARIO=fail_closed` exige 503 nas consultas válidas e zero chamadas novas no eco. Usá-lo durante uma falha Redis ou negação de cota planejada pelo proprietário, mantendo o receptor em modo normal. Registrar qual falha foi induzida e o alcance: falha no limitador não comprova falha após a reserva.
 

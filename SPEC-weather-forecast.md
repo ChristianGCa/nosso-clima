@@ -13,7 +13,7 @@ Esta alteração substitui apenas a decisão anterior sobre `daily.weather_code`
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local estão implementados e aprovados. Redis e reserva compartilhada estão integrados à entrada Vercel, com previsão de sete dias e cache hit observados em Preview. A [continuidade de P1](docs/deploy/preview-progress-2026-10-08.md) registra esse smoke e negações de cota; peso, tamanho da amostra, expiração e concorrência permanecem gates. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; o progresso está em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local estão implementados e aprovados. Redis e reserva compartilhada estão integrados à entrada Vercel, com previsão de sete dias, hit e renovação após o TTL observados em Preview. O histórico `docs/history/preview-evidence-2026-10.md` também registra peso estimado e deduplicação concorrente na amostra de eco; não comprova corpo bruto ≤64 KiB, reserva atômica sob contenção, múltiplas instâncias ou política final Production. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; o progresso está em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 

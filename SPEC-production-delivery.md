@@ -8,13 +8,13 @@
 
 ## Estado e alcance
 
-O progresso e as pendências de Preview/Production estão na [lista ativa](tasks/vercel-todo.md), com links para as evidências datadas. Esta spec define os gates de entrega; o runtime continua em [Backend Platform](SPEC-backend-platform.md). Aprovação P0 e builds Ready não equivalem a autorização de publicação.
+O progresso e as pendências de Preview/Production estão na [lista ativa](tasks/vercel-todo.md); as coletas datadas ficam em `docs/history/preview-evidence-2026-10.md`. Esta spec define os gates de entrega; o runtime continua em [Backend Platform](SPEC-backend-platform.md). Aprovação P0 e builds Ready não equivalem a autorização de publicação. Reaproveitar as provas concluídas no alcance registrado, sem reiniciar implementação ou bootstrap por reler critérios de aceite.
 
 ## Resultado pretendido
 
 Publicar o NossoClima não comercial usando somente planos gratuitos: um projeto Vercel para `apps/web` (Vite estático) e outro para `apps/api` (Fastify em Node 24 Vercel Function), no mesmo repositório. O domínio do web encaminha `/api/*` ao projeto da API, de modo que o navegador continua no mesmo domínio. Upstash Redis do Vercel Marketplace, via HTTPS, mantém cache compartilhado e a cota agregada obrigatória da Open-Meteo. O nome/URL gratuito deve conter `nosso-clima` se houver disponibilidade; nenhum domínio comprado é necessário. O tráfego estimado de cerca de 100 pessoas/dia não é garantia nem limite de capacidade.
 
-O proprietário exige que a Open-Meteo não receba o IP do visitante, escolheu apenas planos gratuitos e autorizou resultados temporários na Upstash (busca até 24 h, previsão até 10 min, sem IP) e HMAC derivado de IP por aproximadamente 1 min para rate limit. Uma falha ou cota esgotada pode tornar a consulta indisponível; a API não faz chamada externa sem reserva. Não há artefatos verificáveis do ensaio de Preview anterior neste pacote; ele não serve como evidência de aprovação.
+O proprietário exige que a Open-Meteo não receba o IP do visitante, escolheu apenas planos gratuitos e autorizou resultados temporários na Upstash (busca até 24 h, previsão até 10 min, sem IP) e HMAC derivado de IP por aproximadamente 1 min para rate limit. Uma falha ou cota esgotada pode tornar a consulta indisponível; a API não faz chamada externa sem reserva. O ensaio informal anterior à aprovação P0 não tinha artefatos e não serve como evidência; as coletas posteriores de 2026-10-07 a 2026-10-10 estão documentadas no histórico, com alcance e limitações próprios.
 
 ## Viabilidade P1 antes de publicação pública
 

@@ -1,6 +1,6 @@
 # Histórico resumido
 
-O estado de execução está na [lista ativa](../../tasks/vercel-todo.md). Este registro preserva decisões encerradas; não autoriza novas implementações nem publicação.
+O estado de execução está na [lista ativa](../../tasks/vercel-todo.md). Este registro preserva decisões encerradas; não autoriza novas implementações nem publicação. Relatos datados podem conter próximos passos já superados: consultar a lista ativa antes de agir.
 
 ## Marcos preservados
 
@@ -20,7 +20,7 @@ A ideia inicial priorizava leitura rápida, unidades °C/km/h/mm, busca explíci
 - [Auditoria de 2026-10-03](release-audit-2026-10-03.md): resultados e limitações daquele checkout, incluindo falhas de instalação e recuperação. Recomendações Cloudflare estão superadas.
 - [Implementação Vercel até 2026-10-06](vercel-local-evidence-2026-10-06.md): resultados locais de P0/P2–P9; hashes anteriores à reescrita do histórico.
 - [Contraste](../quality/contrast-2026-10-04.md): método e medidas de outubro.
-- [Preview de 2026-10-07](../deploy/preview-evidence-2026-10-07.md) e [continuidade em 2026-10-08](../deploy/preview-progress-2026-10-08.md): evidências anonimizadas das provas hospedadas.
+- `docs/history/preview-evidence-2026-10.md`: seis relatos de 2026-10-07 a 2026-10-10, consolidados na organização de 2026-10-10. Preserva bootstrap, matriz HTTP/CI, WAF, cache/TTL, consumo, falha Redis/recuperação, ferramentas de eco e restauração final do Preview; também reúne as verificações locais antigas do runbook. Os resultados mantêm a fonte e as limitações originais.
 
 O [baseline Node](../architecture/backend-local-baseline.md) foi movido para arquitetura porque ainda é referenciado pela spec da plataforma como contrato local. Seus requisitos foram preservados.
 
@@ -37,3 +37,5 @@ git show d3a2fdca11be10f46f54d0d207cf87c8fe73577d:docs/ideas/nosso-clima.md
 ```
 
 Os atalhos `tasks/plan.md` e `tasks/todo.md` foram removidos; use os arquivos Vercel ativos. As instruções de `apps/web/README.md` foram incorporadas ao README principal, às specs e aos documentos de evidência já existentes. A matriz anterior de contraste permanece recuperável no mesmo commit em `docs/quality/contrast-2026-10-01.md`.
+
+Os seis arquivos datados retirados de `docs/deploy/` em 2026-10-10 aparecem como títulos de origem no histórico consolidado. Para recuperar sua apresentação anterior, usar `git show afc52be:docs/deploy/<nome-do-arquivo>`. As referências internas foram convertidas para nomes/caminhos; fontes externas preservam o título, sem criar novos hyperlinks.

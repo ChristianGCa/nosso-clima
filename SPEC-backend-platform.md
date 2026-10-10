@@ -1,7 +1,7 @@
 # Spec: Backend Platform — estado local e migração Vercel + Upstash
 
 - **Estado local:** implementado e aprovado em 2026-09-23.
-- **Estado da migração:** P0 aprovada em 2026-10-04; integração implementada e com smoke hospedado em Preview. Em 2026-10-08, a validação continua em `chore/vercel-p1`; P1 é parcial e permanece obrigatória antes da publicação.
+- **Estado da migração:** P0 aprovada em 2026-10-04; integração implementada e ensaiada em Preview. O progresso vigente e o alcance das provas ficam em `tasks/vercel-todo.md`; P1 permanece obrigatória antes da publicação.
 - **Módulo:** `backend-platform`; consumidores: `location-search`, `weather-forecast`, `production-delivery`.
 - **Contrato local detalhado:** [Node/Fastify aprovado para execução local](docs/architecture/backend-local-baseline.md). A alternativa Cloudflare foi descartada.
 
@@ -19,7 +19,7 @@ As seções seguintes definem o destino Vercel + Upstash e seus critérios de ac
 
 Executar a API Fastify/Node 24 existente como Vercel Function em um projeto `apps/api`, separado do projeto Vite `apps/web` no mesmo repositório. O projeto web encaminha `/api/*` à API. O navegador usa caminhos relativos; a API é o único componente que acessa Open-Meteo e Upstash. `backend-platform` mantém HTTP compartilhado, configuração, identidade temporária de rate limit, cache compartilhado, reserva agregada de cota, transporte externo e logs. Os módulos de busca e previsão mantêm parâmetros, validação da resposta externa, transformação e contratos HTTP próprios. `production-delivery` mantém configuração dos dois projetos, roteamento, CI, privacidade, evidência de release e rollback.
 
-A exigência do proprietário é não enviar o IP do visitante à Open-Meteo. Não há script, log ou resultado do ensaio anterior de Preview neste pacote; ele não conta como evidência. A entrada Fastify definitiva, ambas as rotas e o caminho de Production precisam de prova reproduzível antes da publicação.
+A exigência do proprietário é não enviar o IP do visitante à Open-Meteo. O ensaio informal anterior à P0 de 2026-10-04 não tinha artefatos e não conta como evidência. As provas posteriores estão em `docs/history/preview-evidence-2026-10.md`, com ferramentas reproduzíveis presentes no código; seu alcance não encerra o gate completo de privacidade. A entrada Fastify definitiva, ambas as rotas e o caminho de Production precisam de prova reproduzível antes da publicação.
 
 ## Entrada serverless e configuração
 
@@ -47,7 +47,7 @@ A implementação usa uma escala inteira: 1.000 créditos correspondem a uma uni
 
 A reserva atual usa Redis TIME e janelas móveis de 60 segundos, uma hora, 24 horas e 31 dias. O consumo é compartilhado por busca e previsão e pelos deployments que usam a mesma base/namespace Redis; redeploys e branches novas não o zeram. Uma negação em qualquer janela resulta em 503 antes do fetch. A liberação gradual de reservas antigas permite alternância entre misses 200 e 503 sob pressão de cota, enquanto hits válidos continuam disponíveis.
 
-Em 2026-10-08, a CLI confirmou negações de cota em amostras de busca/previsão, e o proprietário relatou melhora após ampliar o orçamento de testes. Os valores efetivos e a janela que negou a reserva não foram auditados. O [andamento de P1](docs/deploy/preview-progress-2026-10-08.md) registra essas limitações. O proprietário decidiu manter a instrumentação existente, sem adicionar janela, custo solicitado ou saldo aos logs.
+O histórico `docs/history/preview-evidence-2026-10.md` registra negações `quota_denied` em 2026-10-08 e a conferência posterior de escopos/custos/tetos Preview e reservas no Monitor em 2026-10-10. A janela causadora das falhas anteriores não foi identificada; a política final Production continua pendente. O proprietário decidiu manter a instrumentação existente, sem adicionar janela, custo solicitado ou saldo aos logs.
 
 - Antes de **cada** chamada externa efetiva de geocodificação ou previsão, reservar atomicamente seu custo ponderado em um orçamento comum de minuto, hora, dia e mês. A operação verifica as quatro janelas e só registra a reserva se todas comportarem o custo; nenhuma janela parcial. A [tabela de preços](https://open-meteo.com/en/pricing/) lista 300.000/mês para Free, embora a seção de uso não comercial dos [termos](https://open-meteo.com/en/terms/) enumere somente minuto, hora e dia. Tratar o limite mensal como aplicável até esclarecimento verificável no P1. Com 31 dias, 10.000/dia alcançariam 310.000; tetos internos precisam de margem em todas as janelas.
 - Usar política que proteja também os limites em janelas móveis, inclusive rajadas junto à troca de minuto/hora/dia/mês. A escolha do algoritmo e os tetos numéricos dependem do peso confirmado no calculador oficial, da semântica Upstash, do consumo de comandos e de teste concorrente em P1. Não assumir que o custo de 13 variáveis seja uma chamada.

@@ -6,7 +6,7 @@
 
 ## Contexto
 
-O NossoClima já tem web Vite e API Fastify/Node. O cache e os limites atuais vivem num único processo, portanto múltiplas Functions não os compartilham. A Open-Meteo tem limites por IP de saída, com risco documentado em hospedagem compartilhada, e o proprietário exige que ela nunca receba o IP do visitante. A alternativa Cloudflare foi **descartada**, sem aprovação para implementação. Não há script, log ou resultado reproduzível do ensaio anterior de Preview neste pacote; ele não integra a evidência da P0.
+No momento da decisão P0, o NossoClima já tinha web Vite e API Fastify/Node, com cache e limites num único processo, não compartilhados entre Functions. A Open-Meteo tem limites por IP de saída, com risco documentado em hospedagem compartilhada, e o proprietário exige que ela nunca receba o IP do visitante. A alternativa Cloudflare foi **descartada**, sem aprovação para implementação. O ensaio informal anterior à P0 não tinha resultado reproduzível; coletas posteriores estão em `docs/history/preview-evidence-2026-10.md`, sem ampliar retroativamente a evidência da P0.
 
 ## Decisão aprovada
 
@@ -35,7 +35,7 @@ Ambas as rotas reais precisam de teste com eco e canário em Preview e caminho f
 
 ## Alinhamento com os contratos ativos — 2026-10-08
 
-A decisão de dois projetos, Redis, reserva e WAF permanece. A implementação já passou pelo smoke em Preview, foi integrada à `main` e continua em `chore/vercel-p1`, conforme o [andamento](../deploy/preview-progress-2026-10-08.md); isso não conclui P1 nem autoriza publicação. O cache local citado no contexto é o baseline de desenvolvimento, não a infraestrutura única da entrada Vercel atual.
+A decisão de dois projetos, Redis, reserva e WAF permanece. A implementação já passou pelo smoke em Preview, foi integrada à `main` e continua em `chore/vercel-p1`, conforme o andamento (`docs/history/preview-evidence-2026-10.md`); isso não conclui P1 nem autoriza publicação. O cache local citado no contexto é o baseline de desenvolvimento, não a infraestrutura única da entrada Vercel atual.
 
 As referências originais a alarme mensal devem ser lidas junto de [Production Delivery](../../SPEC-production-delivery.md): acompanhar consumo e indisponibilidade no Free, usar alertas onde disponíveis e registrar um procedimento manual; o alarme de orçamento do plano pago por uso não é gate. Essa nota alinha a terminologia aos requisitos ativos já existentes, sem habilitar cobrança nem retirar o controle de custo.
 

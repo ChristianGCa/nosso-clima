@@ -7,7 +7,7 @@
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local estão implementados e aprovados. O cache Redis e a reserva compartilhada também estão integrados à entrada Vercel, com buscas e hits observados em Preview. A [continuidade de P1](docs/deploy/preview-progress-2026-10-08.md) registra o smoke e negações de cota, sem concluir expiração, concorrência ou aceite de produção. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; os gates estão em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local estão implementados e aprovados. O cache Redis e a reserva compartilhada também estão integrados à entrada Vercel, com buscas e hits observados em Preview. O histórico `docs/history/preview-evidence-2026-10.md` registra o smoke, negações de cota e deduplicação concorrente na amostra de eco; expiração da busca, múltiplas instâncias, reserva sob contenção e aceite de produção continuam pendentes. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; os gates estão em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 

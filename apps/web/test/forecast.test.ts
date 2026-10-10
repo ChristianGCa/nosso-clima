@@ -95,6 +95,20 @@ describe('forecast HTTP boundary', () => {
     ).rejects.toMatchObject({ failure: { kind: 'unavailable' } });
   });
 
+  it('classifies a WAF-style 429 with non-JSON body as rate_limited', async () => {
+    const location = locationResponse.locations[0];
+    const wafBlock = vi.fn<typeof fetch>(
+      async () =>
+        new Response('<html>Rate limited</html>', {
+          status: 429,
+          headers: { 'content-type': 'text/html' },
+        }),
+    );
+    await expect(
+      getForecast(location, new AbortController().signal, wafBlock),
+    ).rejects.toMatchObject({ failure: { kind: 'rate_limited' } });
+  });
+
   it.each([400, 401, 404, 500])('classifies HTTP %i as a generic failure', async (status) => {
     const fetchImpl = vi.fn<typeof fetch>(async () =>
       jsonResponse({ error: { code: 'OTHER', message: 'private detail' } }, status),

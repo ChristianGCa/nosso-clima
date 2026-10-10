@@ -4,7 +4,7 @@ Os módulos locais estão implementados. Vercel + Upstash é o plano de produç�
 
 ## Estado por módulo
 
-| Módulo | Implementado e aprovado localmente | Proposto para produção Vercel | Depende de |
+| Módulo | Implementado e aprovado localmente | Implementação Vercel e prova hospedada | Depende de |
 |---|---|---|---|
 | `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada, circuit breaker e cache compartilhado ligados às rotas; HMAC temporário, pré-limite e limites compartilhados ligados à entrada Function, sujeitos à prova real em P1 | — |
 | `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Cache Redis de 24 h e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
@@ -12,7 +12,7 @@ Os módulos locais estão implementados. Vercel + Upstash é o plano de produç�
 | `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Fluxo pelo rewrite confirmado em Preview pelo proprietário; matriz completa de headers/CDN e release continuam em P1 | `location-search`, `weather-forecast` |
 | `production-delivery` | P7–P9 locais e smoke hospedado de API/web, CORS permitido e fluxo de busca/previsão/cache; P1 parcial | Completar P1a/P1b, WAF/CDN, identidade/saída, privacidade, direitos e rollback antes da publicação | Todos os módulos acima |
 
-As specs de busca, previsão e UI descrevem os contratos locais vigentes e identificam as alterações propostas. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração; seu contrato local detalhado permanece referenciado no [baseline Node](docs/architecture/backend-local-baseline.md). Os itens concluídos dos módulos locais não comprovam a migração para Vercel.
+As specs de busca, previsão e UI descrevem os contratos vigentes. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração implementada; seu contrato local detalhado permanece referenciado no [baseline Node](docs/architecture/backend-local-baseline.md). Implementação local e provas hospedadas têm alcances distintos; resultados e lacunas ficam somente em `tasks/vercel-todo.md`, com detalhes no histórico.
 
 ## Grafo e ordem
 
