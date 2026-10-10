@@ -4,9 +4,9 @@ Evidência da conferência de infraestrutura e dos testes manuais que sucedem a 
 
 ## Fonte e revisão
 
-O proprietário operou os painéis Vercel/Upstash e o navegador, fornecendo capturas, resultados HTTP e relatos do Monitor. O agente analisou essas informações e, mediante autorização posterior, atualizou a documentação. Não houve alteração de código nem operação dos painéis pelo agente nesta rodada.
+O proprietário operou os painéis Vercel/Upstash e o navegador, fornecendo capturas, resultados HTTP e relatos do Monitor. O agente analisou essas informações, consultou a CLI Vercel em modo somente leitura com autorização e atualizou a documentação quando solicitado. Não houve alteração de código nem operação dos painéis pelo agente nesta rodada.
 
-O checkout local estava em `chore/vercel-p1`, revisão `c7bdb23`, limpo antes desta atualização. A última revisão hospedada confirmada na evidência anterior é `0c6d090`; os SHAs dos deployments não foram reconferidos em 2026-10-10. A comparação local até `c7bdb23` não altera runtime, dependências, assets ou configuração versionada de deploy. Isso não comprova a revisão ou as variáveis efetivamente hospedadas nesta rodada; reconfirmá-las no release.
+O checkout local estava em `chore/vercel-p1`, revisão `c7bdb23`, antes do primeiro registro, commitado em `a09efe8`. A continuação documental começou com árvore limpa nesse último commit. A CLI reconfirmou API e web Ready em `0c6d090`, na mesma branch, depois do redeploy da API pelo proprietário. O novo Preview da API foi criado em 2026-10-10 às 16:40:19.628 UTC, após o cadastro das variáveis; o web permanecia no Preview criado em 2026-10-08. Roots `apps/api`/`apps/web`, frameworks Fastify/Vite, runtime configurado Node `24.x` e proteção All Deployments dos dois projetos foram reconfirmados. Isso não é uma nova execução de CI ou uma reconferência das versões exatas dos builds. A comparação local até `a09efe8` não altera runtime, dependências, assets ou configuração versionada de deploy; reconferir a revisão final no release.
 
 Somente resumos anonimizados foram transcritos. Capturas, CSVs e exports de logs não foram incorporados ao repositório. URLs reais, nomes e IDs de recursos/conta, IPs, digests, chaves Redis, identificadores de requisição, consultas reais e coordenadas foram omitidos.
 
@@ -69,7 +69,54 @@ Com a captura retomada antes do teste, a amostra de cinco chamadas de busca inv�
 
 Em seguida, com o web limitado a 1/60, o proprietário observou a mesma separação na previsão: consulta permitida com 200 e comandos Redis; tentativas seguintes com 429 sem comandos; nova consulta após liberar a janela com 200 e atividade Redis. A captura da consulta permitida também mostrou operações de cache, lock, circuito, reserva e gravação. Isso evidencia execução desses mecanismos, não prova isoladamente atomicidade sob contenção, expiração exata ou custo do miss.
 
-**Conclusão limitada:** houve ausência de comandos Redis observados nas chamadas bloqueadas pelo WAF no caminho web, com controles permitidos antes e depois. A fonte da atividade/ausência é a captura e o relato do proprietário. Não foi feita uma amostra equivalente com Monitor para bloqueios no domínio direto da API, nem uma correlação específica das cinco chamadas com as invocações da Function. As rajadas anteriores fornecem evidência complementar, sem substituir essas verificações.
+**Conclusão inicial:** ausência de comandos Redis observados nos bloqueios pelo web, com controles antes/depois. Naquele ponto faltavam a amostra direta e a correlação específica com a Function; a continuação abaixo acrescentou essas evidências.
+
+## Amostras isoladas e correlação com a Function
+
+O proprietário repetiu o ensaio com limite WAF de 60/60: preparação de 60 buscas inválidas, leitura completa das respostas, espera de cinco segundos e amostra de cinco chamadas. Os horários abaixo são UTC; os painéis fornecidos exibiam UTC−3. Não misturar os comandos da preparação com a amostra bloqueada.
+
+| Caminho | Intervalo da amostra em 2026-10-10 | Resultado e correlação |
+|---|---|---|
+| Web → rewrite | Fim às 15:43:00.917 UTC | Cinco 429. Os registros de busca fornecidos pertenciam à preparação, por volta de 15:42:53–55; nenhum registro de busca foi apresentado no intervalo da amostra. Controles posteriores `/health` 200 entre 15:47 e 15:48 confirmaram continuidade dos logs. Complementa os controles Redis anteriores do web. |
+| API direta | 15:55:54.171–15:55:54.222 UTC | Cinco 429 em texto simples. Monitor registrou somente a preparação, de 15:55:47.683 a 15:55:49.070, sem comandos observados na amostra. Logs de busca também pertenciam à preparação; `/health` posterior retornou 200, com registro às 15:55:54.23. Controles anteriores de busca inválida retornaram 400 e produziram comandos no Monitor. |
+
+O cabeçalho de um export indicava um intervalo antigo, embora suas linhas Live tivessem timestamps posteriores. A correlação usou os timestamps das linhas e do Console. `request_completed` acompanha o fim da execução; o horário da requisição na listagem pode ser anterior. Uma linha com duas mensagens podia agrupar `rate_limit_rejected` e `request_completed` da mesma requisição.
+
+**Conclusão observacional:** as amostras sustentam bloqueio WAF antes da aplicação nos dois caminhos, sem execução da Function registrada para as chamadas amostradas e sem comandos Redis observados nas capturas com controles. Isso não é auditoria independente de cobrança ou garantia para todos os tráfegos, regiões e deployments. Reconfirmar no release; projeção mensal e acompanhamento do plano permanecem pendentes.
+
+## Política Preview e variáveis efetivas
+
+O agente leu os adapters de [busca](../../apps/api/src/locations/open-meteo-geocoding.ts), [previsão](../../apps/api/src/forecast/open-meteo-forecast.ts) e a [política de créditos](../../apps/api/src/config/provider-policy.ts). A busca faz uma chamada HTTP por miss. A previsão solicita uma localização, sete dias, cinco variáveis atuais, uma horária e sete diárias, sem seleção explícita de múltiplos modelos.
+
+A [página oficial de preços](https://open-meteo.com/en/pricing) usa contagem fracionária. Aplicando a [fórmula do calculador oficial](https://github.com/open-meteo/open-meteo-website/blob/main/src/routes/en/pricing/%2Bpage.svelte) a 13 variáveis, sete dias, um modelo e uma localização, o peso estimado é 1,3 chamada. É uma estimativa baseada nesses parâmetros, não uma leitura de faturamento do provedor. O proprietário aprovou uma reserva conservadora acima desse peso e quatro tetos provisórios exclusivos do Preview; as fontes foram consultadas em 2026-10-10. Os [termos](https://open-meteo.com/en/terms) e a política de Production continuam sujeitos à revisão de release.
+
+| Campos | Cadastro e conferência |
+|---|---|
+| `OPEN_METEO_GEOCODING_CREDITS`, `OPEN_METEO_FORECAST_CREDITS` | Overrides exclusivos de Preview, branch `chore/vercel-p1`, cadastrados como Sensitive pelo proprietário; custos conferidos nos argumentos das reservas de busca/previsão |
+| `OPEN_METEO_MINUTE_CREDITS`, `OPEN_METEO_HOUR_CREDITS`, `OPEN_METEO_DAY_CREDITS`, `OPEN_METEO_MONTH_CREDITS` | Mesmo escopo; quatro tetos conferidos nos argumentos de ambas as reservas |
+
+A CLI confirmou presença, nomes, tipo Sensitive e escopo da branch, mas não revelou valores. Os seis números efetivos foram depois comparados com a proposta aprovada usando os argumentos dos scripts no Monitor; todos corresponderam. Os valores de ambiente e argumentos brutos permanecem fora do Git, conforme a regra de documentação pública do projeto. Essa conferência não altera cooldown/probe nem prova comportamento do circuito aberto.
+
+O proprietário excluiu os seis campos gerais anteriores, que abrangiam Production/Preview. A consulta somente leitura do escopo Production confirmou ausência dos seis nomes. Não restaurar automaticamente os tetos de Preview em Production: definir e aprovar sua própria política antes do release. Redis/HMAC continuavam vinculados a Preview nas capturas. O proprietário redeployou a API, excluiu o deployment antigo e confirmou o fluxo web funcional. O deployment excluído não pode ser presumido como destino disponível de rollback; selecionar e verificar destinos dos dois projetos em P11.
+
+## Perfis de cache e renovação da previsão
+
+O proprietário forneceu os trechos do Monitor e status HTTP para consultas reais limitadas pelo web/rewrite. Cada consulta abaixo retornou 200. Os registros contam tanto `EVAL` como os comandos internos Lua visíveis; ainda não são unidades faturáveis confirmadas.
+
+| Amostra em UTC−3 | Observação | Registros visíveis |
+|---|---|---:|
+| Busca nova às 13:52:19 e outra às 13:53:04 | Miss, lock, circuito, reserva, gravação com TTL de 24 h e liberação do lock, em cada busca | 29 por busca |
+| Repetição da última busca às 13:59:23 | Limitador e leitura `EVAL`/`PTTL`/`GET` da mesma chave; sem nova reserva, lock ou gravação | 9 |
+| Busca às 14:02:05 | Hit da mesma busca, separado da previsão seguinte | 9 |
+| Previsão às 14:02:09–10 | Miss, lock, circuito, reserva e gravação com TTL de 10 min; liberação do lock | 29 |
+| Mesma previsão às 14:05:27 | Recarga da página, antes do prazo: limitador e leitura da mesma chave; sem reserva, lock ou gravação | 9 |
+| Mesma previsão às 14:15:32–33 | Após o prazo: cache indisponível, novo lock, reserva, gravação com TTL de 10 min e liberação | 29 |
+
+O hit tem seis registros do limitador e três da leitura. O miss observado tem oito `EVAL`, dois `TIME`, cinco `GET`, quatro `SET`, dois `PTTL`, um `ZREVRANGE`, quatro `ZREVRANGEBYSCORE`, um `ZRANGEBYSCORE`, um `ZADD` e um `DEL`. Nenhum dos misses fornecidos mostrou contenção, limpeza de eventos antigos da cota ou recuperação de circuito aberto; esses caminhos podem ter consumo diferente.
+
+Na previsão, a gravação inicial ocorreu às 14:02:10; o hit às 14:05:27 não regravou nem prorrogou o TTL. Às 14:15:32, a leitura do script terminou após `PTTL`, sem `GET` do valor, e iniciou um novo carregamento. A nova gravação trouxe `retrievedAtUtc` posterior ao inicial. Isso confirma o ciclo miss → hit antes do prazo → miss/renovação depois do prazo, sem medir o instante exato da expiração. A igualdade de `retrievedAtUtc` no hit intermediário não foi informada. O hit veio de **recarregar a página**, não de clicar no logo; a requisição de previsão e sua leitura Redis confirmam a validade da amostra.
+
+Os dados gravados incluíam condições atuais, sete dias e atribuição. O corpo normalizado no cache não substitui a medição do corpo bruto da Open-Meteo para o gate de 64 KiB. A expiração de 24 h da busca, contenção real, reserva atômica sob concorrência e falha fechada continuam pendentes.
 
 ## Comportamento da interface e diagnóstico
 
@@ -92,6 +139,6 @@ Executados na revisão local `c7bdb23`, antes da atualização documental:
 
 ## Alcance do handoff
 
-A configuração WAF final está publicada em 60/60, segundo confirmação do proprietário. A [lista ativa](../../tasks/vercel-todo.md) separa os itens concluídos de plano/vínculo, bloqueio e Monitor das provas ainda necessárias: revisão hospedada final, invocações, Redis no acesso direto, consumo representativo/adversarial, upgrade automático, cota/TTL/falha fechada, identidade/saída, Production, privacidade, direitos e rollback. Nenhuma dessas pendências foi encerrada pelos resultados desta rodada.
+A configuração WAF final está publicada em 60/60, segundo confirmação do proprietário. A continuação acrescentou a correlação dos bloqueios nos dois caminhos, a amostra direta do Monitor, a reconferência dos Previews, os seis campos efetivos de política e os perfis de hit/miss com renovação da previsão. P1 permanece parcial; a [lista ativa](../../tasks/vercel-todo.md#retomada-na-próxima-sessão) define o ponto de retomada: conferir a unidade de contabilização da Upstash antes de projetar consumo normal/adversarial e viabilidade mensal. Não converter automaticamente 9/29 registros do Monitor em comandos faturados.
 
-Na atualização documental, `npm run check` passou novamente com 505 testes API e 90 web. Os destinos e âncoras dos 30 links locais dos três documentos envolvidos foram verificados, e a busca por padrões selecionados de dados operacionais no conteúdo novo não encontrou correspondências. `git diff --check` passou. Essa busca específica não substitui Gitleaks.
+Na primeira atualização documental (`a09efe8`), `npm run check` passou novamente com 505 testes API e 90 web, e os 30 links locais foram verificados. Na continuação documental, `npm run check` voltou a passar com os mesmos 595 testes; os destinos e âncoras dos 44 links locais dos três documentos foram conferidos, a revisão do diff e `git diff --check` passaram, e a busca por padrões selecionados de dados operacionais no conteúdo novo não encontrou correspondências. Essa busca específica não substitui Gitleaks. Nenhum novo resultado de cobertura, navegador, audit, Gitleaks ou CI hospedada foi produzido nesta atualização exclusivamente documental. Alterações deixadas no checkout para revisão e commit separado.
