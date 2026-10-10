@@ -46,6 +46,8 @@ O executor primeiro calibra o ingresso e verifica a marca `x-nosso-clima-preview
 
 O resumo não contém URLs, IPs, tokens, queries, coordenadas ou request IDs. `ok` significa que as amostras do perfil passaram, não que P1 está concluída. `multipleInstances`, `atomicQuota` e `identityTrust` ficam `not_proven`: quatro chamadas concorrentes não comprovam distribuição entre Functions, atomicidade sob contenção real nem impossibilidade de falsificar o header de identidade.
 
+Nos dois projetos protegidos, o web e a API exigem autorizações distintas. O executor usa o token do web uma vez no HTML, com `x-vercel-set-bypass-cookie: true`, lê o cookie do redirect sem segui-lo e o mantém somente em memória, restrito à origem web. Nas rotas reescritas, envia esse cookie para autorizar o ingresso web e o token da API em `x-vercel-protection-bypass` para autorizar o destino. O token do web não pode substituir o da API no rewrite. Cookie e tokens não entram no resumo, no eco ou nos requests diretos da API. Falha ao obter o cookie interrompe antes das consultas válidas; não desabilitar Deployment Protection para fazer o teste passar.
+
 Interrupções informam somente código fixo, etapa, caminho, status HTTP e nome de variável quando aplicável. `protected_access` indica redirect/401/403 no caminho de Preview e exige conferir o acesso autorizado; `fixture_marker_missing` exige conferir a revisão/configuração do eco. Erros desconhecidos não exibem mensagem bruta. Reiniciar somente o processo de eco após alterações em `preview-echo.mjs`, mantendo o túnel aberto para preservar a origem temporária.
 
 ## Falha fechada e demais controles

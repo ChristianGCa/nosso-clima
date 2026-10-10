@@ -6,6 +6,7 @@ const failureCodes = new Map([
   ['Invalid probe configuration', 'configuration_invalid'],
   ['Network request failed', 'network_unavailable'],
   ['Protected Preview access denied', 'protected_access'],
+  ['Web automation cookie unavailable', 'web_cookie_unavailable'],
   ['Request rate limited', 'rate_limited'],
   ['Preview fixture marker missing', 'fixture_marker_missing'],
   ['Expected JSON response', 'json_expected'],
@@ -100,6 +101,7 @@ async function readJson(response) {
 export async function runPreviewProbe(environment, fetchImpl = fetch) {
   let api, web, echo;
   let ingress;
+  let webCookie;
   const scenario = environment.PROBE_SCENARIO ?? 'normal';
   const token = environment.UPSTREAM_TEST_TOKEN;
   const canary = environment.PROBE_CANARY;
@@ -183,6 +185,7 @@ export async function runPreviewProbe(environment, fetchImpl = fetch) {
       forwarded: 'for=198.51.100.77',
       'cf-connecting-ip': '198.51.100.77',
       ...(bypass ? { 'x-vercel-protection-bypass': bypass } : {}),
+      ...(target === 'web_rewrite' && webCookie ? { cookie: webCookie } : {}),
     };
     const response = await fetchResponse(stage, target, `${base}${urlPath}`, {
       headers,
@@ -281,6 +284,35 @@ export async function runPreviewProbe(environment, fetchImpl = fetch) {
   // Both deployments must identify the isolated fixture before any valid query.
   await report();
   for (const target of paths) {
+    if (target.label === 'web_rewrite' && environment.PROBE_WEB_BYPASS) {
+      const response = await fetchResponse('preflight', 'web_rewrite', `${web}/`, {
+        headers: {
+          'x-vercel-protection-bypass': environment.PROBE_WEB_BYPASS,
+          'x-vercel-set-bypass-cookie': 'true',
+        },
+        redirect: 'manual',
+        signal: AbortSignal.timeout(15000),
+      });
+      const cookie = response.headers
+        .getSetCookie()
+        .map((value) => value.split(';', 1)[0])
+        .join('; ');
+      await response.body?.cancel();
+      if (
+        (response.status !== 200 && !(response.status >= 300 && response.status < 400)) ||
+        !cookie ||
+        cookie.length > 8192
+      ) {
+        throw new ProbeFailure('Web automation cookie unavailable', {
+          stage: 'preflight',
+          target: 'web_rewrite',
+          status: response.status,
+        });
+      }
+      webCookie = cookie;
+      // The web cookie authenticates ingress; this header must authenticate the API destination.
+      target.bypass = environment.PROBE_API_BYPASS ?? environment.PROBE_WEB_BYPASS;
+    }
     const invalid = await request(
       target.base,
       '/api/v1/locations?query=a',

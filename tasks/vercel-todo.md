@@ -37,6 +37,8 @@ As [evidências históricas](../docs/history/vercel-local-evidence-2026-10-06.md
 
 ## 2. Viabilidade antes de acesso público — P1b–P1d
 
+Estado mais recente do executor: o proprietário corrigiu as variáveis do eco e cadastrou os bypass de automação. O preflight direto passou; o 401 no rewrite foi diagnosticado com HTML web 200 e resolvido no executor usando cookie de automação no web e token API no header encaminhado. Os dois preflights inválidos passaram pelo handler marcado como eco. Nenhuma consulta meteorológica válida foi enviada pelo agente; a rodada completa continua a cargo do proprietário. Detalhes em `docs/deploy/preview-probe-preparation-2026-10-10.md`.
+
 Continuação do eco: receptor/túnel iniciado pelo proprietário, relatório autenticado 200 e contagens zeradas. O agente identificou 403 no controle de calibração `cf-connecting-ip`, corrigiu a coleta por header e depois obteve 401 no preflight da API direta; ambos os bypass de automação estão ausentes no arquivo local. O proprietário deve configurar os segredos por projeto, manter a proteção e repetir o executor. Detalhes anonimizados em `docs/deploy/preview-probe-preparation-2026-10-10.md`. Não houve chamada meteorológica válida nem conclusão do gate de privacidade nesta coleta.
 
 - [x] Preparar localmente o destino de eco restrito a Preview, receptor protegido e executor agrupado de chamadas frias/hits/concorrência/falha fechada. A entrada temporária proposta é Quick Tunnel; calibração distingue headers preservados dos sobrescritos, sem concluir privacidade completa por ausência mascarada. Roteiro em `docs/deploy/preview-probe-guide.md`. Não houve novo deployment nem ensaio hospedado nesta preparação; P1 segue parcial.

@@ -19,6 +19,14 @@ function fixture({ marker = true, deny = false, leak = false, overwrite = false 
   async function fetchImpl(input, init) {
     const url = new URL(input);
     requests.push({ url, init });
+    if (
+      url.pathname === '/' &&
+      new Headers(init.headers).get('x-vercel-set-bypass-cookie') === 'true'
+    )
+      return new Response(null, {
+        status: 307,
+        headers: { 'set-cookie': '_vercel_jwt=fixture-cookie; Path=/; Secure; HttpOnly' },
+      });
     if (url.pathname === '/__probe/calibrate')
       return Response.json({
         kind: 'nosso-clima-ingress-calibration-v1',
@@ -106,7 +114,7 @@ test('probe blocks a receiver that has already detected a privacy leak', async (
   assert.deepEqual(fake.calls, { geocoding: 0, forecast: 0 });
 });
 
-test('deployment bypass stays scoped to its project and never reaches echo', async () => {
+test('web cookie authorizes the web and the forwarded API token authorizes its rewrite without reaching echo', async () => {
   const fake = fixture();
   await runPreviewProbe(
     { ...settings, PROBE_API_BYPASS: 'api-fixture', PROBE_WEB_BYPASS: 'web-fixture' },
@@ -114,15 +122,42 @@ test('deployment bypass stays scoped to its project and never reaches echo', asy
   );
   for (const request of fake.requests) {
     const headers = new Headers(request.init.headers);
-    if (request.url.hostname === '127.0.0.1')
+    if (request.url.hostname === '127.0.0.1') {
       assert.equal(headers.get('x-vercel-protection-bypass'), null);
-    else
+      assert.equal(headers.get('cookie'), null);
+    } else if (request.url.pathname === '/') {
+      assert.equal(headers.get('x-vercel-protection-bypass'), 'web-fixture');
+      assert.equal(request.init.redirect, 'manual');
+      continue;
+    } else {
+      assert.equal(headers.get('x-vercel-protection-bypass'), 'api-fixture');
       assert.equal(
-        headers.get('x-vercel-protection-bypass'),
-        request.url.hostname.startsWith('api.') ? 'api-fixture' : 'web-fixture',
+        headers.get('cookie'),
+        request.url.hostname.startsWith('web.') ? '_vercel_jwt=fixture-cookie' : null,
       );
+    }
     assert.equal(request.init.redirect, 'error');
   }
+});
+
+test('failed web cookie bootstrap stops before valid fixture queries', async () => {
+  const fake = fixture();
+  const fetchImpl = async (input, init) =>
+    new URL(input).pathname === '/'
+      ? new Response('denied', { status: 401 })
+      : fake.fetchImpl(input, init);
+  let failure;
+  try {
+    await runPreviewProbe(
+      { ...settings, PROBE_API_BYPASS: 'api-fixture', PROBE_WEB_BYPASS: 'web-fixture' },
+      fetchImpl,
+    );
+  } catch (error) {
+    failure = error;
+  }
+  assert.match(formatProbeFailure(failure), /web_cookie_unavailable/);
+  assert.match(formatProbeFailure(failure), /HTTP=401/);
+  assert.deepEqual(fake.calls, { geocoding: 0, forecast: 0 });
 });
 
 test('probe refuses unsafe origins and missing explicit confirmation', async () => {
