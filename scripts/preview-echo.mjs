@@ -75,7 +75,9 @@ export function createEchoHandler({ token, visitorIps, canary }) {
         headers: Object.fromEntries(
           calibrationHeaders.map((name) => [
             name,
-            String(req.headers[name] ?? '').includes('198.51.100.77'),
+            String(req.headers[name] ?? '').includes(
+              name === 'cf-connecting-ipv6' ? '2001:db8::77' : '198.51.100.77',
+            ),
           ]),
         ),
       });

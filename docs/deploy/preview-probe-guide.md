@@ -4,7 +4,7 @@ Preparação de 2026-10-10. Este guia executa parte das pendências de `tasks/ve
 
 ## Preparar uma vez
 
-1. Usar uma branch/override de Preview isolado e conferir proteção dos dois projetos. Separar o `CACHE_HMAC_KEY` desse ensaio do Preview funcional, preservando o valor original para restauração. Fixtures também passam pelos caches normais; não misturá-las com dados reais. A cota e os circuitos continuam compartilhados conforme o namespace existente; não apagar suas chaves para obter aprovação.
+1. Usar uma branch/override de Preview isolado e conferir proteção dos dois projetos. Preservar o cadastro original de `CACHE_HMAC_KEY` sem editar seu valor: variáveis Sensitive não são legíveis após criação. Se a chave original é geral de Preview, criar outro cadastro com o mesmo nome, um novo segredo e escopo somente na branch do ensaio. Ao encerrar, remover apenas esse override para voltar à chave geral; não é necessário conhecer o segredo original. Se já existir uma chave específica na mesma branch, não sobrescrevê-la: escolher outra branch isolada e conferir o pareamento e todas as variáveis necessárias, inclusive a política provisória aprovada. Fixtures também passam pelos caches normais; não misturá-las com dados reais. A cota e os circuitos continuam compartilhados conforme o namespace existente; não apagar suas chaves para obter aprovação.
 2. Gerar um token temporário com `openssl rand -hex 32` e um canário sintético diferente. Salvar valores em um arquivo local `.env.preview-probe`, ignorado pelo Git e com acesso restrito. Não colar valores em mensagens, evidências, comandos versionados ou capturas. `UPSTREAM_TEST_TOKEN` deve ser sensível na API, exclusivo desse ensaio e nunca cadastrado no web.
 3. No arquivo privado, configurar `UPSTREAM_TEST_TOKEN`, `PROBE_CANARY`, `PROBE_VISITOR_IPS` (IPv4/IPv6 públicos da máquina que executará o probe, conhecidos pelo proprietário; somente em memória no receptor), `PROBE_ECHO_PORT` (opcional, padrão 8787), `PROBE_CONFIRM_PREVIEW=isolated-fixtures` e `PROBE_SCENARIO=normal`. O IP de documentação usado para falsificação é observado automaticamente. Não descobrir IP de visitantes reais nem usar consultas de produção.
 4. Iniciar o receptor na raiz:
@@ -27,6 +27,8 @@ Não habilitar debug, export de requests ou logs com headers/query. A saída de 
 
 O túnel termina TLS na Cloudflare e pode sobrescrever/remover headers de IP. A calibração verifica sete headers com um IP sintético e um canário. Se algum header não for preservado, o relatório usa `partial_ingress_overwrites_headers`: a rodada ainda pode medir cache, chamadas e falha fechada, mas não fecha a prova completa de privacidade. Para essa conclusão, usar um receptor HTTPS controlado com ingresso calibrado que preserve os campos avaliados. Não atribuir ausência de um valor removido pelo proxy à segurança da API.
 
+A calibração primeiro confirma acesso autenticado e canário sem headers de IP, depois testa cada header individualmente. O `Forwarded` usa sintaxe `for=`, e o controle de `cf-connecting-ipv6` usa IPv6 sintético. Um 403 exclusivamente no controle de um header fica registrado em `calibration.statuses`, com indicador falso e `partial_ingress_blocks_controls`; não invalida as outras amostras nem conclui privacidade. Falha na chamada inicial sem headers de IP continua interrompendo o ensaio. Em 2026-10-10, a coleta do agente confirmou 200 no relatório e nos demais controles individuais, mas 403 no controle `cf-connecting-ip`, sem consultas meteorológicas ou alteração de painel.
+
 Fontes oficiais consultadas em 2026-10-10: Cloudflare Docs, Quick Tunnels; Cloudflare Fundamentals, Cloudflare HTTP headers; Node.js v24.21.0, HTTP. São referências por título, sem novos hyperlinks.
 
 ## Parear Preview e executar
@@ -44,6 +46,8 @@ O executor primeiro calibra o ingresso e verifica a marca `x-nosso-clima-preview
 
 O resumo não contém URLs, IPs, tokens, queries, coordenadas ou request IDs. `ok` significa que as amostras do perfil passaram, não que P1 está concluída. `multipleInstances`, `atomicQuota` e `identityTrust` ficam `not_proven`: quatro chamadas concorrentes não comprovam distribuição entre Functions, atomicidade sob contenção real nem impossibilidade de falsificar o header de identidade.
 
+Interrupções informam somente código fixo, etapa, caminho, status HTTP e nome de variável quando aplicável. `protected_access` indica redirect/401/403 no caminho de Preview e exige conferir o acesso autorizado; `fixture_marker_missing` exige conferir a revisão/configuração do eco. Erros desconhecidos não exibem mensagem bruta. Reiniciar somente o processo de eco após alterações em `preview-echo.mjs`, mantendo o túnel aberto para preservar a origem temporária.
+
 ## Falha fechada e demais controles
 
 Após a rodada normal, esperar a próxima janela de visitante. O perfil `PROBE_SCENARIO=fail_closed` exige 503 nas consultas válidas e zero chamadas novas no eco. Usá-lo durante uma falha Redis ou negação de cota planejada pelo proprietário, mantendo o receptor em modo normal. Registrar qual falha foi induzida e o alcance: falha no limitador não comprova falha após a reserva.
@@ -56,6 +60,6 @@ O modo oversized testa a rejeição do limite de leitura, e timeout testa o esta
 
 ## Encerrar e registrar
 
-Restaurar o Preview funcional: remover `UPSTREAM_TEST_BASE` e `UPSTREAM_TEST_TOKEN`, recuperar o segredo de cache anterior e qualquer política temporária, redeployar a API e conferir o pareamento do web. Confirmar ausência da marca de eco. Não promover o deployment de fixtures nem copiar as variáveis de teste para Production. Encerrar eco/túnel e invalidar token e bypass temporários quando aplicável.
+Restaurar o Preview funcional: remover `UPSTREAM_TEST_BASE` e `UPSTREAM_TEST_TOKEN` do escopo de ensaio e somente o override temporário de `CACHE_HMAC_KEY`, preservando a variável original. Restaurar qualquer política temporária, redeployar a API e conferir o pareamento do web. Confirmar ausência da marca de eco. Não promover o deployment de fixtures nem copiar as variáveis de teste para Production. Encerrar eco/túnel e invalidar token e bypass temporários quando aplicável.
 
 Registrar somente revisão, data, perfil, status, contagens e indicadores anonimizados na lista ativa/evidência. Não salvar logs do túnel/Monitor, arquivos privados ou respostas brutas no repositório. Concluir cada gate apenas com as provas que realmente o cobrem. Production, privacidade final, direitos, custo Free, gates finais e rollback permanecem na sequência vigente.

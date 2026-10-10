@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { runPreviewProbe } from './preview-probe.mjs';
+import { formatProbeFailure, runPreviewProbe } from './preview-probe.mjs';
 
 const settings = {
   PROBE_CONFIRM_PREVIEW: 'isolated-fixtures',
@@ -151,4 +151,81 @@ test('ingress that overwrites IP headers cannot produce a complete privacy verdi
   assert.equal(summary.calibration.headers['cf-connecting-ip'], false);
   assert.equal(summary.atomicQuota, 'not_proven');
   assert.equal(summary.identityTrust, 'not_proven');
+});
+
+test('ingress rejection of a single calibration header remains explicit and does not suppress other controls', async () => {
+  const fake = fixture();
+  const fetchImpl = async (input, init) => {
+    if (
+      new URL(input).pathname === '/__probe/calibrate' &&
+      new Headers(init.headers).has('cf-connecting-ip')
+    )
+      return new Response('proxy rejection', { status: 403 });
+    return fake.fetchImpl(input, init);
+  };
+  const summary = await runPreviewProbe(
+    { ...settings, PROBE_INGRESS_ORIGIN: 'https://echo.example.test' },
+    fetchImpl,
+  );
+  assert.equal(summary.ok, true);
+  assert.equal(summary.privacyGate, 'partial_ingress_blocks_controls');
+  assert.equal(summary.calibration.statuses['cf-connecting-ip'], 403);
+  assert.equal(summary.calibration.headers['cf-connecting-ip'], false);
+  assert.equal(summary.calibration.headers['x-forwarded-for'], true);
+  assert.equal(summary.calibration.statuses['x-forwarded-for'], 200);
+});
+
+test('a blocked baseline calibration cannot be accepted as a blocked individual header', async () => {
+  const fake = fixture();
+  const fetchImpl = async (input, init) =>
+    new URL(input).pathname === '/__probe/calibrate'
+      ? new Response('denied', { status: 403 })
+      : fake.fetchImpl(input, init);
+  await assert.rejects(
+    runPreviewProbe({ ...settings, PROBE_INGRESS_ORIGIN: 'https://echo.example.test' }, fetchImpl),
+    /Ingress calibration unavailable/,
+  );
+  assert.deepEqual(fake.calls, { geocoding: 0, forecast: 0 });
+});
+
+test('diagnostic identifies a missing configuration field without revealing values', async () => {
+  let failure;
+  try {
+    await runPreviewProbe({ ...settings, PROBE_API_ORIGIN: undefined });
+  } catch (error) {
+    failure = error;
+  }
+  assert.match(formatProbeFailure(failure), /PROBE_API_ORIGIN/);
+  assert.doesNotMatch(formatProbeFailure(failure), /example\.test|fixture-only|Bearer/);
+});
+
+test('diagnostic distinguishes protected access from a missing fixture marker', async () => {
+  const fake = fixture();
+  const fetchImpl = async (input, init) =>
+    String(input).includes('/api/v1/')
+      ? new Response('private upstream body', {
+          status: 302,
+          headers: { location: 'https://private.example.test/auth' },
+        })
+      : fake.fetchImpl(input, init);
+  let failure;
+  try {
+    await runPreviewProbe(settings, fetchImpl);
+  } catch (error) {
+    failure = error;
+  }
+  const diagnostic = formatProbeFailure(failure);
+  assert.match(diagnostic, /protected_access/);
+  assert.match(diagnostic, /api_direct/);
+  assert.match(diagnostic, /302/);
+  assert.doesNotMatch(diagnostic, /private|example\.test|fixture-only|Bearer/);
+  assert.deepEqual(fake.calls, { geocoding: 0, forecast: 0 });
+});
+
+test('unknown errors cannot inject operational values into diagnostics', () => {
+  const diagnostic = formatProbeFailure(
+    new Error('https://private.example.test?token=private-value'),
+  );
+  assert.match(diagnostic, /unexpected_failure/);
+  assert.doesNotMatch(diagnostic, /private|token=|https:/);
 });

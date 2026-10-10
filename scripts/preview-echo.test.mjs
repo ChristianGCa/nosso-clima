@@ -57,6 +57,14 @@ test('protected echo observes real HTTP without exposing visitor values', async 
       assert.equal(body.canaryPreserved, true);
       assert.equal(body.headers['x-forwarded-for'], true);
       assert.equal(body.headers['cf-connecting-ip'], false);
+      const ipv6 = await fetch(`${base}/__probe/calibrate`, {
+        headers: {
+          ...headers,
+          'x-test-canary': 'fixture-canary',
+          'cf-connecting-ipv6': '2001:db8::77',
+        },
+      });
+      assert.equal((await ipv6.json()).headers['cf-connecting-ipv6'], true);
       assert.deepEqual(await report(), before);
       assert.doesNotMatch(JSON.stringify(body), /198\.51\.100\.77|fixture-canary|Bearer/);
     },
