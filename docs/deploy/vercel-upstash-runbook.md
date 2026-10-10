@@ -59,7 +59,7 @@ Preview tem padrões provisórios de 1.000 para os seis custos/tetos e 60.000/10
 
 Consultar detalhes completos da invocação, não somente primeira linha da listagem. Redeploy e limpeza de cache climático não zeram reservas. Não limpar Redis nem ampliar política para obter um teste verde. Usar as categorias existentes; proposta de novos logs de janela/custo/saldo foi cancelada pelo proprietário.
 
-Toolbar/CSP, SSO e manifesto não demonstram falha de quota. Redirect/401/403 de proteção não é resposta da aplicação. O cliente web atualmente trata 429 sem JSON como erro genérico; a pendência pertence a `weather-ui`.
+Toolbar/CSP, SSO e manifesto não demonstram falha de quota. Redirect/401/403 de proteção não é resposta da aplicação. O cliente web classifica 429 pelo status HTTP mesmo quando o WAF retorna HTML ou JSON inválido.
 
 ## Cache, TTL, reserva e consumo
 
@@ -81,14 +81,16 @@ API: `Cache-Control: private, no-store`; Function define `Vercel-CDN-Cache-Contr
 
 O transporte reconstrói GET/URL/opções pela allowlist dos dois hosts Open-Meteo, proíbe redirects e não copia headers do visitante. A identidade usa somente um IP válido de `x-vercel-forwarded-for`, HMAC temporário, normalização IPv6 /64 e TTL até o fim do minuto; ausência/ambiguidade nega com 503. Pré-limite em memória e Redis impõem 60/30/15; confiar na sobrescrita do header exige prova hospedada.
 
-Usar `docs/deploy/preview-probe-guide.md` apenas para a lacuna que exige nova coleta. A rodada normal já passou; Quick Tunnel bloqueou/modificou controles, deixando privacidade parcial. Definir ingresso HTTPS calibrado que preserve os campos antes de alegar ausência de vazamento. Provar saída nas duas rotas, direto/rewrite, Preview e caminho final protegido; não publicar IP/canário/digest.
+A consulta de 2026-10-10 pela CLI autenticada confirmou `serverlessFunctionRegion=iad1` no projeto API, plano Hobby e um deployment Production Ready. `apps/api/vercel.json` não define override de região. A região corresponde a Washington, D.C., EUA; o `sandbox.region` do resumo CLI é outro campo e não foi usado para essa conclusão. A documentação de Runtime Logs da Vercel fixa uma hora de retenção no Hobby; esse prazo não cobre todos os registros da plataforma. Para encontrar a região no painel: **Settings → Functions → Function Regions**. O proprietário informou base Upstash na Virgínia do Norte, **Backups → Daily Backup** desativado e nenhuma retenção de logs ajustada por ele. Isso não exclui eventuais cópias internas do fornecedor; o aviso descreve os TTLs do aplicativo sem inventar prazo geral. Reconfirmar apenas se configuração, plano ou topologia mudarem; na revisão final, conferir que a interface mantém finalidade, transferência internacional, contato e o caminho de saída sem IP de visitante. Registrar somente região geográfica, opção/prazo constatado e data, sem valores operacionais.
+
+Usar `docs/deploy/preview-probe-guide.md` apenas para a lacuna que exige nova coleta. A rodada normal já passou; Quick Tunnel bloqueou/modificou controles, deixando a amostra hospedada de privacidade parcial. A decisão do proprietário de 2026-10-10 aceita a saída sem IP pela revisão do transporte, apoiada pelas amostras existentes. Na revisão final, conferir que busca e previsão ainda usam esse transporte e que não há outro caminho para Open-Meteo. Não repetir o eco por padrão; mudança relevante no transporte/topologia exige reavaliação. A confiança no header de identidade permanece uma verificação separada nos caminhos direto e rewrite. Não publicar IP/canário/digest.
 
 O teste de token inválido e recuperação já está no histórico. Não alterar Redis novamente por padrão. Falhas após o limitador, contagem independente de saída, reserva sob contenção e 429/circuit breaker são provas distintas; planejar fixtures/escopo antes de pedir uma rodada. Não provocar 429 da Open-Meteo real.
 
 ## Release, operação e rollback
 
-1. Concluir privacidade (região/retenção/transferências/contato), direitos dos fundos/logo, termos/atribuição, custo Free e política Production aprovados. O aviso básico da interface e o inventário de origem já existem.
-2. Conferir configuração Production, sem eco/segredos no web; executar gates finais locais/CI da revisão escolhida e smoke protegido, incluindo prova de privacidade final. Gate ausente/falho continua aberto.
+1. Reaproveitar a revisão de privacidade, fundos/logo e termos/créditos no alcance registrado. Confirmar custo Free e política Production antes da abertura; reconferir região e retenção apenas se a configuração ou o plano mudar.
+2. Conferir configuração Production, sem eco/segredos no web; executar gates finais locais/CI da revisão escolhida e smoke protegido. Confirmar que a revisão final mantém o transporte de saída aceito e registrar a prova separada de confiança da identidade. Gate ausente/falho continua aberto.
 3. Ensaiar reversão de API e web para deployments existentes/verificados, com ordem e smoke dos dois caminhos. IDs/URLs/comandos com valores reais ficam no painel/registro privado; no Git, usar placeholders/resultados resumidos. Preservar formatos Redis; deployment API excluído não é destino de rollback.
 4. Obter decisão explícita do proprietário para abertura pública. Após abertura, acompanhar categorias 503/negação, `upstream_rate_limited` versus limites próprios, cache hit/miss e consumo dos planos Free sem dados pessoais.
 

@@ -21,19 +21,26 @@ export function SiteInformation() {
             navegador. Não pedimos acesso à localização do dispositivo nem criamos uma conta.
           </p>
           <p>
-            Na hospedagem Vercel, o servidor recebe o IP da conexão. Para limitar consultas em
-            excesso, a API cria um identificador temporário derivado desse IP, renovado a cada
-            minuto. O IP original não é guardado nesse contador nem nos logs da aplicação.
+            A hospedagem Vercel recebe o IP da conexão para entregar e proteger o site. Nossa API
+            está configurada para executar na região de Washington, D.C., nos Estados Unidos. A
+            Vercel pode manter registros de acesso segundo sua política de retenção. Para limitar
+            consultas em excesso, nossa API cria um identificador temporário derivado desse IP,
+            renovado a cada minuto. Não guardamos o IP original nesse contador nem nos logs da
+            aplicação.
           </p>
           <p>
-            A Upstash guarda resultados de busca por até 24 horas e previsões por até 10 minutos,
-            além dos contadores temporários de consultas. Esses resultados podem incluir nomes,
-            coordenadas e fuso da cidade. As consultas à Open-Meteo são feitas pelo nosso servidor,
-            sem encaminhar os cabeçalhos com o IP do visitante.
+            Nossa base Upstash está na Virgínia do Norte, nos Estados Unidos. Os resultados ativos
+            de busca expiram em até 24 horas e os de previsão em até 10 minutos. Eles podem incluir
+            nomes, coordenadas e fuso da cidade. A base também guarda contadores temporários usados
+            para limitar consultas. Os backups periódicos desta base estão desativados. A eventual
+            retenção de logs e outras cópias dos fornecedores segue as políticas deles. As consultas
+            à Open-Meteo são feitas pelo nosso servidor, sem encaminhar os cabeçalhos com o IP do
+            visitante.
           </p>
           <p>
-            A Open-Meteo informa que seu serviço gratuito pode manter logs com coordenadas por até
-            90 dias.{' '}
+            A Open-Meteo recebe o endereço de conexão do nosso servidor e informa que seu serviço
+            gratuito pode manter registros com coordenadas por até 90 dias. A Vercel, a Upstash e a
+            Open-Meteo podem processar informações fora do Brasil.{' '}
             <a href="https://open-meteo.com/en/terms">
               Leia os termos e a privacidade da Open-Meteo
             </a>
