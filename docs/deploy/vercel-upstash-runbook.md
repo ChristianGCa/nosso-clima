@@ -146,6 +146,7 @@ A [Vercel documenta projetos por diretório](https://vercel.com/docs/monorepos) 
 | API Production; opcional em Preview | `OPEN_METEO_GEOCODING_CREDITS`, `OPEN_METEO_FORECAST_CREDITS` | Custo inteiro de cada consulta, no mínimo 1.000 créditos e não maior que nenhum teto. Preview usa 1.000 quando ausentes; peso real da previsão depende de P1b |
 | API Production; opcional em Preview | `OPEN_METEO_429_COOLDOWN_MS`, `OPEN_METEO_PROBE_MS` | Inteiros positivos em milissegundos. Preview usa 60.000/10.000 quando ausentes; ajustar após P1d |
 | API Preview isolado | `UPSTREAM_TEST_BASE` (se necessário ao ensaio) | Apenas eco protegido, proibido em Production e removido antes do release |
+| API Preview isolado | `UPSTREAM_TEST_TOKEN` | Token temporário do receptor, de 32 a 256 caracteres alfanuméricos, underscore ou hífen; somente API e receptor, rejeitado fora de Preview e removido antes do release |
 | Web Production | `VITE_API_BASE_URL` | **Ausente**; o cliente usa `/api/v1/*` relativo |
 | Web Preview/Production | `API_ORIGIN` | Origem HTTPS pública **da API do mesmo ambiente**, sem caminho, query, fragmento ou credenciais. Variável de build usada só por `vercel.mjs` para gerar o rewrite; não recebe token e não entra no bundle JS. Configurar separadamente por ambiente e conferir a URL efetiva em cada deploy. |
 | Web Preview/Production | `WEB_ORIGIN` (opcional) | Origem HTTPS exata do deploy web para rejeitar `API_ORIGIN` que apontaria ao próprio web. Se ausente, a configuração usa `VERCEL_URL` da Vercel quando disponível. |

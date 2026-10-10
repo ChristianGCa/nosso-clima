@@ -27,6 +27,12 @@ O proprietário exige que a Open-Meteo não receba o IP do visitante, escolheu a
 
 ## Entrega e roteamento
 
+O kit de ensaio P1 fica em `scripts/preview-echo.mjs`, `scripts/preview-probe.mjs` e `docs/deploy/preview-probe-guide.md`. Ele não acrescenta aplicação à topologia pública: o receptor é um processo temporário do proprietário, protegido por token e exposto somente durante a rodada. O transporte/configuração de teste permanece em `backend-platform`.
+
+O receptor fornece fixtures de geocodificação/previsão, controles de 429, timeout e corpo excessivo, contagem limitada e indicadores de presença/ausência. Não retém nem devolve requests, headers, IP, consulta ou credenciais; somente sentinelas previamente configuradas permanecem em memória. O executor agrupa chamadas frias, repetidas e concorrentes nos dois caminhos, ou um perfil de falha fechada, sempre verificando o modo de eco antes de consultar dados.
+
+A entrada HTTPS temporária proposta é um Quick Tunnel, disponível sem conta/domínio e somente para testes. Isso não retoma a alternativa de hospedagem Cloudflare descartada. O proxy altera alguns headers: a calibração usa sentinelas sintéticas e registra quais são preservadas. Amostras sem vazamento por um ingresso que sobrescreve headers são parciais e não encerram o gate completo de privacidade. Ausência de header confiável, múltiplas instâncias e reserva atômica real continuam provas separadas; o resumo automático identifica explicitamente essas limitações.
+
 - Manter builds independentes de `apps/web` e `apps/api` com `npm ci`, checks e lockfile únicos. O web de Production usa URL relativa `/api/v1/*` e rejeita `VITE_API_BASE_URL` de outra origem. O rewrite preserva query, método, status e o envelope da API; caminhos desconhecidos sob `/api` não caem no HTML da SPA.
 - A API permanece acessível no domínio do seu projeto. Aplicar validação, rate limits, cota, logs seguros e política de origem também ali; CORS não impede pedidos fora de navegador e não substitui quota. Usar somente origem web exata para CORS onde necessário e comprovar como `Origin` chega pelo rewrite em Preview e Production. Não assumir que o domínio API é privado.
 - Enviar cabeçalhos de segurança no web (CSP com `connect-src 'self'`, HSTS, referrer policy, proteção de tipos) após validar links externos legítimos. Somente assets Vite com hash recebem cache longo `immutable`; HTML e arquivos sem hash revalidam. Rotas API usam política de cache explícita testada; erros e dados além do TTL não podem ser armazenados pelo CDN.
