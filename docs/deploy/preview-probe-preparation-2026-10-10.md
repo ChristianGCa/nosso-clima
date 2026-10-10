@@ -44,3 +44,20 @@ Com a calibração corrigida, o preflight da API direta retornou 401. A conferê
 Após a correção do executor, `npm run check` passou com 535 testes API, 90 web e 21 das ferramentas de Preview. A execução hospedada do executor foi limitada aos dois preflights inválidos, que passaram; a rotina de diagnóstico recusou todas as consultas válidas. O proprietário pode executar a rodada completa com o arquivo privado já configurado.
 
 Após o proprietário corrigir a configuração de eco e cadastrar os tokens de automação, o preflight direto passou e o rewrite retornou 401. A coleta independente do agente encontrou HTML web 200 com documento da aplicação e busca inválida reescrita 401: o token web autorizava o ingresso, mas não o destino API. Com o bootstrap oficial de cookie do web, foram observados redirect 307 com cookie, HTML 200 e busca inválida pelo rewrite 400 com marca de eco. Nenhum cookie/valor de token, URL ou identificador foi impresso/versionado; nenhum pedido meteorológico válido foi enviado. O executor passou a aplicar esse fluxo em memória, com isolamento de headers/cookie e interrupção quando o bootstrap falha. Fonte: Vercel Docs, Protection Bypass for Automation. Nenhuma configuração de projeto/proteção foi alterada pelo agente.
+
+## Rodada normal fornecida pelo proprietário
+
+O proprietário executou o executor e forneceu o resumo completo com `ok: true`, `scenario: normal`. O checkout local está em `79fd0c4`; SHA/pareamento dos deployments e eventos Redis não foram reconfirmados nesta rodada, e o resultado não é automaticamente atribuído a esse SHA hospedado. Não houve repetição de chamadas pelo agente.
+
+| Caminho | Serviço | Fria e repetição | Quatro concorrentes da mesma chave | Saídas recebidas em cada perfil |
+|---|---|---|---|---|
+| API direta | Busca | 200 / 200 | Quatro 200 | Uma |
+| API direta | Previsão | 200 / 200 | Quatro 200 | Uma |
+| Web/rewrite | Busca | 200 / 200 | Quatro 200 | Uma |
+| Web/rewrite | Previsão | 200 / 200 | Quatro 200 | Uma |
+
+Os oito perfis passaram, somando 24 respostas válidas e oito chamadas recebidas pelo eco. Em cada perfil, todas as respostas tinham `private, no-store` e CDN MISS, e a contagem confirmou reutilização após a primeira chamada e deduplicação na amostra concorrente. Não inferir cache entre instâncias, TTL completo, consumo mensal ou reserva atômica a partir dessa amostra.
+
+A calibração preservou o canário e os controles `x-forwarded-for`, `x-vercel-forwarded-for`, `forwarded` e `true-client-ip`; esses controles retornaram 200. `cf-connecting-ip` retornou 403; `cf-connecting-ipv6` e `x-real-ip` retornaram 200 sem preservar o controle. Nenhuma sentinela configurada foi observada nas chamadas ao eco, mas a conclusão permanece `partial_ingress_blocks_controls`, pois o ingresso bloqueia/modifica campos. `multipleInstances`, `atomicQuota` e `identityTrust` continuam `not_proven`, conforme o próprio resultado.
+
+A rodada normal encerra a coleta desses oito perfis e não deve ser repetida sem divergência concreta. O próximo ensaio é falha fechada com 503 e zero chamadas novas no eco, preservando o cadastro original da credencial Redis. Circuit breaker/429 em fixture, reserva sob contenção real e as demais pendências de P1 continuam separados. Não executar `fail_closed` apenas mudando o cenário local enquanto a API está saudável, nem atribuir a ele a primeira chamada que induz 429 externo, pois essa chamada efetivamente chega ao eco.
