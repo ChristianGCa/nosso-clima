@@ -88,6 +88,14 @@ test('probe stops on WAF responses and unsafe configuration without claiming ide
     ok: false,
     apiDirect: 'inconclusive',
     webRewrite: 'not_run',
+    interruption: {
+      stage: 'api_direct',
+      request: 1,
+      reason: 'unexpected_response',
+      status: 429,
+      code: null,
+      noStore: false,
+    },
   });
   assert.equal(blocked.requests.length, 1);
 
@@ -109,6 +117,19 @@ test('probe is inconclusive when requests cross a minute boundary', async () => 
     reads += 1;
     return reads < 5 ? 120_000 : 180_000;
   });
-  assert.deepEqual(result, { ok: false, apiDirect: 'inconclusive', webRewrite: 'not_run' });
+  assert.equal(result.apiDirect, 'inconclusive');
+  assert.equal(result.webRewrite, 'not_run');
+  assert.equal(result.interruption.stage, 'api_direct');
+  assert.equal(result.interruption.reason, 'minute_changed');
   assert.ok(fake.requests.length < 31);
+});
+
+test('probe reports a failed web bootstrap without exposing cookies', async () => {
+  const result = await runIdentityProbe(settings, async () => new Response(null, { status: 401 }));
+  assert.deepEqual(result, {
+    ok: false,
+    apiDirect: 'inconclusive',
+    webRewrite: 'not_run',
+    interruption: { stage: 'web_bootstrap', status: 401, cookie: false },
+  });
 });

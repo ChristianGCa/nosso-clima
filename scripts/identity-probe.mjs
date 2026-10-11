@@ -77,11 +77,24 @@ export async function runIdentityProbe(environment, fetchImpl = fetch, now = Dat
     !cookie ||
     cookie.length > 8192
   )
-    return { ok: false, apiDirect: 'inconclusive', webRewrite: 'not_run' };
+    return {
+      ok: false,
+      apiDirect: 'inconclusive',
+      webRewrite: 'not_run',
+      interruption: { stage: 'web_bootstrap', status: bootstrap.status, cookie: Boolean(cookie) },
+    };
 
   const bucket = Math.floor(now() / 60_000);
+  // Only fixed stage names, request numbers, HTTP status and public error codes are reported.
+  let interruption;
+  function interrupt(details) {
+    interruption ??= details;
+    return 'inconclusive';
+  }
   async function sample(base, urlPath, index, rewrite) {
-    if (Math.floor(now() / 60_000) !== bucket) return 'inconclusive';
+    const stage = rewrite ? 'web_rewrite' : 'api_direct';
+    if (Math.floor(now() / 60_000) !== bucket)
+      return interrupt({ stage, request: index + 1, reason: 'minute_changed' });
     const forgedIp = `198.51.100.${index + 1}`;
     let response;
     try {
@@ -97,17 +110,22 @@ export async function runIdentityProbe(environment, fetchImpl = fetch, now = Dat
         signal: AbortSignal.timeout(15000),
       });
     } catch {
-      return 'inconclusive';
+      return interrupt({ stage, request: index + 1, reason: 'network' });
     }
     const code = await errorCode(response);
-    if (
-      Math.floor(now() / 60_000) !== bucket ||
-      response.headers.get('cache-control') !== 'private, no-store'
-    )
-      return 'inconclusive';
-    if (response.status === 400 && code === 'VALIDATION_ERROR') return 'validation';
-    if (response.status === 429 && code === 'RATE_LIMITED') return 'rate_limited';
-    return 'inconclusive';
+    if (Math.floor(now() / 60_000) !== bucket)
+      return interrupt({ stage, request: index + 1, reason: 'minute_changed' });
+    const noStore = response.headers.get('cache-control') === 'private, no-store';
+    if (noStore && response.status === 400 && code === 'VALIDATION_ERROR') return 'validation';
+    if (noStore && response.status === 429 && code === 'RATE_LIMITED') return 'rate_limited';
+    return interrupt({
+      stage,
+      request: index + 1,
+      reason: 'unexpected_response',
+      status: response.status,
+      code: typeof code === 'string' && /^[A-Z_]{1,64}$/.test(code) ? code : null,
+      noStore,
+    });
   }
 
   async function group(base, urlPath, limit, firstIndex, rewrite) {
@@ -121,9 +139,15 @@ export async function runIdentityProbe(environment, fetchImpl = fetch, now = Dat
 
   // Different groups keep the two paths within the global 60/min and each WAF 60/min.
   const apiDirect = await group(api, '/api/v1/locations?query=a', 30, 0, false);
-  if (apiDirect !== 'rate_limited') return { ok: false, apiDirect, webRewrite: 'not_run' };
+  if (apiDirect !== 'rate_limited')
+    return { ok: false, apiDirect, webRewrite: 'not_run', ...(interruption && { interruption }) };
   const webRewrite = await group(web, '/api/v1/forecast?latitude=invalid', 15, 31, true);
-  return { ok: webRewrite === 'rate_limited', apiDirect, webRewrite };
+  return {
+    ok: webRewrite === 'rate_limited',
+    apiDirect,
+    webRewrite,
+    ...(interruption && { interruption }),
+  };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
