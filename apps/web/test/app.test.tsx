@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { App } from '../src/app';
 
@@ -18,9 +18,21 @@ describe('neutral first screen', () => {
     expect(brandImage?.getAttribute('src')).toBeTruthy();
     expect(brandImage?.getAttribute('alt')).toBe('');
     expect(screen.queryByRole('heading', { name: 'Previsão de 7 dias' })).toBeNull();
-    expect(screen.getByRole('link', { name: 'Como usamos seus dados' }).getAttribute('href')).toBe(
-      '#seus-dados',
-    );
+    expect(screen.queryByRole('heading', { name: 'Seus dados' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Como usamos seus dados' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Privacidade e créditos' })).toBeTruthy();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fetchSpy.mockRestore();
+  });
+});
+
+describe('site information dialog', () => {
+  it('opens from the prominent first-visit button with privacy, project and licence details', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Como usamos seus dados' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Privacidade e informações' });
+    expect(dialog.hasAttribute('open')).toBe(true);
     expect(screen.getByRole('heading', { name: 'Seus dados' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Sobre o projeto' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Licenças e créditos' })).toBeTruthy();
@@ -36,7 +48,36 @@ describe('neutral first screen', () => {
     expect(screen.getByRole('link', { name: 'licença MIT' }).getAttribute('href')).toBe(
       '/code-license.txt',
     );
-    expect(fetchSpy).not.toHaveBeenCalled();
-    fetchSpy.mockRestore();
+  });
+
+  it('closes with the corner button and reopens from the discreet footer option', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Privacidade e créditos' }));
+    const dialog = screen.getByRole('dialog', { name: 'Privacidade e informações' });
+    expect(dialog.hasAttribute('open')).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Fechar' }));
+    expect(dialog.hasAttribute('open')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Privacidade e créditos' }));
+    expect(dialog.hasAttribute('open')).toBe(true);
+  });
+
+  it('closes on a backdrop click or a native close, but not on clicks inside the panel', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Como usamos seus dados' }));
+    const dialog = screen.getByRole('dialog', { name: 'Privacidade e informações' });
+
+    fireEvent.click(screen.getByRole('heading', { name: 'Seus dados' }));
+    expect(dialog.hasAttribute('open')).toBe(true);
+
+    fireEvent.click(dialog);
+    expect(dialog.hasAttribute('open')).toBe(false);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Como usamos seus dados' }));
+    act(() => (dialog as HTMLDialogElement).close());
+    expect(dialog.hasAttribute('open')).toBe(false);
+    fireEvent.click(screen.getByRole('button', { name: 'Como usamos seus dados' }));
+    expect(dialog.hasAttribute('open')).toBe(true);
   });
 });

@@ -81,12 +81,24 @@ describe('location HTTP boundary', () => {
     jsonResponse({ invalid: true }),
     new Response('not json', { headers: { 'content-type': 'text/plain' } }),
     new Response('{', { headers: { 'content-type': 'application/json' } }),
-    new Response('{', { status: 429, headers: { 'content-type': 'application/json' } }),
   ])('makes invalid and unavailable responses generic', async (response) => {
     const fetchImpl = vi.fn<typeof fetch>(async () => response.clone());
     await expect(
       searchLocations('Curitiba', new AbortController().signal, fetchImpl),
     ).rejects.toBeInstanceOf(ApiRequestError);
+  });
+
+  it.each([
+    new Response('{', { status: 429, headers: { 'content-type': 'application/json' } }),
+    new Response('<html>Rate limited</html>', {
+      status: 429,
+      headers: { 'content-type': 'text/html' },
+    }),
+  ])('classifies any 429 as rate_limited regardless of body format', async (response) => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => response.clone());
+    await expect(
+      searchLocations('Curitiba', new AbortController().signal, fetchImpl),
+    ).rejects.toMatchObject({ failure: { kind: 'rate_limited' } });
   });
 
   it('makes network failure generic', async () => {
@@ -155,9 +167,18 @@ describe('location HTTP boundary', () => {
     ).rejects.toMatchObject({ failure: { kind: 'request_failed', requestId: 'test-request-1' } });
   });
 
-  it.each([429, 503])('does not trust a mismatched error code for HTTP %i', async (status) => {
+  it('classifies a 429 with mismatched error code as rate_limited', async () => {
     const fetchImpl = vi.fn<typeof fetch>(async () =>
-      jsonResponse({ error: { code: 'OTHER' } }, status),
+      jsonResponse({ error: { code: 'OTHER' } }, 429),
+    );
+    await expect(
+      searchLocations('Curitiba', new AbortController().signal, fetchImpl),
+    ).rejects.toMatchObject({ failure: { kind: 'rate_limited' } });
+  });
+
+  it('does not trust a mismatched error code for HTTP 503', async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () =>
+      jsonResponse({ error: { code: 'OTHER' } }, 503),
     );
     await expect(
       searchLocations('Curitiba', new AbortController().signal, fetchImpl),

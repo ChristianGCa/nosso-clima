@@ -47,7 +47,9 @@ export async function requestJson(
     const supportId = requestId(response);
     if (!response.ok) {
       let kind: RequestFailure['kind'] = 'request_failed';
-      if (response.status === 429 || response.status === 503) {
+      if (response.status === 429) {
+        kind = 'rate_limited';
+      } else if (response.status === 503) {
         const body: unknown = await response.json().catch(() => null);
         if (
           typeof body === 'object' &&
@@ -56,10 +58,9 @@ export async function requestJson(
           typeof body.error === 'object' &&
           body.error !== null &&
           'code' in body.error &&
-          ((response.status === 429 && body.error.code === 'RATE_LIMITED') ||
-            (response.status === 503 && body.error.code === 'SERVICE_UNAVAILABLE'))
+          body.error.code === 'SERVICE_UNAVAILABLE'
         ) {
-          kind = response.status === 429 ? 'rate_limited' : 'unavailable';
+          kind = 'unavailable';
         }
       }
       throw new ApiRequestError({ kind, ...(supportId ? { requestId: supportId } : {}) });

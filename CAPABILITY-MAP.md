@@ -1,18 +1,18 @@
 # Capability Map: NossoClima
 
-**Estado em 2026-10-07 (ensaio até 2026-10-08 UTC):** os quatro módulos locais e P2–P9 estão implementados. A adaptação para **Vercel + Upstash** permanece o único plano ativo de deploy, autorizado em P0. API e web estão Ready em Preview; busca, previsão de sete dias, cache hit e CORS da origem web foram verificados pela CLI, com confirmação do proprietário no navegador. A [evidência](docs/deploy/preview-evidence-2026-10-07.md) registra a correção dos escopos que causavam `quota_denied`. P1 está parcialmente verificada; P10–P11 e a decisão de publicação seguem pendentes. Cloudflare e Render foram descartados.
+Os módulos locais estão implementados. Vercel + Upstash é o plano de produção aprovado; a [lista ativa](tasks/vercel-todo.md) concentra progresso, evidências e pendências. Este mapa define responsabilidades e dependências; não comprova prontidão para publicação.
 
 ## Estado por módulo
 
-| Módulo | Implementado e aprovado localmente | Proposto para produção Vercel | Depende de |
+| Módulo | Implementado e aprovado localmente | Implementação Vercel e prova hospedada | Depende de |
 |---|---|---|---|
-| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Entrada Function, Redis HTTPS, reserva agregada, circuit breaker e cache compartilhado ligados às rotas; HMAC temporário, pré-limite e limites compartilhados ligados à entrada Function, sujeitos à prova real em P1 | — |
-| `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Cache Redis de 24 h e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
-| `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Cache Redis de 10 min e saída com reserva integrados localmente; prova real em P1 | `backend-platform` |
+| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Function, Redis HTTPS, reserva agregada, circuit breaker, cache, HMAC e limites compartilhados integrados; fluxos reais observados em Preview, com identidade anti-spoof e política Production pendentes | — |
+| `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Cache Redis e reserva observados em Preview; expiração hospedada após 24 h e concorrência entre instâncias em acompanhamento | `backend-platform` |
+| `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Previsão, cache Redis, renovação após TTL e reserva observados em Preview; peso oficial e política Production pendentes | `backend-platform` |
 | `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Fluxo pelo rewrite confirmado em Preview pelo proprietário; matriz completa de headers/CDN e release continuam em P1 | `location-search`, `weather-forecast` |
-| `production-delivery` | P7–P9 locais e smoke hospedado de API/web, CORS permitido e fluxo de busca/previsão/cache; P1 parcial | Completar P1a/P1b, WAF/CDN, identidade/saída, privacidade, direitos e rollback antes da publicação | Todos os módulos acima |
+| `production-delivery` | P7–P9 locais e smoke hospedado de API/web, CORS permitido e fluxo de busca/previsão/cache; saída sem IP aceita por revisão do transporte e amostra parcial de Preview; aviso de privacidade e direitos revisados; P1/P10 parciais | Completar a revisão final de P1, política Production, acesso público ao repositório, gates e rollback antes da publicação | Todos os módulos acima |
 
-As specs de busca, previsão e UI descrevem os contratos locais vigentes e identificam as alterações propostas. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração; seu contrato local detalhado permanece referenciado no [baseline Node](docs/history/backend-platform-node-baseline-2026-09-23.md). Os itens concluídos dos módulos locais não comprovam a migração para Vercel.
+As specs de busca, previsão e UI descrevem os contratos vigentes. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração implementada; seu contrato local detalhado permanece referenciado no [baseline Node](docs/architecture/backend-local-baseline.md). Implementação local e provas hospedadas têm alcances distintos; resultados e lacunas ficam somente em `tasks/vercel-todo.md`, com detalhes no histórico.
 
 ## Grafo e ordem
 

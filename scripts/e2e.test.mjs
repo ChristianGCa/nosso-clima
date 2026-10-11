@@ -313,7 +313,12 @@ test('P8: browser, default Vercel handler and fixture provider', async (suite) =
     const address = web.httpServer.address();
     assert.ok(address && typeof address !== 'string');
     const origin = `http://127.0.0.1:${address.port}`;
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({
+      headless: true,
+      ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+        ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+        : {}),
+    });
 
     await suite.test(
       'neutral, keyboard search, seven days, credits and restored city',

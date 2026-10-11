@@ -53,6 +53,8 @@ describe('city-to-forecast flow', () => {
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
     expect(fetchSpy).toHaveBeenCalledTimes(1);
     expect(String(fetchSpy.mock.calls[0]?.[0])).toContain('/forecast?');
+    expect(screen.queryByRole('button', { name: 'Como usamos seus dados' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Privacidade e créditos' })).toBeTruthy();
   });
 
   it('starts neutrally when the saved city is invalid', () => {

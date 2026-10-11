@@ -7,7 +7,7 @@
 
 ## Alcance desta spec
 
-O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. A configuração de build de P7 também foi implementada localmente; seu roteamento e os demais gates de produção dependem de P1 em Preview, conforme [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. Build, rewrite e fluxo pelo navegador foram verificados em Preview; em 2026-10-08, o proprietário confirmou o funcionamento em `chore/vercel-p1` e melhora após ajustar o orçamento agregado. Os estados 503 continuam seguindo o contrato existente. A continuidade de P1 (`docs/history/preview-evidence-2026-10.md`) registra isso, com a matriz de headers/CDN e os demais gates ainda em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -63,7 +63,7 @@ The city picker has a persistent accessible name without a separate visible labe
 
 ## Tech Stack and Commands
 
-The frontend is a separate `@nosso-clima/web` npm workspace using React, Vite and strict TypeScript, as recorded in `docs/ideas/nosso-clima.md`. It uses native `fetch`, `AbortController` and `Intl` without a client state or HTTP library. Vitest and React Testing Library cover state and component behavior. A browser-based axe check supplies the active `npm run test:a11y` gate. Exact dependency versions are pinned in the committed lockfile.
+The frontend is a separate `@nosso-clima/web` npm workspace using React, Vite and strict TypeScript. It uses native `fetch`, `AbortController` and `Intl` without a client state or HTTP library. Vitest and React Testing Library cover state and component behavior. A browser-based axe check supplies the active `npm run test:a11y` gate. Exact dependency versions are pinned in the committed lockfile.
 
 The web workspace provides these commands:
 
@@ -143,7 +143,7 @@ type ForecastViewState =
 
 ## Success Criteria — implementação local
 
-The checked items record the local handoff approved on 2026-09-24, subsequent owner-approved amendments through 2026-10-04 and the completed corrective verification below. Current contrast evidence is in [the 2026-10-04 report](docs/quality/contrast-2026-10-04.md); the earlier report preserves the original method and measurement.
+The checked items record the local handoff approved on 2026-09-24, subsequent owner-approved amendments through 2026-10-04 and the completed corrective verification below. Current contrast evidence is in [the 2026-10-04 report](docs/quality/contrast-2026-10-04.md); the same report preserves the original method and summarizes the earlier measurement.
 
 - [x] A first visit without a saved city makes no location or forecast request and shows a useful neutral state.
 - [x] Reopening with a valid saved city shows its name and requests a fresh forecast without geocoding; corrupt or blocked storage falls back safely to the neutral state.
@@ -159,7 +159,7 @@ The checked items record the local handoff approved on 2026-09-24, subsequent ow
 
 - [x] The web forecast boundary rejects a response whose first daily date differs from `current.validAtLocal`'s local date, or whose timezone differs from the selected city's canonical timezone. Regression tests cover both cases.
 - [x] HTTP failures other than `429 RATE_LIMITED` and `503 SERVICE_UNAVAILABLE` use the generic failure state. Boundary and component tests cover unrelated statuses and keep provider diagnostics hidden.
-- [x] Mobile and desktop contrast was measured for all ten bundled backgrounds against computed text and control surfaces. The reproducible browser check and its numeric evidence are in `apps/web/test/contrast.mjs` and `docs/quality/contrast-2026-10-01.md`.
+- [x] Mobile and desktop contrast was measured for all ten bundled backgrounds against computed text and control surfaces. The reproducible browser check and its numeric evidence are in `apps/web/test/contrast.mjs` and `docs/quality/contrast-2026-10-04.md`.
 
 ## Decisions and Approval Record
 
@@ -185,3 +185,20 @@ On 2026-10-03 the owner identified Claude personal Free as the logo tool and sai
 ## Correções autorizadas em 2026-10-07
 
 O proprietário pediu a correção das inconsistências da revisão e confirmou que a entrada existente funciona na Vercel. O exemplo de ambiente mantém `VITE_API_BASE_URL` ausente para permitir build com caminhos relativos. O rodapé inclui o remoto GitHub existente e descreve o recebimento do IP pela Vercel, o identificador temporário por minuto e os TTLs de busca/previsão na Upstash. A revisão final de regiões e retenção do host permanece em `production-delivery`; esses valores não são inferidos de um deploy já excluído.
+
+## Continuidade documental em 2026-10-08
+
+O fluxo na nova branch foi confirmado pelo proprietário. A reserva ponderada da plataforma, compartilhada por busca/previsão, pode negar misses com 503 mesmo quando hits ainda respondem 200. Isso é independente do rate limit por visitante e continua usando o estado de indisponibilidade existente. O proprietário ajustou o orçamento de testes e relatou melhora; debounce, retries explícitos, seleção, armazenamento e mensagens da UI não foram alterados. Os avisos CSP dos recursos Vercel no Preview são separados desse diagnóstico. A evidência atual (`docs/history/preview-evidence-2026-10.md`) mantém os dados operacionais anonimizados.
+
+## Estado documental em 2026-10-10
+
+O aviso de privacidade foi revisado com a configuração de região da Function obtida pela CLI, a região Redis e a ausência de backup periódico informadas pelo proprietário, além dos TTLs do aplicativo; prazos gerais de logs dos fornecedores não foram presumidos. Os direitos dos fundos/logo foram revisados no alcance do inventário, e os créditos permanecem na interface. O link GitHub existente respondeu 404 sem autenticação; o proprietário pretende tornar o repositório público, com conferência anônima antes da abertura. As pendências vigentes ficam em `tasks/vercel-todo.md`.
+
+## Informações do site em diálogo — 2026-10-10
+
+O proprietário pediu que as informações de privacidade deixem de ocupar o fim da página e passem a abrir como uma mensagem sobreposta, com fundo desfocado e botão de fechar no canto superior direito. Esta revisão substitui, para a apresentação, o rodapé com seções ancoradas descrito em 2026-09-28; o conteúdo, os links e as atribuições continuam os mesmos.
+
+- Um diálogo modal (`<dialog>` com `showModal()`) reúne “Seus dados”, “Sobre o projeto” e “Licenças e créditos”. Ele recebe foco ao abrir, fecha pelo botão “Fechar”, pela tecla Esc ou por clique fora do painel, devolve o foco a quem o abriu e bloqueia a rolagem da página enquanto aberto.
+- Primeiro acesso: a tela neutra, exibida apenas enquanto nenhuma cidade foi escolhida neste navegador, mostra um botão evidente “Como usamos seus dados”. Nenhum novo dado é guardado para detectar o primeiro acesso; a última cidade salva continua sendo o único registro local.
+- Demais acessos: o rodapé mantém um botão discreto “Privacidade e créditos”, sempre disponível. A atribuição de dados meteorológicos continua no rodapé junto à previsão.
+- Testes de componente cobrem abertura pelos dois pontos, fechamento e conteúdo; o teste de acessibilidade do navegador abre o diálogo real e executa axe com ele aberto.

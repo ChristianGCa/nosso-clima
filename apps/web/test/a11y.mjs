@@ -124,7 +124,12 @@ const server = spawn(
 let browser;
 try {
   await ready();
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({
+    headless: true,
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+      : {}),
+  });
   const context = await browser.newContext({
     viewport: { width: 360, height: 800 },
     reducedMotion: 'reduce',
@@ -182,10 +187,37 @@ try {
   await page.setViewportSize({ width: 1280, height: 800 });
   await scan(page, 'neutral desktop');
   await page.setViewportSize({ width: 360, height: 800 });
-  await page.getByRole('link', { name: 'Como usamos seus dados' }).click();
-  assert.equal(new URL(page.url()).hash, '#seus-dados');
+  const privacyButton = page.getByRole('button', { name: 'Como usamos seus dados' });
+  await privacyButton.click();
+  const infoDialog = page.getByRole('dialog', { name: 'Privacidade e informações' });
+  await infoDialog.waitFor();
   await page.getByRole('heading', { name: 'Seus dados' }).waitFor();
-  await page.getByRole('link', { name: 'Voltar à busca' }).click();
+  assert.equal(
+    await page.evaluate(() => getComputedStyle(document.body).overflow),
+    'hidden',
+    'an open dialog must lock page scrolling',
+  );
+  await scan(page, 'information dialog mobile');
+  if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
+    await page.screenshot({ path: '/tmp/nosso-clima-dialog-mobile.png' });
+  }
+  await page.keyboard.press('Escape');
+  await infoDialog.waitFor({ state: 'hidden' });
+  assert.equal(
+    await privacyButton.evaluate((element) => element === document.activeElement),
+    true,
+    'closing the dialog must return focus to its opener',
+  );
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.getByRole('button', { name: 'Privacidade e créditos' }).click();
+  await infoDialog.waitFor();
+  await scan(page, 'information dialog desktop');
+  if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
+    await page.screenshot({ path: '/tmp/nosso-clima-dialog-desktop.png' });
+  }
+  await page.getByRole('button', { name: 'Fechar' }).click();
+  await infoDialog.waitFor({ state: 'hidden' });
+  await page.setViewportSize({ width: 360, height: 800 });
   const headerHeight = await page
     .locator('.site-header')
     .evaluate((element) => element.getBoundingClientRect().height);

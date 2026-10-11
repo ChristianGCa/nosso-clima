@@ -6,6 +6,7 @@ import { type AppConfig, type EnvironmentInput, parseEnvironment } from './confi
 import { type ProviderPolicy, parseProviderPolicy } from './config/provider-policy.js';
 import { assertServerlessCredentials } from './config/serverless-credentials.js';
 import { createQuotaReservation } from './infrastructure/quota-reservation.js';
+import { createPreviewUpstream } from './infrastructure/preview-upstream.js';
 import { createReservedOpenMeteoFetch } from './infrastructure/reserved-open-meteo-fetch.js';
 import { createUpstashRestClient, type UpstashRestClient } from './infrastructure/upstash-rest.js';
 import { createUpstreamCircuit } from './infrastructure/upstream-circuit.js';
@@ -37,6 +38,7 @@ export function createVercelApp(
       : environment;
   let config: AppConfig;
   let policy: ProviderPolicy;
+  let providerFetch: typeof fetch;
   let validationStage = 'runtime_environment';
   try {
     if (
@@ -51,6 +53,8 @@ export function createVercelApp(
     assertServerlessCredentials(runtimeEnvironment);
     validationStage = 'provider_policy';
     policy = parseProviderPolicy(runtimeEnvironment);
+    validationStage = 'preview_upstream';
+    providerFetch = createPreviewUpstream(runtimeEnvironment, dependencies.providerFetch);
   } catch (error) {
     const credentialCode =
       validationStage === 'serverless_credentials' && error instanceof Error
@@ -75,10 +79,10 @@ export function createVercelApp(
     quota,
     circuits,
     costs: policy.costs,
-    ...(dependencies.providerFetch ? { fetchImpl: dependencies.providerFetch } : {}),
+    fetchImpl: providerFetch,
   });
 
-  return buildApp({
+  const app = buildApp({
     config,
     fetchImpl,
     sharedCache: { redis, secret: environment.CACHE_HMAC_KEY ?? '' },
@@ -88,4 +92,11 @@ export function createVercelApp(
       ...(dependencies.loggerStream ? { stream: dependencies.loggerStream } : {}),
     },
   });
+  if (environment.UPSTREAM_TEST_BASE !== undefined) {
+    app.addHook('onSend', async (_request, reply, payload) => {
+      reply.header('x-nosso-clima-preview-upstream', 'echo-v1');
+      return payload;
+    });
+  }
+  return app;
 }

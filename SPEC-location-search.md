@@ -1,13 +1,13 @@
 # Spec: Location Search
 
-- **Status:** Complete; Checkpoint L-B approved by owner on 2026-09-23. Public and commercial deployment gates remain open under `production-delivery`.
+- **Status:** Complete; Checkpoint L-B approved by owner on 2026-09-23. Public deployment gates remain open under `production-delivery`; the owner confirmed noncommercial use.
 - **Module id:** `location-search`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
 
 ## Alcance desta spec
 
-O contrato HTTP e o comportamento local abaixo estão implementados e aprovados. A seção **Cache: contrato local e migração proposta** identifica separadamente o cache de desenvolvimento e a integração Vercel + Upstash implementada localmente em P4/P6, ainda pendente da prova P1. A migração de produção é acompanhada em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O contrato HTTP e o comportamento local estão implementados e aprovados. O cache Redis e a reserva compartilhada também estão integrados à entrada Vercel, com buscas e hits observados em Preview. O histórico `docs/history/preview-evidence-2026-10.md` registra o smoke, negações de cota e deduplicação concorrente na amostra de eco. A expiração da busca após 24 h e a reserva hospedada sob contenção/entre instâncias não foram comprovadas; a decisão de 2026-10-10 na lista ativa as transferiu para acompanhamento, sem alterar a implementação da reserva atômica. O aceite de Production permanece aberto. A seção **Cache: desenvolvimento local e Redis em Preview** distingue os runtimes; os gates estão em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -170,7 +170,7 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 - Text fields used publicly are trimmed, limited to 256 Unicode code points, and rejected if they contain C0 controls or DEL. JSON encoding, not HTML markup, is returned.
 - If an accepted candidate is missing or violates a consumed field, the entire upstream response is rejected. The API does not silently manufacture coordinates, country data, or timezone values.
 
-## Cache: contrato local e migração proposta
+## Cache: desenvolvimento local e Redis em Preview
 
 ### Implementado localmente
 
@@ -185,17 +185,17 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 
 The canonical query exists transiently in process memory as the request, cache key, and outbound parameter. It is not persisted. Hashing the cache key would not anonymize low-entropy city names and is therefore not represented as a privacy control.
 
-### Migração Vercel + Upstash — P0 aprovada, pendente de P1
+### Redis na entrada Vercel — implementado; P1 parcial
 
 O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para resultados normalizados de busca, inclusive vazios, com TTL máximo de 24 horas, sem IP ou identificador do visitante. A busca canônica passa a gerar uma chave opaca derivada com segredo da API; a chave não expõe o texto diretamente. O valor pode conter nomes e coordenadas dos resultados, pois são necessários ao contrato de busca. Falhas continuam fora do cache. O cache e a reserva agregada pertencem a `backend-platform`, não a este módulo; o contrato HTTP, canonicalização, timeout, filtro e créditos desta spec permanecem iguais.
 
 Esta alteração foi aprovada para implementação na P0 e integrada localmente em P4/P6; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime de desenvolvimento. Só a migração verificada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
 
-Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 24 horas são preservados. A aceitação da migração exige testes entre instâncias, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs, conforme a [lista ativa](tasks/vercel-todo.md).
+Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 24 horas são preservados. A migração exige testes locais de concorrência, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs; o ensaio hospedado entre instâncias e após 24 horas segue o acompanhamento aprovado na [lista ativa](tasks/vercel-todo.md).
 
 ## Observability, Privacy, and Licensing
 
-- Expected provider failures produce one structured warning named `geocoding_upstream_failed` with `requestId` and a bounded `failureKind`: `timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, or `invalid_response`. A redirect rejected by `fetch` is classified as `network`; the implementation must not inspect unstable exception text to distinguish it.
+- Expected provider failures produce one structured warning named `geocoding_upstream_failed` with `requestId` and a bounded `failureKind`: `timeout`, `network`, `status`, `content_type`, `body_too_large`, `invalid_json`, `invalid_response`, plus the platform categories `quota_denied`, `circuit_open`, `redis_unavailable` and `upstream_rate_limited` in the Vercel entry. A redirect rejected by `fetch` is classified as `network`; the implementation must not inspect unstable exception text to distinguish it.
 - An upstream status failure may include the numeric `upstreamStatus`; it must not include status text or response content.
 - Existing cache hit/miss and executor-saturation events remain keyless and payload-free.
 - Never log or attach to telemetry the query, canonical query, cache key, full URL, coordinates, location names, raw upstream body, client IP, or environment values.
