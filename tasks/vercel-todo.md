@@ -8,7 +8,7 @@
 - **Preview:** protegido e funcional com dados reais; eco retirado; Redis preservado.
 - **Production:** não validada; política própria ainda não configurada.
 - **Publicação:** bloqueada até fechar as pendências abaixo e a decisão separada do proprietário.
-- **Git:** branch de trabalho `chore/vercel-p1`, sincronizada com o remoto em `e9ba52e` (CI verde por relato do proprietário em 2026-10-10). Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
+- **Git:** branch de trabalho `chore/vercel-p1`, sincronizada com o remoto em `e9ba52e`; Quality gates verde nessa revisão, conferido pela API pública do GitHub em 2026-10-10. Previews dos dois projetos nessa revisão e site funcionando, por relato. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
 
 | Etapa | Estado |
 |---|---|
@@ -18,20 +18,18 @@
 | P1b — Redis e cota | Aceita no alcance registrado; provas extensas em acompanhamento; peso da previsão confirmado (1,3) |
 | P1c — WAF e custo Free | Aceita no alcance registrado; reconferir regra/plano no release |
 | P1d — identidade e saída | Saída sem IP aceita; anti-spoof da identidade pendente (verificador pronto, não executado) |
-| P10 — privacidade, direitos, termos | Revisados; falta acesso público ao repositório |
+| P10 — privacidade, direitos, termos | Concluída: revisados e repositório público |
 | P11 — smoke, rollback, decisão | Aberto |
 
 ## Pendências bloqueantes — ordem para chegar à produção
 
 1. **Fechar P1d — identidade anti-spoof.**
    - [ ] Conferir que o Preview dos dois projetos usa a revisão enviada, gerar novos tokens de automação da proteção (os anteriores foram revogados) num arquivo privado fora do Git e executar `scripts/identity-probe.mjs` conforme o runbook. Registrar o resultado resumido e revogar os tokens ao final. Não alterar Redis nem reabrir a rodada de eco.
-2. **Fechar P10.**
-   - [ ] Tornar o repositório público e confirmar acesso anônimo ao link “Repositório no GitHub” da interface (respondeu 404 sem autenticação em 2026-10-10).
-3. **Preparar Production protegido.**
+2. **Preparar Production protegido.**
    - [ ] Aprovar tetos/custos com margem e configurar os oito campos de política em Production. Proposta apresentada ao proprietário em 2026-10-10; valores efetivos ficam no painel, fora do Git. Os registros mostram campos de créditos removidos de Production e erros antigos `application_environment`/500; não copiar a política Preview.
    - [ ] Conferir em Production `NODE_ENV`/`HOST`, Redis, HMAC, CORS, rewrite e ausência das variáveis de eco.
-4. **Release (P1a/P1c agrupados + P11).**
-   - [ ] Gates finais na revisão escolhida: `npm run check`, cobertura ≥80% por métrica/app, builds, E2E, axe, performance, audit, Gitleaks e CI em checkout limpo. A CI de `e9ba52e` passou por relato; repetir somente se a revisão final mudar.
+3. **Release (P1a/P1c agrupados + P11).**
+   - [ ] Gates finais na revisão escolhida: `npm run check`, cobertura ≥80% por métrica/app, builds, E2E, axe, performance, audit, Gitleaks e CI em checkout limpo. A CI de `e9ba52e` passou; repetir somente se a revisão final mudar.
    - [ ] Conferência agrupada de P1a: versões dos dois builds, pareamento, rewrite, ausência de segredos no bundle, headers web/assets, CORS e caminhos HTTP sem evidência.
    - [ ] P1c: plano Free/Hobby sem cobrança/upgrade, rotina de acompanhamento de consumo/indisponibilidade e regras WAF ainda publicadas.
    - [ ] Confirmar que busca e previsão ainda usam o transporte de saída revisado.
@@ -61,7 +59,8 @@
 | Cliente web e 429 | Qualquer 429 vira `rate_limited` pelo status, inclusive HTML do WAF | `apps/web/src/api/http.ts`, commit `e0021b4`, com testes |
 | Privacidade e ativos | Aviso atualizado; Function em `iad1` e plano Hobby pela CLI; Redis na Virgínia do Norte e backup diário desativado por relato; direitos dos fundos/logo revisados | `docs/history/preview-evidence-2026-10.md` e `docs/deploy/image-rights.md`. Reconfirmar se configuração/plano mudar |
 | Peso Open-Meteo | Busca: uma chamada, peso 1,0. Previsão: 13 variáveis (5 atuais, 1 horária, 7 diárias), 7 dias, 1 local → 1,3 | Regra de contagem fracionária da página oficial *Open-Meteo Pricing*, consultada em 2026-10-10 (>10 variáveis e >2 semanas multiplicam), e parâmetros em `open-meteo-forecast.ts`. Limites gratuitos: 600/min, 5.000/h, 10.000/dia, 300.000/mês (mensal ainda não aplicado pelo provedor) |
-| Revisão sincronizada e credenciais do eco | `chore/vercel-p1` enviada; CI verde por relato em `e9ba52e`. Tokens de `.env.preview-probe` revogados e arquivo excluído pelo proprietário | Relato 2026-10-10; arquivo ausente conferido localmente |
+| Revisão sincronizada e credenciais do eco | `chore/vercel-p1` enviada; Quality gates `success` em `e9ba52e`. Tokens de `.env.preview-probe` revogados e arquivo excluído pelo proprietário | CI conferida pela API pública do GitHub; revogação por relato; arquivo ausente conferido localmente |
+| Repositório público | Link “Repositório no GitHub” da interface responde 200 sem autenticação | Conferido em 2026-10-10 |
 | Verificador de identidade | `scripts/identity-probe.mjs` e quatro testes; procedimento no runbook | Preparado em 2026-10-10; execução hospedada pendente |
 
 ## Decisão aprovada em 2026-10-10 — simplificação de P1
