@@ -24,8 +24,9 @@
 ## Pendências bloqueantes — ordem para chegar à produção
 
 1. **Preparar Production protegido.**
-   - [ ] Aprovar tetos/custos com margem e configurar os oito campos de política em Production. Proposta apresentada ao proprietário em 2026-10-10; valores efetivos ficam no painel, fora do Git. Os registros mostram campos de créditos removidos de Production e erros antigos `application_environment`/500; não copiar a política Preview.
-   - [ ] Conferir em Production `NODE_ENV`/`HOST`, Redis, HMAC, CORS, rewrite e ausência das variáveis de eco.
+   - [x] Política Production aprovada pelo proprietário em 2026-10-10 (tetos bem abaixo dos limites gratuitos, porque o IP de saída da Vercel é compartilhado) e cadastrada; valores efetivos ficam no painel, fora do Git.
+   - [x] Variáveis de Production conferidas pela CLI em 2026-10-10, somente nomes/escopos: API com `NODE_ENV`, `HOST`, `UPSTASH_REDIS_REST_URL`/`TOKEN` (copiados do endpoint REST da integração), duas chaves HMAC, CORS e oito campos de política; web com `API_ORIGIN`. CORS/`API_ORIGIN` separados entre Preview e Production; sem variáveis de eco. Domínios de Production renomeados pelo proprietário; os antigos redirecionam. Preview e Production compartilham a base Upstash Free e, portanto, a reserva de cota.
+   - [ ] Levar `chore/vercel-p1` (mais o ajuste de interface pendente do proprietário) para `main` por PR e gerar os deployments Production a partir dela. Em 2026-10-10 a API Production foi redeployada sem querer a partir de `main` `0c6d090`, antiga e protegida; o web Production ainda é anterior ao novo `API_ORIGIN`.
 2. **Release (P1a/P1c agrupados + P11).**
    - [ ] Gates finais na revisão escolhida: `npm run check`, cobertura ≥80% por métrica/app, builds, E2E, axe, performance, audit, Gitleaks e CI em checkout limpo. A CI de `e9ba52e` passou; repetir somente se a revisão final mudar.
    - [ ] Conferência agrupada de P1a: versões dos dois builds, pareamento, rewrite, ausência de segredos no bundle, headers web/assets, CORS e caminhos HTTP sem evidência.
