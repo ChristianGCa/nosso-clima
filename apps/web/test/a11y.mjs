@@ -124,7 +124,12 @@ const server = spawn(
 let browser;
 try {
   await ready();
-  browser = await chromium.launch({ headless: true });
+  browser = await chromium.launch({
+    headless: true,
+    ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+      ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
+      : {}),
+  });
   const context = await browser.newContext({
     viewport: { width: 360, height: 800 },
     reducedMotion: 'reduce',

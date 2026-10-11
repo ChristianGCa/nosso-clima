@@ -50,7 +50,7 @@ O web consome `GET /api/v1/locations` e `GET /api/v1/forecast`, sem importar run
 | `npm run test:performance` | LCP e CLS móveis; resultado em `artifacts/performance.json` |
 | `npm audit --audit-level=high` | Auditoria de dependências |
 
-Os testes de navegador exigem Chromium: `npx playwright install chromium`. A [CI](.github/workflows/ci.yml) também executa builds e Gitleaks. Os limiares e momentos de execução estão em [CONSTRAINTS.md](CONSTRAINTS.md); resultados antigos não comprovam a revisão atual.
+Os testes de navegador exigem Chromium: `npx playwright install chromium`. Para usar um executável local do Fedora em diagnóstico, defina `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser` ao executar `test:a11y`, `test:e2e` ou `test:performance`. A CI continua usando o navegador fixado pelo Playwright. A [CI](.github/workflows/ci.yml) também executa builds e Gitleaks. Os limiares e momentos de execução estão em [CONSTRAINTS.md](CONSTRAINTS.md); resultados antigos não comprovam a revisão atual.
 
 ## Onde documentar
 

@@ -38,6 +38,8 @@ Preview tem padrões provisórios de 1.000 para os seis custos/tetos e 60.000/10
 
 ## Revisão, CI e pareamento
 
+Em Fedora, os três testes de navegador aceitam `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser` para ensaio local headless. Registrar a versão efetiva do navegador junto dos resultados. Esse override não muda a CI, que usa o binário fixado pelo Playwright; passar localmente com outra versão não comprova o gate hospedado da revisão final.
+
 1. Consultar checkout/branch/SHA; conferir Actions → Quality gates da revisão escolhida no GitHub autenticado. Registrar data, revisão e resultado resumido. Referência remota local não comprova sincronização atual nem CI.
 2. Nos dois projetos Vercel, conferir ambiente, branch, SHA, roots, Node/npm, proteção e destino efetivo do rewrite. Metadados Ready não comprovam runtime nem resposta HTTP. Não desproteger para conseguir acesso.
 3. Reaproveitar evidências cuja implementação/configuração ainda corresponda à revisão escolhida. Registrar diferenças materiais; uma mudança só documental não exige repetir automaticamente os ensaios, mas a revisão final precisa de gates/pareamento próprios.
