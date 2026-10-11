@@ -617,7 +617,7 @@ body:has(.info-dialog[open]) {
   max-height: min(calc(100svh - 2rem), 52rem);
   padding: 0;
   border: 1px solid rgb(180 245 255 / 0.22);
-  border-radius: 1.25rem;
+  border-radius: 0.9rem;
   background: rgb(9 24 34 / 0.82);
   color: #f4fbff;
   box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 0.45);
@@ -681,7 +681,7 @@ body:has(.info-dialog[open]) {
   height: 2.75rem;
   padding: 0;
   border: 1px solid rgb(231 244 246 / 0.2);
-  border-radius: 999px;
+  border-radius: 0.45rem;
   background: rgb(255 255 255 / 0.06);
   color: #f4fbff;
   cursor: pointer;
@@ -740,7 +740,7 @@ body:has(.info-dialog[open]) {
   margin-top: 1.6rem;
   padding: 1rem 1.1rem;
   border: 1px solid rgb(180 245 255 / 0.28);
-  border-radius: 0.9rem;
+  border-radius: 0.75rem;
   background: rgb(7 22 31 / 0.55);
 }
 
@@ -757,7 +757,7 @@ body:has(.info-dialog[open]) {
   min-height: 2.75rem;
   padding: 0.55rem 1.1rem;
   border: 1px solid #b4f5ff;
-  border-radius: 999px;
+  border-radius: 0.45rem;
   background: #c4f3f5;
   color: #092944;
   font-weight: 800;
