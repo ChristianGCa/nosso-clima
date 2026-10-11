@@ -2,9 +2,7 @@
 
 Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias, usando dados da Open-Meteo. Na primeira visita, a tela começa neutra; depois da seleção, o navegador guarda apenas a última cidade e consulta uma previsão nova nas visitas seguintes. Limpar os dados do site remove essa preferência.
 
-**Entrega:** o fluxo já foi testado em Preview protegido; a publicação pública ainda depende dos gates e da decisão do proprietário. A [lista ativa](tasks/vercel-todo.md) concentra o estado atual e o próximo trabalho.
-
-O teste de falha Redis e a recuperação já foram registrados; a rodada normal no eco também passou. O Preview voltou a consultar dados reais, com proteção mantida e variáveis de eco removidas. Preservar Redis e consultar a lista ativa antes de repetir ensaios. Production ainda exige configuração e validação próprias.
+**Entrega:** implementação local concluída e Preview protegido funcionando; Production ainda não validada e publicação pública pendente. Estado e próximos passos ficam somente na [lista ativa](tasks/vercel-todo.md).
 
 ## Executar localmente
 
@@ -62,7 +60,7 @@ Antes de alterar código, leia [AGENTS.md](AGENTS.md), o [mapa de capacidades](C
 
 Cada informação tem um lugar: requisitos nas specs; motivos na ADR; sequência no [plano](tasks/vercel-plan.md); progresso e pendências na [lista ativa](tasks/vercel-todo.md); procedimentos no runbook. Evidências datadas registram o que foi observado, sem se tornar outro plano. O [histórico resumido](docs/history/README.md) preserva aprovações e explica como recuperar documentos encerrados pelo Git.
 
-Para começar uma sessão, basta ler `AGENTS.md`, esta página e `tasks/vercel-todo.md`; antes de código, acrescentar mapa, constraints e spec do módulo. A auditoria documental, o alcance dos testes reaproveitados e os bloqueios de produção estão na lista ativa.
+Para começar uma sessão, basta ler `AGENTS.md`, esta página e `tasks/vercel-todo.md`; antes de código, acrescentar mapa, constraints e spec do módulo.
 
 | Documento | Quando consultar |
 |---|---|
@@ -75,7 +73,7 @@ Para começar uma sessão, basta ler `AGENTS.md`, esta página e `tasks/vercel-t
 | `docs/history/preview-evidence-2026-10.md` | Coletas de Preview de 7–10 de outubro, consolidadas; ler só a seção necessária |
 | `docs/history/README.md`, `docs/decisions/`, `docs/architecture/`, `docs/quality/` | Aprovações anteriores, motivos, contrato local e medidas de contraste |
 
-Os seis relatos de Preview antes espalhados em `docs/deploy/` foram consolidados em um histórico em 2026-10-10. Seus próximos passos antigos podem estar superados; não os tratar como tarefas ativas. A pesquisa datada `docs/deploy/vercel-research-2026-10-04.md` registra fontes/hipóteses da P0, não o estado atual da conta.
+Os próximos passos dentro do histórico podem estar superados; não os tratar como tarefas ativas. A pesquisa datada `docs/deploy/vercel-research-2026-10-04.md` registra fontes/hipóteses da P0, não o estado atual da conta.
 
 Atualize o documento responsável em vez de copiar o mesmo status para vários arquivos. Ao encerrar um plano, mantenha o resumo das decisões e use o Git para os detalhes antigos. Logs brutos, builds, cobertura e relatórios gerados ficam nos caminhos já ignorados pelo `.gitignore`; specs, exemplos de ambiente e evidências selecionadas continuam versionados. Nunca inclua credenciais ou identificadores reais de infraestrutura nos relatos.
 
@@ -85,4 +83,4 @@ Antes de versionar uma evidência, confira o diff e os links locais e revise cad
 
 ## Licenças e publicação
 
-O código usa [MIT](LICENSE). Dados e ícones têm [licenças próprias](apps/web/public/third-party-licenses.txt). Os originais de fundos e marca são mantidos para rastreabilidade; a revisão dos direitos de publicação está no [inventário visual](docs/deploy/image-rights.md). Região, retenção e aviso de privacidade foram revisados no alcance da lista ativa. Configuração Production, gates finais, acesso público ao repositório e rollback continuam pendentes.
+O código usa [MIT](LICENSE). Dados e ícones têm [licenças próprias](apps/web/public/third-party-licenses.txt). Os originais de fundos e marca são mantidos para rastreabilidade; a revisão dos direitos de publicação está no [inventário visual](docs/deploy/image-rights.md). Região, retenção e aviso de privacidade foram revisados; as pendências de publicação estão na lista ativa.

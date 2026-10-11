@@ -36,7 +36,7 @@ A entrada HTTPS temporária usada foi um Quick Tunnel, disponível sem conta/dom
 - Manter builds independentes de `apps/web` e `apps/api` com `npm ci`, checks e lockfile únicos. O web de Production usa URL relativa `/api/v1/*` e rejeita `VITE_API_BASE_URL` de outra origem. O rewrite preserva query, método, status e o envelope da API; caminhos desconhecidos sob `/api` não caem no HTML da SPA.
 - A API permanece acessível no domínio do seu projeto. Aplicar validação, rate limits, cota, logs seguros e política de origem também ali; CORS não impede pedidos fora de navegador e não substitui quota. Usar somente origem web exata para CORS onde necessário e comprovar como `Origin` chega pelo rewrite em Preview e Production. Não assumir que o domínio API é privado.
 - Enviar cabeçalhos de segurança no web (CSP com `connect-src 'self'`, HSTS, referrer policy, proteção de tipos) após validar links externos legítimos. Somente assets Vite com hash recebem cache longo `immutable`; HTML e arquivos sem hash revalidam. Rotas API usam política de cache explícita testada; erros e dados além do TTL não podem ser armazenados pelo CDN.
-- Não usar `UPSTREAM_TEST_BASE` em Production. Ferramentas de eco e `/api/whoami` só existem em Preview isolado e são removidas/desativadas antes do release. Nenhuma variável secreta entra em `VITE_*` ou em build web. Guardar segredo Upstash e HMAC no projeto API, por ambiente, com rotação e acesso mínimo.
+- Não usar `UPSTREAM_TEST_BASE` em Production. As ferramentas de eco só existem em Preview isolado e são removidas/desativadas antes do release. Nenhuma variável secreta entra em `VITE_*` ou em build web. Guardar segredo Upstash e HMAC no projeto API, por ambiente, com rotação e acesso mínimo.
 
 ## Qualidade, privacidade e direitos
 

@@ -20,7 +20,7 @@ A ideia inicial priorizava leitura rápida, unidades °C/km/h/mm, busca explíci
 - [Auditoria de 2026-10-03](release-audit-2026-10-03.md): resultados e limitações daquele checkout, incluindo falhas de instalação e recuperação. Recomendações Cloudflare estão superadas.
 - [Implementação Vercel até 2026-10-06](vercel-local-evidence-2026-10-06.md): resultados locais de P0/P2–P9; hashes anteriores à reescrita do histórico.
 - [Contraste](../quality/contrast-2026-10-04.md): método e medidas de outubro.
-- `docs/history/preview-evidence-2026-10.md`: seis relatos de 2026-10-07 a 2026-10-10, consolidados na organização de 2026-10-10. Preserva bootstrap, matriz HTTP/CI, WAF, cache/TTL, consumo, falha Redis/recuperação, ferramentas de eco e restauração final do Preview; também reúne as verificações locais antigas do runbook. Os resultados mantêm a fonte e as limitações originais.
+- `docs/history/preview-evidence-2026-10.md`: seis relatos de 2026-10-07 a 2026-10-10, consolidados na organização de 2026-10-10. Preserva bootstrap, matriz HTTP/CI, WAF, cache/TTL, consumo, falha Redis/recuperação, ferramentas de eco e restauração final do Preview; também reúne as verificações locais antigas do runbook e as notas de sessão retiradas da lista ativa na reorganização de 2026-10-10. Os resultados mantêm a fonte e as limitações originais.
 
 O [baseline Node](../architecture/backend-local-baseline.md) foi movido para arquitetura porque ainda é referenciado pela spec da plataforma como contrato local. Seus requisitos foram preservados.
 
