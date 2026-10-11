@@ -1,6 +1,7 @@
+import { useCallback, useState } from 'react';
 import { CitySearch } from './components/city-search';
 import { ForecastStatus } from './components/forecast-state';
-import { SiteInformation } from './components/site-information';
+import { SiteInformationDialog } from './components/site-information';
 import logoEscuro from './assets/brand/logo-escuro.svg';
 import { useForecast } from './hooks/use-forecast';
 import { useWeatherBackground } from './hooks/use-weather-background';
@@ -8,6 +9,9 @@ import { useWeatherBackground } from './hooks/use-weather-background';
 export function App() {
   const forecast = useForecast();
   const background = useWeatherBackground(forecast.state);
+  const [informationOpen, setInformationOpen] = useState(false);
+  const openInformation = useCallback(() => setInformationOpen(true), []);
+  const closeInformation = useCallback(() => setInformationOpen(false), []);
   return (
     <div
       className={`site-shell${background ? ' has-image' : ''}`}
@@ -22,13 +26,20 @@ export function App() {
         </div>
       </header>
       <main className={`main-content${forecast.state.status === 'ready' ? '' : ' has-state'}`}>
-        <ForecastStatus state={forecast.state} onRetry={forecast.retry} />
+        <ForecastStatus
+          state={forecast.state}
+          onRetry={forecast.retry}
+          onOpenInformation={openInformation}
+        />
       </main>
       <footer className="site-footer">
         <div className="footer-inner">
           <div className="footer-about">
             <strong>NossoClima</strong>
             <p>Condições atuais e previsão para sete dias.</p>
+            <button type="button" className="footer-information" onClick={openInformation}>
+              Privacidade e créditos
+            </button>
           </div>
           {forecast.state.status !== 'idle' && (
             <p className="attribution forecast-attribution">
@@ -57,8 +68,8 @@ export function App() {
             </p>
           )}
         </div>
-        <SiteInformation />
       </footer>
+      <SiteInformationDialog open={informationOpen} onClose={closeInformation} />
     </div>
   );
 }

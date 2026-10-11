@@ -193,3 +193,12 @@ O fluxo na nova branch foi confirmado pelo proprietário. A reserva ponderada da
 ## Estado documental em 2026-10-10
 
 O aviso de privacidade foi revisado com a configuração de região da Function obtida pela CLI, a região Redis e a ausência de backup periódico informadas pelo proprietário, além dos TTLs do aplicativo; prazos gerais de logs dos fornecedores não foram presumidos. Os direitos dos fundos/logo foram revisados no alcance do inventário, e os créditos permanecem na interface. O link GitHub existente respondeu 404 sem autenticação; o proprietário pretende tornar o repositório público, com conferência anônima antes da abertura. As pendências vigentes ficam em `tasks/vercel-todo.md`.
+
+## Informações do site em diálogo — 2026-10-10
+
+O proprietário pediu que as informações de privacidade deixem de ocupar o fim da página e passem a abrir como uma mensagem sobreposta, com fundo desfocado e botão de fechar no canto superior direito. Esta revisão substitui, para a apresentação, o rodapé com seções ancoradas descrito em 2026-09-28; o conteúdo, os links e as atribuições continuam os mesmos.
+
+- Um diálogo modal (`<dialog>` com `showModal()`) reúne “Seus dados”, “Sobre o projeto” e “Licenças e créditos”. Ele recebe foco ao abrir, fecha pelo botão “Fechar”, pela tecla Esc ou por clique fora do painel, devolve o foco a quem o abriu e bloqueia a rolagem da página enquanto aberto.
+- Primeiro acesso: a tela neutra, exibida apenas enquanto nenhuma cidade foi escolhida neste navegador, mostra um botão evidente “Como usamos seus dados”. Nenhum novo dado é guardado para detectar o primeiro acesso; a última cidade salva continua sendo o único registro local.
+- Demais acessos: o rodapé mantém um botão discreto “Privacidade e créditos”, sempre disponível. A atribuição de dados meteorológicos continua no rodapé junto à previsão.
+- Testes de componente cobrem abertura pelos dois pontos, fechamento e conteúdo; o teste de acessibilidade do navegador abre o diálogo real e executa axe com ele aberto.
