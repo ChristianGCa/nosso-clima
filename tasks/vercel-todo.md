@@ -38,6 +38,7 @@
 
 ## Pendências de manutenção (não bloqueiam)
 
+- [ ] LGPD — transferência internacional: aviso atualizado em 2026-10-12 (branch `fix/lgpd-privacy-notice`) com base legal, transferência, direitos do titular, ANPD e incidentes; `Referrer-Policy` do web passou a `no-referrer`; procedimento de incidente no runbook. Os DPAs públicos de Vercel e Upstash pesquisados não mostram as cláusulas-padrão da ANPD (Res. CD/ANPD nº 19/2024). Decisão do proprietário: aceitar e manter a transparência no aviso, ou mover a Function para São Paulo e a base Upstash para a região de São Paulo (reduz, mas não elimina, a transferência, porque os fornecedores são estrangeiros). Conferir também se o apelido `ChristianGCa` basta como identificação do controlador (art. 9º, III) ou se o nome civil deve constar.
 - [ ] Branches: as locais foram removidas em 2026-10-12, inclusive `p1a-preview`, cujas duas correções foram restauradas na `main`. No GitHub restam `chore/vercel-p1`, `docs/release-p11`, `fix/restore-p1a-hardening` e `fix/geocoding-skip-incomplete-candidates`, todas incorporadas; a remoção fica a cargo do proprietário.
 - Após a abertura, acompanhar: 503, negações de cota, 429 externo, consumo dos planos Free, expiração de busca em 24 h, concorrência/atomicidade hospedadas e reconciliação mensal (postergados pela decisão abaixo).
 
