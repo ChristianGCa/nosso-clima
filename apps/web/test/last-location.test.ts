@@ -28,6 +28,8 @@ describe('last selected city', () => {
       JSON.stringify({ version: 1, location: { ...location, latitude: 999 } }),
       JSON.stringify({ version: 1, location: { ...location, timezone: 'Invalid/Zone' } }),
       JSON.stringify({ version: 1, location: { ...location, name: '<script>'.repeat(1000) } }),
+      JSON.stringify({ version: 1, location: { ...location, name: 'x'.repeat(257) } }),
+      JSON.stringify({ version: 1, location: { ...location, region: '\u0001' } }),
     ]) {
       localStorage.setItem(LAST_LOCATION_STORAGE_KEY, raw);
       expect(loadLastLocation()).toBeNull();
