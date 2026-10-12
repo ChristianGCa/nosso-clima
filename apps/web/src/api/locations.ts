@@ -25,8 +25,21 @@ export type LocationSearch = Readonly<{
 
 function region(value: unknown): string | null {
   if (value === null) return null;
-  if (typeof value !== 'string') throw new Error('invalid data');
-  return value;
+  return placeText(value);
+}
+
+function placeText(value: unknown): string {
+  const label = text(value);
+  if (label !== label.trim()) throw new Error('invalid data');
+  let length = 0;
+  for (const character of label) {
+    length += 1;
+    const firstCodeUnit = character.charCodeAt(0);
+    if (length > 256 || firstCodeUnit < 32 || firstCodeUnit === 127) {
+      throw new Error('invalid data');
+    }
+  }
+  return label;
 }
 
 export function parseLocations(value: unknown): LocationSearch {
@@ -56,9 +69,9 @@ export function parseLocation(raw: unknown): Location {
   if (!Number.isInteger(id)) throw new Error('invalid data');
   return {
     id,
-    name: text(item.name),
+    name: placeText(item.name),
     region: region(item.region),
-    country: text(item.country),
+    country: placeText(item.country),
     countryCode,
     latitude: finite(item.latitude, -90, 90),
     longitude: finite(item.longitude, -180, 180),

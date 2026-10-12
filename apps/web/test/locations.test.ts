@@ -19,12 +19,6 @@ describe('location HTTP boundary', () => {
     expect(result.locations[0]?.region).toBe('São Paulo');
     expect(result.attribution.sourceUrl).toBe('https://www.geonames.org/');
     expect(parseLocations({ ...locationResponse, locations: [] }).locations).toEqual([]);
-    expect(
-      parseLocations({
-        ...locationResponse,
-        locations: [{ ...locationResponse.locations[0], region: '' }],
-      }).locations[0]?.region,
-    ).toBe('');
   });
 
   it('uses only the configured API origin', async () => {
@@ -42,6 +36,14 @@ describe('location HTTP boundary', () => {
     { ...locationResponse, locations: [{ ...locationResponse.locations[0], latitude: 'wrong' }] },
     { ...locationResponse, locations: [{ ...locationResponse.locations[0], countryCode: 'BRA' }] },
     { ...locationResponse, locations: [{ ...locationResponse.locations[0], region: 5 }] },
+    {
+      ...locationResponse,
+      locations: [{ ...locationResponse.locations[0], name: 'x'.repeat(257) }],
+    },
+    { ...locationResponse, locations: [{ ...locationResponse.locations[0], country: ' Brasil' }] },
+    { ...locationResponse, locations: [{ ...locationResponse.locations[0], region: '\u0001' }] },
+    { ...locationResponse, locations: [{ ...locationResponse.locations[0], region: '\u007f' }] },
+    { ...locationResponse, locations: [{ ...locationResponse.locations[0], region: '' }] },
     { ...locationResponse, locations: [{ ...locationResponse.locations[0], id: 1.5 }] },
     {
       ...locationResponse,
@@ -63,6 +65,22 @@ describe('location HTTP boundary', () => {
         locations: [{ ...locationResponse.locations[0], region: null }],
       }).locations[0]?.region,
     ).toBeNull();
+  });
+
+  it('counts location labels in Unicode code points', () => {
+    const name = '😀'.repeat(256);
+    expect(
+      parseLocations({
+        ...locationResponse,
+        locations: [{ ...locationResponse.locations[0], name }],
+      }).locations[0]?.name,
+    ).toBe(name);
+    expect(() =>
+      parseLocations({
+        ...locationResponse,
+        locations: [{ ...locationResponse.locations[0], name: `${name}😀` }],
+      }),
+    ).toThrow();
   });
 
   it('classifies valid rate limits without leaking messages', async () => {
@@ -183,5 +201,18 @@ describe('location HTTP boundary', () => {
     await expect(
       searchLocations('Curitiba', new AbortController().signal, fetchImpl),
     ).rejects.toMatchObject({ failure: { kind: 'request_failed' } });
+  });
+
+  it.each([
+    new Response('{', { status: 503, headers: { 'content-type': 'application/json' } }),
+    new Response('temporarily unavailable', {
+      status: 503,
+      headers: { 'content-type': 'text/plain' },
+    }),
+  ])('treats a malformed 503 body as temporary unavailability', async (response) => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => response.clone());
+    await expect(
+      searchLocations('Curitiba', new AbortController().signal, fetchImpl),
+    ).rejects.toMatchObject({ failure: { kind: 'unavailable' } });
   });
 });

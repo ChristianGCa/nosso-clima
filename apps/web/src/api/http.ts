@@ -50,7 +50,12 @@ export async function requestJson(
       if (response.status === 429) {
         kind = 'rate_limited';
       } else if (response.status === 503) {
-        const body: unknown = await response.json().catch(() => null);
+        let body: unknown = null;
+        try {
+          body = await response.json();
+        } catch {
+          kind = 'unavailable';
+        }
         if (
           typeof body === 'object' &&
           body !== null &&

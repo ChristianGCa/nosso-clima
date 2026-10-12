@@ -135,6 +135,10 @@ describe('parseEnvironment', () => {
     ['localhost', 'https://localhost:4173'],
     ['IPv4 loopback', 'https://127.0.0.1:4173'],
     ['IPv6 loopback', 'https://[::1]:4173'],
+    ['private IPv4', 'https://10.0.0.1'],
+    ['link-local IPv4', 'https://169.254.1.1'],
+    ['public IPv4 literal', 'https://8.8.8.8'],
+    ['private IPv6', 'https://[fd00::1]'],
   ])('rejects %s as a production CORS origin', (_caseName, origin) => {
     expect(() =>
       parseEnvironment({

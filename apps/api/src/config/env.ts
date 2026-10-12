@@ -1,3 +1,4 @@
+import { isIP } from 'node:net';
 import envSchema, { type JSONSchemaType } from 'env-schema';
 
 export type NodeEnvironment = 'development' | 'test' | 'production';
@@ -169,8 +170,9 @@ function normalizeHttpOrigin(origin: string, nodeEnvironment: NodeEnvironment): 
       hostname.endsWith('.localhost') ||
       hostname.startsWith('127.') ||
       hostname === '[::1]';
+    const isIpLiteral = isIP(hostname.replace(/^\[|\]$/g, '')) !== 0;
 
-    if (parsed.protocol !== 'https:' || isLoopback) {
+    if (parsed.protocol !== 'https:' || isLoopback || isIpLiteral) {
       throw new Error('CORS_ALLOWED_ORIGINS must contain only public HTTPS origins in production');
     }
   }
