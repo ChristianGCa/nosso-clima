@@ -7,7 +7,7 @@
 - **Local:** P0 e P2–P9 implementados. Todos os gates locais passaram em 2026-10-10 (detalhes abaixo), com navegador Chromium do Fedora em vez do fixado pelo Playwright.
 - **Preview:** protegido e funcional com dados reais; eco retirado; Redis preservado.
 - **Production:** ativa em `64c84ec` (mesmo código de aplicação de `1e49054`; o diff é só de documentação), protegida; smoke protegido e ensaio de rollback dos dois projetos concluídos em 2026-10-12.
-- **Publicação:** pendências técnicas fechadas em 2026-10-12; falta somente a decisão explícita do proprietário.
+- **Publicação:** aberta em 2026-10-12 por decisão do proprietário. Proteção “Standard” (domínios de Production públicos; Previews e URLs de deployment protegidos); smoke público aprovado.
 - **Git:** `chore/vercel-p1` integrada a `main` pelos PRs #2 (`1e49054`) e #3 (`64c84ec`, só documentação), com CI verde em ambos. O merge do PR #3 gerou novos deployments Production apesar de não mudar `apps/`: **todo commit na `main` gera deployments Production**. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
 
 | Etapa | Estado |
@@ -19,7 +19,7 @@
 | P1c — WAF e custo Free | Concluída: plano Hobby sem pagamento e WAF ativa reconferidos em 2026-10-12 |
 | P1d — identidade e saída | Concluída: saída sem IP aceita; identidade resistiu à falsificação nos dois caminhos em Preview |
 | P10 — privacidade, direitos, termos | Concluída: revisados e repositório público |
-| P11 — smoke, rollback, decisão | Parcial: smoke protegido e rollback ensaiados; decisão pendente |
+| P11 — smoke, rollback, decisão | Concluída: smoke protegido, rollback ensaiado, abertura e smoke público em 2026-10-12 |
 
 ## Pendências bloqueantes — ordem para chegar à produção
 
@@ -34,7 +34,7 @@
    - [x] P1c em 2026-10-12: conta e time em Hobby, sem trial, sem método de pagamento e sem bloqueio; regra WAF ativa nos dois projetos (`/api` OU prefixo `/api/`, 60/60 s por IP, janela fixa). A rotina de acompanhamento após a abertura está no runbook (Release, item 4).
    - [x] Transporte de saída confirmado em 2026-10-12: busca e previsão passam por `createReservedOpenMeteoFetch` → `createOpenMeteoTransport`; nenhuma mudança em `apps/api/src` desde a revisão aceita; o eco só é aceito em Preview e o header de eco não aparece em Production.
    - [x] Smoke protegido e ensaio de rollback dos dois projetos em 2026-10-12: atual → par anterior → atual, com smoke da API pela CLI e do web no navegador em cada estado. Detalhes em `docs/history/preview-evidence-2026-10.md`, seção “Smoke e rollback de Production — 2026-10-12”.
-   - [ ] Decisão explícita do proprietário sobre a abertura pública.
+   - [x] Abertura pública em 2026-10-12: o proprietário trocou a proteção dos dois projetos de “All Deployments” para a que libera somente os domínios de Production. Smoke anônimo aprovado; detalhes no histórico, seção “Abertura pública e smoke anônimo — 2026-10-12”.
 
 ## Pendências de manutenção (não bloqueiam)
 
