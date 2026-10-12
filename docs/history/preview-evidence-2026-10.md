@@ -797,3 +797,9 @@ Smoke do agente com `curl` sem autenticação, nos domínios de Production:
 - Foram feitas quatro consultas reais à Open-Meteo (duas buscas e duas previsões).
 
 Acompanhamento após a abertura, conforme o runbook: 503/negações de cota, 429 externo versus limites próprios, cache hit/miss e consumo dos planos Free.
+
+## Merge do PR #4 e falha `git_info_fail` — 2026-10-12
+
+O merge do PR #4 (`e6bede3`, só documentação) gerou deployments de Preview e de Production cerca de 11 minutos depois. Na API, o deployment ficou Ready e ativo. No web, a primeira tentativa falhou em 25 s com `git_info_fail`, sem eventos de build e sem atribuição de domínio. A Production do web continuou servindo `64c84ec` até o proprietário fazer o redeploy, que ficou Ready em `e6bede3` com o mesmo JS com hash. O smoke público passou nos dois projetos.
+
+Na mesma janela havia dois incidentes abertos nas páginas de status: na Vercel, "Increased build and deployment failures", afetando *Builds* e *Git Integrations*; no GitHub, "Incident with Actions, Pull Requests and Issues", com atraso de notificações. A coincidência de horário explica de forma plausível a falha e os atrasos na criação dos deployments, mas a causa não foi confirmada pela Vercel. Os atrasos também invalidam as conclusões anteriores de que deployments tinham sido “pulados”. Se um deploy falhar sem log durante incidente, esperar e usar "Redeploy" antes de investigar o código.
