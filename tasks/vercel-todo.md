@@ -1,12 +1,12 @@
 # Entrega Vercel + Upstash — estado e pendências
 
-**Atualizado em 2026-10-10. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
+**Atualizado em 2026-10-12. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
 
 ## Resumo
 
 - **Local:** P0 e P2–P9 implementados. Todos os gates locais passaram em 2026-10-10 (detalhes abaixo), com navegador Chromium do Fedora em vez do fixado pelo Playwright.
 - **Preview:** protegido e funcional com dados reais; eco retirado; Redis preservado.
-- **Production:** configurada e implantada em `1e49054`, protegida; smoke e rollback pendentes.
+- **Production:** configurada e implantada em `1e49054`, protegida; smoke protegido e ensaio de rollback dos dois projetos concluídos em 2026-10-12.
 - **Publicação:** bloqueada até fechar as pendências abaixo e a decisão separada do proprietário.
 - **Git:** `chore/vercel-p1` integrada a `main` em `1e49054` (PR #2), com CI verde; Production dos dois projetos gerado dessa revisão, ainda protegido. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
 
@@ -19,7 +19,7 @@
 | P1c — WAF e custo Free | Aceita no alcance registrado; reconferir regra/plano no release |
 | P1d — identidade e saída | Concluída: saída sem IP aceita; identidade resistiu à falsificação nos dois caminhos em Preview |
 | P10 — privacidade, direitos, termos | Concluída: revisados e repositório público |
-| P11 — smoke, rollback, decisão | Aberto |
+| P11 — smoke, rollback, decisão | Parcial: smoke protegido e rollback ensaiados; decisão pendente |
 
 ## Pendências bloqueantes — ordem para chegar à produção
 
@@ -27,13 +27,13 @@
    - [x] Política Production aprovada pelo proprietário em 2026-10-10 (tetos bem abaixo dos limites gratuitos, porque o IP de saída da Vercel é compartilhado) e cadastrada; valores efetivos ficam no painel, fora do Git.
    - [x] Variáveis de Production conferidas pela CLI em 2026-10-10, somente nomes/escopos: API com `NODE_ENV`, `HOST`, `UPSTASH_REDIS_REST_URL`/`TOKEN` (copiados do endpoint REST da integração), duas chaves HMAC, CORS e oito campos de política; web com `API_ORIGIN`. CORS/`API_ORIGIN` separados entre Preview e Production; sem variáveis de eco. Domínios de Production renomeados pelo proprietário; os antigos redirecionam. Preview e Production compartilham a base Upstash Free e, portanto, a reserva de cota.
    - [x] `chore/vercel-p1` integrada a `main` pelo PR #2 (merge `1e49054`). Quality gates `success` na `main` e no PR (`b2412ac`), conferidos pela API pública do GitHub. API e web Production Ready em `1e49054`, protegidos; smoke ainda não executado.
-   - [ ] Definir destino de rollback da API: em 2026-10-10 a listagem Production da API mostrou somente o deployment `1e49054`; o anterior (`0c6d090`) não aparece mais. O web ainda tem o Production `0c6d090`, anterior ao novo `API_ORIGIN`, que não serve como destino pareado sem conferência.
+   - [x] Destino de rollback definido em 2026-10-12: o proprietário reimplantou os dois projetos e excluiu os deployments sem configuração confiável. Cada projeto mantém dois deployments Production Ready em `1e49054` com a mesma configuração; o par anterior (de 2026-10-10) é o destino de rollback.
 2. **Release (P1a/P1c agrupados + P11).**
    - [ ] Gates finais na revisão escolhida: `npm run check`, cobertura ≥80% por métrica/app, builds, E2E, axe, performance, audit, Gitleaks e CI em checkout limpo. A CI de `e9ba52e` passou; repetir somente se a revisão final mudar.
    - [ ] Conferência agrupada de P1a: versões dos dois builds, pareamento, rewrite, ausência de segredos no bundle, headers web/assets, CORS e caminhos HTTP sem evidência.
    - [ ] P1c: plano Free/Hobby sem cobrança/upgrade, rotina de acompanhamento de consumo/indisponibilidade e regras WAF ainda publicadas.
    - [ ] Confirmar que busca e previsão ainda usam o transporte de saída revisado.
-   - [ ] Smoke protegido nos caminhos finais e ensaio de rollback dos dois projetos para deployments existentes/verificados (o deployment antigo da API foi excluído; não usá-lo).
+   - [x] Smoke protegido e ensaio de rollback dos dois projetos em 2026-10-12: atual → par anterior → atual, com smoke da API pela CLI e do web no navegador em cada estado. Detalhes em `docs/history/preview-evidence-2026-10.md`, seção “Smoke e rollback de Production — 2026-10-12”.
    - [ ] Decisão explícita do proprietário sobre a abertura pública.
 
 ## Pendências de manutenção (não bloqueiam)
