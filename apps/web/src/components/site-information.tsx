@@ -93,8 +93,7 @@ export function SiteInformationDialog({ open, onClose }: Props) {
               normalmente não temos dados que identifiquem você.
             </p>
             <p>
-              Respondemos em até 15 dias pelo contato abaixo, e você também pode recorrer à
-              Autoridade Nacional de Proteção de Dados (ANPD). Em caso de incidente de segurança
+              Respondemos em até 15 dias pelo contato abaixo. Em caso de incidente de segurança
               relevante, avisaremos a ANPD e as pessoas afetadas.
             </p>
             <p>
