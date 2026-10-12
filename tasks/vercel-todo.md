@@ -7,16 +7,16 @@
 - **Local:** P0 e P2–P9 implementados. Todos os gates locais passaram em 2026-10-10 (detalhes abaixo), com navegador Chromium do Fedora em vez do fixado pelo Playwright.
 - **Preview:** protegido e funcional com dados reais; eco retirado; Redis preservado.
 - **Production:** configurada e implantada em `1e49054`, protegida; smoke protegido e ensaio de rollback dos dois projetos concluídos em 2026-10-12.
-- **Publicação:** bloqueada até fechar as pendências abaixo e a decisão separada do proprietário.
+- **Publicação:** pendências técnicas fechadas em 2026-10-12; falta somente a decisão explícita do proprietário.
 - **Git:** `chore/vercel-p1` integrada a `main` em `1e49054` (PR #2), com CI verde; Production dos dois projetos gerado dessa revisão, ainda protegido. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
 
 | Etapa | Estado |
 |---|---|
 | P0 — specs e fronteiras | Aprovada em 2026-10-04 |
 | P2–P9 — implementação local | Concluídas; reconferir gates na revisão final |
-| P1a — topologia, build, headers | Parcial: evidências de Preview existentes; conferência agrupada no release |
+| P1a — topologia, build, headers | Concluída: conferência agrupada em Production (2026-10-12) |
 | P1b — Redis e cota | Aceita no alcance registrado; provas extensas em acompanhamento; peso da previsão confirmado (1,3) |
-| P1c — WAF e custo Free | Aceita no alcance registrado; reconferir regra/plano no release |
+| P1c — WAF e custo Free | Concluída: plano Hobby sem pagamento e WAF ativa reconferidos em 2026-10-12 |
 | P1d — identidade e saída | Concluída: saída sem IP aceita; identidade resistiu à falsificação nos dois caminhos em Preview |
 | P10 — privacidade, direitos, termos | Concluída: revisados e repositório público |
 | P11 — smoke, rollback, decisão | Parcial: smoke protegido e rollback ensaiados; decisão pendente |
@@ -29,10 +29,10 @@
    - [x] `chore/vercel-p1` integrada a `main` pelo PR #2 (merge `1e49054`). Quality gates `success` na `main` e no PR (`b2412ac`), conferidos pela API pública do GitHub. API e web Production Ready em `1e49054`, protegidos; smoke ainda não executado.
    - [x] Destino de rollback definido em 2026-10-12: o proprietário reimplantou os dois projetos e excluiu os deployments sem configuração confiável. Cada projeto mantém dois deployments Production Ready em `1e49054` com a mesma configuração; o par anterior (de 2026-10-10) é o destino de rollback.
 2. **Release (P1a/P1c agrupados + P11).**
-   - [ ] Gates finais na revisão escolhida: `npm run check`, cobertura ≥80% por métrica/app, builds, E2E, axe, performance, audit, Gitleaks e CI em checkout limpo. A CI de `e9ba52e` passou; repetir somente se a revisão final mudar.
-   - [ ] Conferência agrupada de P1a: versões dos dois builds, pareamento, rewrite, ausência de segredos no bundle, headers web/assets, CORS e caminhos HTTP sem evidência.
-   - [ ] P1c: plano Free/Hobby sem cobrança/upgrade, rotina de acompanhamento de consumo/indisponibilidade e regras WAF ainda publicadas.
-   - [ ] Confirmar que busca e previsão ainda usam o transporte de saída revisado.
+   - [x] Gates finais na revisão hospedada `1e49054`: check-run `verify` da CI em `success` (checkout limpo, Chromium fixado; `npm run check`, cobertura, audit, axe, E2E, performance e Gitleaks), conferido pela API pública do GitHub em 2026-10-12. Builds Vercel dos dois projetos concluídos. Repetir somente se a revisão hospedada mudar.
+   - [x] Conferência agrupada de P1a em 2026-10-12: Node 24.21.0/npm 12.0.2 nos dois builds de `1e49054`; rewrite do web aponta para a API Production; bundle sem nomes ou valores de credenciais nem domínio da API; headers de HTML, assets e arquivos estáticos; CORS e caminhos HTTP do smoke.
+   - [x] P1c em 2026-10-12: conta e time em Hobby, sem trial, sem método de pagamento e sem bloqueio; regra WAF ativa nos dois projetos (`/api` OU prefixo `/api/`, 60/60 s por IP, janela fixa). A rotina de acompanhamento após a abertura está no runbook (Release, item 4).
+   - [x] Transporte de saída confirmado em 2026-10-12: busca e previsão passam por `createReservedOpenMeteoFetch` → `createOpenMeteoTransport`; nenhuma mudança em `apps/api/src` desde a revisão aceita; o eco só é aceito em Preview e o header de eco não aparece em Production.
    - [x] Smoke protegido e ensaio de rollback dos dois projetos em 2026-10-12: atual → par anterior → atual, com smoke da API pela CLI e do web no navegador em cada estado. Detalhes em `docs/history/preview-evidence-2026-10.md`, seção “Smoke e rollback de Production — 2026-10-12”.
    - [ ] Decisão explícita do proprietário sobre a abertura pública.
 

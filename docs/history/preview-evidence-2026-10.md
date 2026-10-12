@@ -758,3 +758,17 @@ Revisão hospedada `1e49054` (merge do PR #2; árvore idêntica a `b2412ac`). Co
 - **Rollback:** o proprietário promoveu o par anterior dos dois projetos. A CLI confirmou os dois como Production ativos; o smoke da API repetiu 200/400/200/200 e, no navegador, busca e previsão funcionaram. Em seguida, o par atual foi promovido de volta, sem aviso de promoção automática desativada; a CLI confirmou os dois atuais ativos, `autoAssignCustomDomains` verdadeiro e nenhum alvo de rollback pendente; o smoke da API repetiu os mesmos resultados. Redis não foi alterado.
 - **Console do navegador:** avisos de CSP `manifest-src 'self'` ao carregar `site.webmanifest`. O navegador busca o manifesto sem credenciais, a proteção redireciona para o SSO e a CSP bloqueia corretamente. É efeito da proteção, como no Preview; CSP e proteção não foram alteradas. Conferir a ausência do aviso no smoke após a abertura.
 - Foram feitas seis consultas reais à Open-Meteo (três buscas e três previsões, peso aproximado de 6,9). Nenhum endereço, ID ou nonce foi registrado.
+
+## Conferência agrupada de release — 2026-10-12
+
+Consultas somente de leitura do agente nos deployments Production ativos (`1e49054`), com a CLI Vercel autenticada e a API pública do GitHub.
+
+- **Builds (P1a):** os dois logs mostram build em `iad1`, clone de `main` em `1e49054`, comando de instalação versionado com Node 24.21.0 e npm 12.0.2, `npm ci` sem vulnerabilidades e build concluído (API `tsc`; web `tsc --noEmit` + Vite 8.3.1). No web, a etapa da plataforma que instala dependências antes de compilar `vercel.mjs` usa o npm padrão da imagem (11.19.0) e emite avisos `EBADENGINE`. São só avisos e não afetam a instalação do projeto, que usa npm 12.0.2.
+- **Pareamento e rewrite:** no smoke de Production, o 302 do rewrite apontou para o domínio da API Production; no navegador, o rewrite respondeu pela API do mesmo par. O CORS da API aceita somente a origem web de Production.
+- **Bundle:** HTML, JS e CSS servidos não contêm nomes de variáveis de credencial (`UPSTASH`, `REDIS`, `HMAC`, `TOKEN`, `API_ORIGIN`), o domínio da API, `vercel.app`, `Bearer` ou chave privada. "Upstash" aparece só no texto do aviso de privacidade; as strings longas encontradas são internas do React.
+- **Headers:** JS, CSS e imagens com hash usam `public, max-age=31536000, immutable`. HTML, `site.webmanifest`, `third-party-licenses.txt`, `favicon.svg` e 404 usam `public, max-age=0, must-revalidate`, com CSP em todos. A API usa `private, no-store`.
+- **Custo e WAF (P1c):** conta e time em Hobby, status ativo, sem trial, método de pagamento ou bloqueio. Firewall ativo nos dois projetos, com uma regra de rate limit: dois grupos em OU (`path` igual a `/api`; prefixo `/api/`), 60 pedidos/60 s por IP, janela fixa, sem listas de IP nem regras gerenciadas.
+- **Transporte:** busca e previsão usam `createReservedOpenMeteoFetch`, que envolve `createOpenMeteoTransport`. `apps/api/src` não mudou desde `6aa0144`. O upstream de eco só é aceito com `VERCEL_ENV=preview`; o header de eco não aparece na API Production.
+- **Gates:** o check-run `verify` da CI em `1e49054` terminou com `success`. O workflow cobre `npm run check`, cobertura, audit, axe, E2E, performance e Gitleaks em checkout limpo com Chromium fixado.
+
+Nenhum deploy, alteração de ambiente, Redis ou WAF ocorreu. Nenhum endereço, ID ou valor operacional foi registrado.
