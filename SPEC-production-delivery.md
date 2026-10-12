@@ -1,6 +1,6 @@
 # Spec: Production Delivery — dois projetos Vercel (P0)
 
-- **Estado:** P0 aprovada para implementação pelo proprietário em 2026-10-04; publicação pública depende de decisão separada.
+- **Estado:** P0 aprovada para implementação pelo proprietário em 2026-10-04; publicação pública decidida pelo proprietário e realizada em 2026-10-12.
 - **Módulo:** `production-delivery`; depende de `backend-platform`, `location-search`, `weather-forecast`, `weather-ui`.
 - **Histórico:** [marcos e planos encerrados](docs/history/README.md). A alternativa Cloudflare foi descartada.
 - **Pesquisa:** [viabilidade e fontes oficiais](docs/deploy/vercel-research-2026-10-04.md).
@@ -8,7 +8,7 @@
 
 ## Estado e alcance
 
-O progresso e as pendências de Preview/Production estão na [lista ativa](tasks/vercel-todo.md); as coletas datadas ficam em `docs/history/preview-evidence-2026-10.md`. Esta spec define os gates de entrega; o runtime continua em [Backend Platform](SPEC-backend-platform.md). Aprovação P0 e builds Ready não equivalem a autorização de publicação. Reaproveitar as provas concluídas no alcance registrado, sem reiniciar implementação ou bootstrap por reler critérios de aceite.
+O progresso e as pendências de Preview/Production estão na [lista ativa](tasks/vercel-todo.md); as coletas datadas ficam em `docs/history/preview-evidence-2026-10.md`. Esta spec define os gates de entrega; o runtime continua em [Backend Platform](SPEC-backend-platform.md). Aprovação P0 e builds Ready não equivaliam a autorização de publicação; a abertura dependeu de decisão explícita do proprietário. Reaproveitar as provas concluídas no alcance registrado, sem reiniciar implementação ou bootstrap por reler critérios de aceite.
 
 ## Resultado pretendido
 

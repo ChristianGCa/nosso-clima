@@ -12,6 +12,8 @@ O estado de execução está na [lista ativa](../../tasks/vercel-todo.md). Este 
 | 2026-10-01 | Corrigidas validação de data/fuso da previsão e apresentação de erros HTTP; contraste verificado nos dez fundos. |
 | 2026-10-03 | Gates locais executados passaram, mas publicação permaneceu bloqueada. A proposta Worker Cloudflare não demonstrava a exigência de nunca enviar o IP do visitante à Open-Meteo. |
 | 2026-10-04 | Cloudflare descartada; P0 Vercel + Upstash aprovada para implementação, com publicação sujeita a decisão separada. Condição diária passou a ser predominante entre códigos horários, preservando o contrato HTTP; cartões e contraste revistos. Peso da consulta horária continua como prova de P1b. |
+| 2026-10-10 | Simplificação de P1 aprovada pelo proprietário (provas hospedadas extensas passam a acompanhamento); política Production aprovada; identidade anti-spoof aceita em Preview. |
+| 2026-10-12 | Smoke protegido, ensaio de rollback e conferência agrupada de release concluídos; abertura pública decidida pelo proprietário. Correções de CORS, rótulos de cidades e resultados incompletos de busca publicadas no mesmo dia. |
 
 A ideia inicial priorizava leitura rápida, unidades °C/km/h/mm, busca explícita e cinco condições visuais em dia/noite. Não previa contas, geolocalização automática, mapas, alertas, comparação de cidades ou previsão horária na interface. A hipótese de compreensão em menos de dez segundos e o teste de apresentação de chuva com cinco pessoas não tinham validação registrada. A hipótese de evitar Redis foi substituída pela [ADR 0001](../decisions/0001-vercel-upstash.md); requisitos vigentes estão nas specs.
 

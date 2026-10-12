@@ -1,7 +1,7 @@
 # Spec: Backend Platform — estado local e migração Vercel + Upstash
 
 - **Estado local:** implementado e aprovado em 2026-09-23.
-- **Estado da migração:** P0 aprovada em 2026-10-04; integração implementada e ensaiada em Preview. O progresso vigente e o alcance das provas ficam em `tasks/vercel-todo.md`; P1 permanece obrigatória antes da publicação.
+- **Estado da migração:** P0 aprovada em 2026-10-04; integração implementada e ensaiada em Preview. O progresso vigente e o alcance das provas ficam em `tasks/vercel-todo.md`; P1 concluída no alcance aprovado e publicação realizada em 2026-10-12.
 - **Módulo:** `backend-platform`; consumidores: `location-search`, `weather-forecast`, `production-delivery`.
 - **Contrato local detalhado:** [Node/Fastify aprovado para execução local](docs/architecture/backend-local-baseline.md). A alternativa Cloudflare foi descartada.
 
