@@ -2,7 +2,7 @@
 
 Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias, usando dados da Open-Meteo. Na primeira visita, a tela começa neutra; depois da seleção, o navegador guarda apenas a última cidade e consulta uma previsão nova nas visitas seguintes. Limpar os dados do site remove essa preferência.
 
-**Entrega:** implementação local concluída e Preview protegido funcionando; Production ainda não validada e publicação pública pendente. Estado e próximos passos ficam somente na [lista ativa](tasks/vercel-todo.md).
+**Entrega:** publicado em Production em 2026-10-12, com Previews e URLs de deployment ainda protegidos. Estado e próximos passos ficam somente na [lista ativa](tasks/vercel-todo.md).
 
 ## Executar localmente
 

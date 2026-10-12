@@ -772,3 +772,28 @@ Consultas somente de leitura do agente nos deployments Production ativos (`1e490
 - **Gates:** o check-run `verify` da CI em `1e49054` terminou com `success`. O workflow cobre `npm run check`, cobertura, audit, axe, E2E, performance e Gitleaks em checkout limpo com Chromium fixado.
 
 Nenhum deploy, alteração de ambiente, Redis ou WAF ocorreu. Nenhum endereço, ID ou valor operacional foi registrado.
+
+## Deployments de Production após o PR #3 — 2026-10-12
+
+O merge do PR #3 (`64c84ec`, só documentação; sem mudança em `apps/`, `package.json` ou lockfile) gerou um novo deployment Production em cada projeto alguns minutos depois. A opção de pular projetos não afetados estava ativa, mas não evitou os builds; a causa não foi investigada. A CI (`verify`) de `64c84ec` terminou com `success`.
+
+- **Builds:** clone de `main` em `64c84ec`, Node 24.21.0, npm 12.0.2, zero vulnerabilidades, build concluído. O JS do web tem o mesmo nome com hash do build de `1e49054`, ou seja, o mesmo conteúdo.
+- **Smoke da API pela CLI:** `/health` 200; busca curta 400 `VALIDATION_ERROR`; busca e previsão reais 200; `private, no-store`. Web `/` 200 com CSP; CORS aceita a origem web de Production.
+- **Navegador:** por relato do proprietário, buscas de cidades diferentes funcionaram pelo web atual.
+- **Estado final:** o proprietário manteve `64c84ec` ativo e excluiu os demais deployments Production. Destino de rollback em `1e49054`: API de 12/10 11:27 e web de 10/10 22:58, ambos ativos com smoke em algum momento do ensaio de rollback. Proteção `All Deployments` mantida.
+- Foram feitas mais duas consultas reais à Open-Meteo (uma busca e uma previsão).
+
+## Abertura pública e smoke anônimo — 2026-10-12
+
+Decisão do proprietário: abrir Production. Ele trocou a proteção dos dois projetos de “All Deployments” para a opção que deixa públicos só os domínios de Production (`all_except_custom_domains` na API da Vercel). Não há senha. Deployments ativos: `64c84ec` nos dois projetos.
+
+Smoke do agente com `curl` sem autenticação, nos domínios de Production:
+
+- **API direta:** `/health` 200; busca curta 400 `VALIDATION_ERROR`; busca e previsão reais 200 (condição atual, sete dias e atribuição); rota inexistente 404 `NOT_FOUND`; todas JSON com `private, no-store`.
+- **Web:** `/` 200 (HTML, `public, max-age=0, must-revalidate`); `site.webmanifest` 200 `application/manifest+json`, sem redirecionamento ao SSO; JS com hash 200 `immutable`. Pelo rewrite: busca e previsão 200, busca curta 400, rota inexistente 404, todas JSON `private, no-store`.
+- **CORS:** a origem web de Production recebe `Access-Control-Allow-Origin` próprio; uma origem divergente não recebe o header.
+- **Proteção remanescente:** as URLs específicas dos deployments Production e o Preview restante da API responderam 302 ao SSO sem autenticação.
+- A regra WAF continua publicada nos dois projetos (conferência agrupada de 2026-10-12). Não houve rajada em Production para não consumir cota.
+- Foram feitas quatro consultas reais à Open-Meteo (duas buscas e duas previsões).
+
+Acompanhamento após a abertura, conforme o runbook: 503/negações de cota, 429 externo versus limites próprios, cache hit/miss e consumo dos planos Free.

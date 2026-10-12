@@ -6,9 +6,9 @@
 
 - **Local:** P0 e P2–P9 implementados. Todos os gates locais passaram em 2026-10-10 (detalhes abaixo), com navegador Chromium do Fedora em vez do fixado pelo Playwright.
 - **Preview:** protegido e funcional com dados reais; eco retirado; Redis preservado.
-- **Production:** configurada e implantada em `1e49054`, protegida; smoke protegido e ensaio de rollback dos dois projetos concluídos em 2026-10-12.
-- **Publicação:** pendências técnicas fechadas em 2026-10-12; falta somente a decisão explícita do proprietário.
-- **Git:** `chore/vercel-p1` integrada a `main` em `1e49054` (PR #2), com CI verde; Production dos dois projetos gerado dessa revisão, ainda protegido. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
+- **Production:** ativa em `64c84ec` (mesmo código de aplicação de `1e49054`; o diff é só de documentação), protegida; smoke protegido e ensaio de rollback dos dois projetos concluídos em 2026-10-12.
+- **Publicação:** aberta em 2026-10-12 por decisão do proprietário. Proteção “Standard” (domínios de Production públicos; Previews e URLs de deployment protegidos); smoke público aprovado.
+- **Git:** `chore/vercel-p1` integrada a `main` pelos PRs #2 (`1e49054`) e #3 (`64c84ec`, só documentação), com CI verde em ambos. O merge do PR #3 gerou novos deployments Production apesar de não mudar `apps/`: **todo commit na `main` gera deployments Production**. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
 
 | Etapa | Estado |
 |---|---|
@@ -19,7 +19,7 @@
 | P1c — WAF e custo Free | Concluída: plano Hobby sem pagamento e WAF ativa reconferidos em 2026-10-12 |
 | P1d — identidade e saída | Concluída: saída sem IP aceita; identidade resistiu à falsificação nos dois caminhos em Preview |
 | P10 — privacidade, direitos, termos | Concluída: revisados e repositório público |
-| P11 — smoke, rollback, decisão | Parcial: smoke protegido e rollback ensaiados; decisão pendente |
+| P11 — smoke, rollback, decisão | Concluída: smoke protegido, rollback ensaiado, abertura e smoke público em 2026-10-12 |
 
 ## Pendências bloqueantes — ordem para chegar à produção
 
@@ -27,14 +27,14 @@
    - [x] Política Production aprovada pelo proprietário em 2026-10-10 (tetos bem abaixo dos limites gratuitos, porque o IP de saída da Vercel é compartilhado) e cadastrada; valores efetivos ficam no painel, fora do Git.
    - [x] Variáveis de Production conferidas pela CLI em 2026-10-10, somente nomes/escopos: API com `NODE_ENV`, `HOST`, `UPSTASH_REDIS_REST_URL`/`TOKEN` (copiados do endpoint REST da integração), duas chaves HMAC, CORS e oito campos de política; web com `API_ORIGIN`. CORS/`API_ORIGIN` separados entre Preview e Production; sem variáveis de eco. Domínios de Production renomeados pelo proprietário; os antigos redirecionam. Preview e Production compartilham a base Upstash Free e, portanto, a reserva de cota.
    - [x] `chore/vercel-p1` integrada a `main` pelo PR #2 (merge `1e49054`). Quality gates `success` na `main` e no PR (`b2412ac`), conferidos pela API pública do GitHub. API e web Production Ready em `1e49054`, protegidos; smoke ainda não executado.
-   - [x] Destino de rollback definido em 2026-10-12: o proprietário reimplantou os dois projetos e excluiu os deployments sem configuração confiável. Cada projeto mantém dois deployments Production Ready em `1e49054` com a mesma configuração; o par anterior (de 2026-10-10) é o destino de rollback.
+   - [x] Destino de rollback definido em 2026-10-12: o proprietário reimplantou os dois projetos e excluiu os deployments sem configuração confiável. Cada projeto mantém dois deployments Production Ready em `1e49054` com a mesma configuração; o par anterior (de 2026-10-10) é o destino de rollback. Atualizado após o merge do PR #3: ativo `64c84ec` (12/10 12:08) nos dois projetos; destino de rollback em `1e49054`, API de 12/10 11:27 e web de 10/10 22:58, ambos ativos em algum momento do ensaio. Os demais deployments Production foram excluídos pelo proprietário.
 2. **Release (P1a/P1c agrupados + P11).**
    - [x] Gates finais na revisão hospedada `1e49054`: check-run `verify` da CI em `success` (checkout limpo, Chromium fixado; `npm run check`, cobertura, audit, axe, E2E, performance e Gitleaks), conferido pela API pública do GitHub em 2026-10-12. Builds Vercel dos dois projetos concluídos. Repetir somente se a revisão hospedada mudar.
    - [x] Conferência agrupada de P1a em 2026-10-12: Node 24.21.0/npm 12.0.2 nos dois builds de `1e49054`; rewrite do web aponta para a API Production; bundle sem nomes ou valores de credenciais nem domínio da API; headers de HTML, assets e arquivos estáticos; CORS e caminhos HTTP do smoke.
    - [x] P1c em 2026-10-12: conta e time em Hobby, sem trial, sem método de pagamento e sem bloqueio; regra WAF ativa nos dois projetos (`/api` OU prefixo `/api/`, 60/60 s por IP, janela fixa). A rotina de acompanhamento após a abertura está no runbook (Release, item 4).
    - [x] Transporte de saída confirmado em 2026-10-12: busca e previsão passam por `createReservedOpenMeteoFetch` → `createOpenMeteoTransport`; nenhuma mudança em `apps/api/src` desde a revisão aceita; o eco só é aceito em Preview e o header de eco não aparece em Production.
    - [x] Smoke protegido e ensaio de rollback dos dois projetos em 2026-10-12: atual → par anterior → atual, com smoke da API pela CLI e do web no navegador em cada estado. Detalhes em `docs/history/preview-evidence-2026-10.md`, seção “Smoke e rollback de Production — 2026-10-12”.
-   - [ ] Decisão explícita do proprietário sobre a abertura pública.
+   - [x] Abertura pública em 2026-10-12: o proprietário trocou a proteção dos dois projetos de “All Deployments” para a que libera somente os domínios de Production. Smoke anônimo aprovado; detalhes no histórico, seção “Abertura pública e smoke anônimo — 2026-10-12”.
 
 ## Pendências de manutenção (não bloqueiam)
 
