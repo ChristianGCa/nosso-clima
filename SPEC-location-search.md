@@ -185,11 +185,11 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 
 The canonical query exists transiently in process memory as the request, cache key, and outbound parameter. It is not persisted. Hashing the cache key would not anonymize low-entropy city names and is therefore not represented as a privacy control.
 
-### Redis na entrada Vercel — implementado; P1 parcial
+### Redis na entrada Vercel — implementado e publicado
 
 O proprietário confirmou em 2026-10-04 a documentação de um cache Upstash temporário para resultados normalizados de busca, inclusive vazios, com TTL máximo de 24 horas, sem IP ou identificador do visitante. A busca canônica passa a gerar uma chave opaca derivada com segredo da API; a chave não expõe o texto diretamente. O valor pode conter nomes e coordenadas dos resultados, pois são necessários ao contrato de busca. Falhas continuam fora do cache. O cache e a reserva agregada pertencem a `backend-platform`, não a este módulo; o contrato HTTP, canonicalização, timeout, filtro e créditos desta spec permanecem iguais.
 
-Esta alteração foi aprovada para implementação na P0 e integrada localmente em P4/P6; sua publicação depende da prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime de desenvolvimento. Só a migração verificada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
+Esta alteração foi aprovada para implementação na P0 e integrada localmente em P4/P6; publicada em 2026-10-12 após a prova de viabilidade P1 de [Backend Platform](SPEC-backend-platform.md) e [Production Delivery](SPEC-production-delivery.md). O contrato local acima continua descrevendo o runtime de desenvolvimento. Só a migração verificada em P1 substitui o cache local em produção. A exceção aprovada permite exclusivamente os dados e TTL descritos nesta seção. Registrar esses dados em logs ou telemetria, criar histórico, servir cache vencido ou ampliar a persistência continua proibido.
 
 Na integração P6, toda chamada externa efetiva usa a reserva agregada e o circuit breaker de `backend-platform`; falha de Redis ou reserva negada retorna `503 SERVICE_UNAVAILABLE`. O contrato HTTP, os créditos e o TTL de 24 horas são preservados. A migração exige testes locais de concorrência, expiração exata, falhas não cacheadas e ausência de dados sensíveis em logs; o ensaio hospedado entre instâncias e após 24 horas segue o acompanhamento aprovado na [lista ativa](tasks/vercel-todo.md).
 

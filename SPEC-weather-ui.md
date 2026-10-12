@@ -7,7 +7,7 @@
 
 ## Alcance desta spec
 
-O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. Build, rewrite e fluxo pelo navegador foram verificados em Preview; em 2026-10-08, o proprietário confirmou o funcionamento em `chore/vercel-p1` e melhora após ajustar o orçamento agregado. Os estados 503 continuam seguindo o contrato existente. A continuidade de P1 (`docs/history/preview-evidence-2026-10.md`) registra isso, com a matriz de headers/CDN e os demais gates ainda em [tasks/vercel-todo.md](tasks/vercel-todo.md).
+O fluxo e os critérios locais estão implementados, incluindo os adendos aprovados até 2026-10-04. Build, rewrite e fluxo pelo navegador foram verificados em Preview; em 2026-10-08, o proprietário confirmou o funcionamento em `chore/vercel-p1` e melhora após ajustar o orçamento agregado. Os estados 503 continuam seguindo o contrato existente. A continuidade de P1 (`docs/history/preview-evidence-2026-10.md`) registra isso; o release e a publicação de 2026-10-12 estão em [tasks/vercel-todo.md](tasks/vercel-todo.md).
 
 ## Objective
 
@@ -32,7 +32,7 @@ For rate limiting, show a specific friendly message for `429 RATE_LIMITED` and a
 
 The frontend calls the same configured API base URL for both routes and uses `URLSearchParams` for query values. The base URL comes from build configuration, never from a search term or server response. Development may use a Vite proxy; production origin and CORS configuration belong to `production-delivery`.
 
-**Migração Vercel — implementação local de P7 concluída, publicação pendente de P1:** o build de produção usa `/api/v1/*` na origem web, com rewrite para a API. A configuração deixa `VITE_API_BASE_URL` ausente; se a variável for fornecida, a validação aceita somente a própria origem HTTPS e rejeita HTTP, loopback e outra origem. O rewrite, CORS e os headers de entrega seguem [Production Delivery](SPEC-production-delivery.md) e precisam de prova em Preview; contratos HTTP e comportamento visual continuam os descritos nesta spec.
+**Migração Vercel — P7 implementada e publicada em 2026-10-12:** o build de produção usa `/api/v1/*` na origem web, com rewrite para a API. A configuração deixa `VITE_API_BASE_URL` ausente; se a variável for fornecida, a validação aceita somente a própria origem HTTPS e rejeita HTTP, loopback e outra origem. O rewrite, CORS e os headers de entrega seguem [Production Delivery](SPEC-production-delivery.md) e foram verificados em Preview e Production; contratos HTTP e comportamento visual continuam os descritos nesta spec.
 
 The HTTP boundary also rejects a forecast whose first daily date is not the date in `current.validAtLocal`, or whose returned timezone differs from the explicitly selected city's timezone. Such a response uses the unavailable state instead of labelling a mismatched date “HOJE” or presenting a time for the wrong zone.
 
@@ -198,7 +198,7 @@ O aviso de privacidade foi revisado com a configuração de região da Function 
 
 O proprietário pediu que as informações de privacidade deixem de ocupar o fim da página e passem a abrir como uma mensagem sobreposta, com fundo desfocado e botão de fechar no canto superior direito. Esta revisão substitui, para a apresentação, o rodapé com seções ancoradas descrito em 2026-09-28; o conteúdo, os links e as atribuições continuam os mesmos.
 
-- Um diálogo modal (`<dialog>` com `showModal()`) reúne “Seus dados”, “Sobre o projeto” e “Licenças e créditos”. Ele recebe foco ao abrir, fecha pelo botão “Fechar”, pela tecla Esc ou por clique fora do painel, devolve o foco a quem o abriu e bloqueia a rolagem da página enquanto aberto.
+- Um diálogo modal (`<dialog>` com `showModal()`) reúne “Seus dados”, “Seus direitos” (LGPD, incluído em 2026-10-12), “Sobre o projeto” e “Licenças e créditos”. Ele recebe foco ao abrir, fecha pelo botão “Fechar”, pela tecla Esc ou por clique fora do painel, devolve o foco a quem o abriu e bloqueia a rolagem da página enquanto aberto.
 - Primeiro acesso: a tela neutra, exibida apenas enquanto nenhuma cidade foi escolhida neste navegador, mostra um botão evidente “Como usamos seus dados”. Nenhum novo dado é guardado para detectar o primeiro acesso; a última cidade salva continua sendo o único registro local.
 - Demais acessos: o rodapé mantém um botão discreto “Privacidade e créditos”, sempre disponível. A atribuição de dados meteorológicos continua no rodapé junto à previsão.
 - Testes de componente cobrem abertura pelos dois pontos, fechamento e conteúdo; o teste de acessibilidade do navegador abre o diálogo real e executa axe com ele aberto.

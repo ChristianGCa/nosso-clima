@@ -1,16 +1,16 @@
 # Capability Map: NossoClima
 
-Os módulos locais estão implementados. Vercel + Upstash é o plano de produção aprovado; a [lista ativa](tasks/vercel-todo.md) concentra progresso, evidências e pendências. Este mapa define responsabilidades e dependências; não comprova prontidão para publicação.
+Os módulos estão implementados e publicados em Production desde 2026-10-12, com Vercel + Upstash. A [lista ativa](tasks/vercel-todo.md) concentra progresso, evidências e acompanhamento. Este mapa define responsabilidades e dependências.
 
 ## Estado por módulo
 
 | Módulo | Implementado e aprovado localmente | Implementação Vercel e prova hospedada | Depende de |
 |---|---|---|---|
-| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Function, Redis HTTPS, reserva agregada, circuit breaker, cache, HMAC e limites compartilhados integrados; fluxos reais observados em Preview, com identidade anti-spoof e política Production pendentes | — |
+| `backend-platform` | Fastify/Node, HTTP, erros, configuração, logs seguros, cache LRU, `SingleFlight`, executor limitado e rate limits locais | Function, Redis HTTPS, reserva agregada, circuit breaker, cache, HMAC e limites compartilhados integrados; fluxos reais observados em Preview e Production; identidade anti-spoof aprovada em Preview e política Production cadastrada | — |
 | `location-search` | Geocodificação, validação, normalização, contrato de cidades e cache local de 24 h | Cache Redis e reserva observados em Preview; expiração hospedada após 24 h e concorrência entre instâncias em acompanhamento | `backend-platform` |
-| `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Previsão, cache Redis, renovação após TTL e reserva observados em Preview; peso oficial e política Production pendentes | `backend-platform` |
-| `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Fluxo pelo rewrite confirmado em Preview pelo proprietário; matriz completa de headers/CDN e release continuam em P1 | `location-search`, `weather-forecast` |
-| `production-delivery` | P7–P9 locais e smoke hospedado de API/web, CORS permitido e fluxo de busca/previsão/cache; saída sem IP aceita por revisão do transporte e amostra parcial de Preview; aviso de privacidade e direitos revisados; P1/P10 parciais | Completar a revisão final de P1, política Production, acesso público ao repositório, gates e rollback antes da publicação | Todos os módulos acima |
+| `weather-forecast` | Condições atuais, sete dias com condição predominante, validação, WMO e cache local de 10 min | Previsão, cache Redis, renovação após TTL e reserva observados em Preview; peso oficial (1,3) confirmado e política Production cadastrada | `backend-platform` |
+| `weather-ui` | Busca acessível, seleção e última cidade local, condições atuais, sete dias, fundos, estados da interface e cliente `/api/v1/*` na origem web | Fluxo pelo rewrite confirmado em Preview e Production; headers de HTML, assets e API conferidos no release | `location-search`, `weather-forecast` |
+| `production-delivery` | P7–P9 locais e smoke hospedado de API/web, CORS permitido e fluxo de busca/previsão/cache; saída sem IP aceita por revisão do transporte e amostra parcial de Preview; aviso de privacidade e direitos revisados; P1, P10 e P11 concluídas no alcance aprovado | Smoke protegido, rollback ensaiado e abertura pública em 2026-10-12; seguem em acompanhamento consumo, 503/negações, expiração de 24 h e concorrência hospedada | Todos os módulos acima |
 
 As specs de busca, previsão e UI descrevem os contratos vigentes. A [spec da plataforma](SPEC-backend-platform.md) resume o estado local e define a migração implementada; seu contrato local detalhado permanece referenciado no [baseline Node](docs/architecture/backend-local-baseline.md). Implementação local e provas hospedadas têm alcances distintos; resultados e lacunas ficam somente em `tasks/vercel-todo.md`, com detalhes no histórico.
 
@@ -23,7 +23,7 @@ backend-platform
                       ┘
 ```
 
-P0: aprovar specs e fronteiras → P2–P9: implementação e gates locais (concluídos) → P1: provar viabilidade em Preview configurado pelo proprietário → P10–P11: pacote de release e rollback → decisão de publicação. O [plano](tasks/vercel-plan.md) detalha a sequência; o progresso atual é registrado na [lista ativa](tasks/vercel-todo.md), com evidências antigas em `docs/history/`. P1 continua obrigatório antes de exposição pública.
+P0: aprovar specs e fronteiras → P2–P9: implementação e gates locais (concluídos) → P1: provar viabilidade em Preview configurado pelo proprietário → P10–P11: pacote de release e rollback → decisão de publicação. O [plano](tasks/vercel-plan.md) detalha a sequência; o progresso atual é registrado na [lista ativa](tasks/vercel-todo.md), com evidências antigas em `docs/history/`. Todas as etapas foram concluídas, e a publicação ocorreu em 2026-10-12.
 
 ## Regras de fronteira
 
