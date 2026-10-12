@@ -735,9 +735,18 @@ body:has(.info-dialog[open]) {
   color: #c6f6ff;
 }
 
+.idle-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 26rem);
+  align-items: center;
+  gap: 3rem;
+}
+
+.state-inner .idle-intro p {
+  margin-bottom: 0;
+}
+
 .state-privacy-note {
-  max-width: 46ch;
-  margin-top: 1.6rem;
   padding: 1rem 1.1rem;
   border: 1px solid rgb(180 245 255 / 0.28);
   border-radius: 0.75rem;
@@ -745,6 +754,7 @@ body:has(.info-dialog[open]) {
 }
 
 .state-inner .state-privacy-note p {
+  max-width: none;
   margin: 0 0 0.85rem;
   color: #d2e2e9;
   font-size: 0.875rem;
@@ -838,6 +848,15 @@ body:has(.info-dialog[open]) {
     gap: 0.65rem;
   }
 
+  .idle-layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.6rem;
+  }
+
+  .state-privacy-note {
+    max-width: 30rem;
+  }
+
   .information-sections {
     padding-inline: 1.1rem;
   }
@@ -853,6 +872,10 @@ body:has(.info-dialog[open]) {
     grid-template-columns: 1fr;
     gap: 0.5rem;
     padding-block: 0.65rem;
+  }
+
+  .brand {
+    justify-self: center;
   }
 
   .city-search {

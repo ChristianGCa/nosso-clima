@@ -202,3 +202,7 @@ O proprietário pediu que as informações de privacidade deixem de ocupar o fim
 - Primeiro acesso: a tela neutra, exibida apenas enquanto nenhuma cidade foi escolhida neste navegador, mostra um botão evidente “Como usamos seus dados”. Nenhum novo dado é guardado para detectar o primeiro acesso; a última cidade salva continua sendo o único registro local.
 - Demais acessos: o rodapé mantém um botão discreto “Privacidade e créditos”, sempre disponível. A atribuição de dados meteorológicos continua no rodapé junto à previsão.
 - Testes de componente cobrem abertura pelos dois pontos, fechamento e conteúdo; o teste de acessibilidade do navegador abre o diálogo real e executa axe com ele aberto.
+
+## Ajustes de layout antes da divulgação — 2026-10-12
+
+Pedido do proprietário. Até 540 px, o logo fica centralizado na faixa superior do cabeçalho, acima da busca. Na tela neutra, a partir de 761 px, a chamada e o cartão “Como usamos seus dados” ficam em duas colunas (chamada à esquerda, cartão à direita, alinhado à borda direita da busca). Em larguras menores, o cartão continua abaixo da chamada, com largura limitada e texto ocupando o cartão. Conteúdo, comportamento e acessibilidade do diálogo não mudam.

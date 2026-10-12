@@ -9,9 +9,11 @@ export function ForecastStatus({ state, onRetry, onOpenInformation }: Props) {
   if (state.status === 'idle') {
     return (
       <section className="state-panel state-panel--idle">
-        <div className="state-inner">
-          <h1>O clima da sua cidade, sem mistério.</h1>
-          <p>Escolha uma cidade na busca acima para ver a previsão.</p>
+        <div className="state-inner idle-layout">
+          <div className="idle-intro">
+            <h1>O clima da sua cidade, sem mistério.</h1>
+            <p>Escolha uma cidade na busca acima para ver a previsão.</p>
+          </div>
           <div className="state-privacy-note">
             <p>
               Sua última cidade escolhida fica salva neste navegador. Antes de começar, veja quais
