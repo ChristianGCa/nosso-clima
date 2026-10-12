@@ -34,6 +34,10 @@ describe('site information dialog', () => {
     const dialog = screen.getByRole('dialog', { name: 'Privacidade e informações' });
     expect(dialog.hasAttribute('open')).toBe(true);
     expect(screen.getByRole('heading', { name: 'Seus dados' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Seus direitos' })).toBeTruthy();
+    expect(dialog.textContent).toContain('legítimo interesse previsto na LGPD');
+    expect(dialog.textContent).toContain('tratados fora do Brasil');
+    expect(dialog.textContent).toContain('Autoridade Nacional de Proteção de Dados (ANPD)');
     expect(screen.getByRole('heading', { name: 'Sobre o projeto' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Licenças e créditos' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Repositório no GitHub' }).getAttribute('href')).toBe(

@@ -72,15 +72,32 @@ export function SiteInformationDialog({ open, onClose }: Props) {
             </p>
             <p>
               A Open-Meteo recebe o endereço de conexão do nosso servidor e informa que seu serviço
-              gratuito pode manter registros com coordenadas por até 90 dias. A Vercel, a Upstash e
-              a Open-Meteo podem processar informações fora do Brasil.{' '}
+              gratuito pode manter registros com coordenadas por até 90 dias.{' '}
               <a href="https://open-meteo.com/en/terms">
                 Leia os termos e a privacidade da Open-Meteo
               </a>
               .
             </p>
             <p>
-              Responsável pelo site: ChristianGCa. Contato:{' '}
+              Usamos esses dados só para responder às suas consultas e proteger o site contra abuso,
+              com base no legítimo interesse previsto na LGPD. Eles são tratados fora do Brasil
+              pelos serviços citados. Não há publicidade, análise de audiência nem criação de
+              perfis.
+            </p>
+          </section>
+          <section id="seus-direitos" aria-labelledby="seus-direitos-titulo">
+            <h3 id="seus-direitos-titulo">Seus direitos</h3>
+            <p>
+              Você pode pedir acesso, correção ou eliminação dos seus dados, saber com quem são
+              compartilhados ou se opor ao uso. Como não guardamos o IP nem criamos contas,
+              normalmente não temos dados que identifiquem você.
+            </p>
+            <p>
+              Respondemos em até 15 dias pelo contato abaixo. Em caso de incidente de segurança
+              relevante, avisaremos a ANPD e as pessoas afetadas.
+            </p>
+            <p>
+              Responsável pelo site e pelos dados: ChristianGCa. Contato:{' '}
               <a href="mailto:christiangca.dev@gmail.com">christiangca.dev@gmail.com</a>.
             </p>
           </section>

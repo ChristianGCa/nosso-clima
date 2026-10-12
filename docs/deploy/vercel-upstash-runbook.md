@@ -91,6 +91,10 @@ Usar `docs/deploy/preview-probe-guide.md` apenas para a lacuna que exige nova co
 
 O teste de token inválido e recuperação já está no histórico. Não alterar Redis novamente por padrão. Falhas após o limitador, contagem independente de saída, reserva sob contenção e 429/circuit breaker são provas distintas; planejar fixtures/escopo antes de pedir uma rodada. Não provocar 429 da Open-Meteo real.
 
+### Incidente de segurança com dados pessoais
+
+Se houver suspeita de acesso indevido a segredos, Redis, logs ou deployments: (1) conter — revogar e trocar o token Upstash e as chaves HMAC pelos painéis, retirar o deployment afetado ou reverter; (2) avaliar se dados pessoais foram afetados e se há risco ou dano relevante aos titulares; (3) nesse caso, comunicar a ANPD e os titulares em até três dias úteis do conhecimento (Resolução CD/ANPD nº 15/2024; verificar se o prazo em dobro de agente de pequeno porte se aplica), com complemento posterior se faltarem informações; (4) registrar todo incidente, comunicado ou não, fora do Git e mantê-lo por pelo menos cinco anos. O registro contém data, natureza, dados e titulares afetados, medidas e avaliação de risco, sem segredos nem IPs. Pedidos de titulares chegam pelo contato do aviso e são respondidos em até 15 dias.
+
 ## Release, operação e rollback
 
 1. Reaproveitar a revisão de privacidade, fundos/logo e termos/créditos no alcance registrado. Confirmar peso da previsão, custo Free e política Production antes da abertura; reconferir região e retenção apenas se a configuração ou o plano mudar. O proprietário pretende tornar o repositório público; confirmar acesso anônimo ao link da interface no release.

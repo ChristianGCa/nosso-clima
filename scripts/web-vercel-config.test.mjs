@@ -48,7 +48,7 @@ test('web headers limit connection origins and cache only hashed Vite assets imm
   assert.match(value(all, 'Content-Security-Policy'), /connect-src 'self'/);
   assert.match(value(all, 'Strict-Transport-Security'), /max-age=31536000/);
   assert.equal(value(all, 'X-Content-Type-Options'), 'nosniff');
-  assert.ok(value(all, 'Referrer-Policy'));
+  assert.equal(value(all, 'Referrer-Policy'), 'no-referrer');
 
   const hashed = config.headers.find(
     ({ source }) => source.startsWith('/assets/') && source.includes('{8,}'),
