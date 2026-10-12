@@ -6,9 +6,9 @@
 
 - **Local:** P0 e P2–P9 implementados. Todos os gates locais passaram em 2026-10-10 (detalhes abaixo), com navegador Chromium do Fedora em vez do fixado pelo Playwright.
 - **Preview:** protegido e funcional com dados reais; eco retirado; Redis preservado.
-- **Production:** configurada e implantada em `1e49054`, protegida; smoke protegido e ensaio de rollback dos dois projetos concluídos em 2026-10-12.
+- **Production:** ativa em `64c84ec` (mesmo código de aplicação de `1e49054`; o diff é só de documentação), protegida; smoke protegido e ensaio de rollback dos dois projetos concluídos em 2026-10-12.
 - **Publicação:** pendências técnicas fechadas em 2026-10-12; falta somente a decisão explícita do proprietário.
-- **Git:** `chore/vercel-p1` integrada a `main` em `1e49054` (PR #2), com CI verde; Production dos dois projetos gerado dessa revisão, ainda protegido. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
+- **Git:** `chore/vercel-p1` integrada a `main` pelos PRs #2 (`1e49054`) e #3 (`64c84ec`, só documentação), com CI verde em ambos. O merge do PR #3 gerou novos deployments Production apesar de não mudar `apps/`: **todo commit na `main` gera deployments Production**. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
 
 | Etapa | Estado |
 |---|---|
@@ -27,7 +27,7 @@
    - [x] Política Production aprovada pelo proprietário em 2026-10-10 (tetos bem abaixo dos limites gratuitos, porque o IP de saída da Vercel é compartilhado) e cadastrada; valores efetivos ficam no painel, fora do Git.
    - [x] Variáveis de Production conferidas pela CLI em 2026-10-10, somente nomes/escopos: API com `NODE_ENV`, `HOST`, `UPSTASH_REDIS_REST_URL`/`TOKEN` (copiados do endpoint REST da integração), duas chaves HMAC, CORS e oito campos de política; web com `API_ORIGIN`. CORS/`API_ORIGIN` separados entre Preview e Production; sem variáveis de eco. Domínios de Production renomeados pelo proprietário; os antigos redirecionam. Preview e Production compartilham a base Upstash Free e, portanto, a reserva de cota.
    - [x] `chore/vercel-p1` integrada a `main` pelo PR #2 (merge `1e49054`). Quality gates `success` na `main` e no PR (`b2412ac`), conferidos pela API pública do GitHub. API e web Production Ready em `1e49054`, protegidos; smoke ainda não executado.
-   - [x] Destino de rollback definido em 2026-10-12: o proprietário reimplantou os dois projetos e excluiu os deployments sem configuração confiável. Cada projeto mantém dois deployments Production Ready em `1e49054` com a mesma configuração; o par anterior (de 2026-10-10) é o destino de rollback.
+   - [x] Destino de rollback definido em 2026-10-12: o proprietário reimplantou os dois projetos e excluiu os deployments sem configuração confiável. Cada projeto mantém dois deployments Production Ready em `1e49054` com a mesma configuração; o par anterior (de 2026-10-10) é o destino de rollback. Atualizado após o merge do PR #3: ativo `64c84ec` (12/10 12:08) nos dois projetos; destino de rollback em `1e49054`, API de 12/10 11:27 e web de 10/10 22:58, ambos ativos em algum momento do ensaio. Os demais deployments Production foram excluídos pelo proprietário.
 2. **Release (P1a/P1c agrupados + P11).**
    - [x] Gates finais na revisão hospedada `1e49054`: check-run `verify` da CI em `success` (checkout limpo, Chromium fixado; `npm run check`, cobertura, audit, axe, E2E, performance e Gitleaks), conferido pela API pública do GitHub em 2026-10-12. Builds Vercel dos dois projetos concluídos. Repetir somente se a revisão hospedada mudar.
    - [x] Conferência agrupada de P1a em 2026-10-12: Node 24.21.0/npm 12.0.2 nos dois builds de `1e49054`; rewrite do web aponta para a API Production; bundle sem nomes ou valores de credenciais nem domínio da API; headers de HTML, assets e arquivos estáticos; CORS e caminhos HTTP do smoke.

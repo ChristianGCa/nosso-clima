@@ -772,3 +772,13 @@ Consultas somente de leitura do agente nos deployments Production ativos (`1e490
 - **Gates:** o check-run `verify` da CI em `1e49054` terminou com `success`. O workflow cobre `npm run check`, cobertura, audit, axe, E2E, performance e Gitleaks em checkout limpo com Chromium fixado.
 
 Nenhum deploy, alteração de ambiente, Redis ou WAF ocorreu. Nenhum endereço, ID ou valor operacional foi registrado.
+
+## Deployments de Production após o PR #3 — 2026-10-12
+
+O merge do PR #3 (`64c84ec`, só documentação; sem mudança em `apps/`, `package.json` ou lockfile) gerou um novo deployment Production em cada projeto alguns minutos depois. A opção de pular projetos não afetados estava ativa, mas não evitou os builds; a causa não foi investigada. A CI (`verify`) de `64c84ec` terminou com `success`.
+
+- **Builds:** clone de `main` em `64c84ec`, Node 24.21.0, npm 12.0.2, zero vulnerabilidades, build concluído. O JS do web tem o mesmo nome com hash do build de `1e49054`, ou seja, o mesmo conteúdo.
+- **Smoke da API pela CLI:** `/health` 200; busca curta 400 `VALIDATION_ERROR`; busca e previsão reais 200; `private, no-store`. Web `/` 200 com CSP; CORS aceita a origem web de Production.
+- **Navegador:** por relato do proprietário, buscas de cidades diferentes funcionaram pelo web atual.
+- **Estado final:** o proprietário manteve `64c84ec` ativo e excluiu os demais deployments Production. Destino de rollback em `1e49054`: API de 12/10 11:27 e web de 10/10 22:58, ambos ativos com smoke em algum momento do ensaio de rollback. Proteção `All Deployments` mantida.
+- Foram feitas mais duas consultas reais à Open-Meteo (uma busca e uma previsão).
