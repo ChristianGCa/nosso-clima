@@ -168,7 +168,7 @@ External JSON begins as `unknown`. Runtime validation permits documented additio
 - `timezone` must be accepted as an IANA time-zone identifier by the Node.js runtime.
 - `admin1` may be absent or empty and normalizes to `null`; otherwise it is a bounded non-control string.
 - Text fields used publicly are trimmed, limited to 256 Unicode code points, and rejected if they contain C0 controls or DEL. JSON encoding, not HTML markup, is returned.
-- If an accepted candidate is missing or violates a consumed field, the entire upstream response is rejected. The API does not silently manufacture coordinates, country data, or timezone values.
+- An accepted candidate that is missing or violates a consumed field is skipped as a whole; the API never repairs it or manufactures coordinates, country data, or timezone values. Skipped candidates do not reserve their `id`. The entire upstream response is still rejected as `invalid_response` when malformed accepted candidates are not a strict minority of accepted candidates (including a single malformed one), and when the envelope, a candidate's object shape or its `feature_code` is invalid. Approved by the owner on 2026-10-12 after a real “Belém” response failed because one of ten candidates lacked `country`.
 
 ## Cache: desenvolvimento local e Redis em Preview
 

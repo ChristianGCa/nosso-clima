@@ -67,11 +67,32 @@ export function normalizeGeocodingResponse(payload: unknown): readonly Location[
 
   const locations: Location[] = [];
   const seenIds = new Set<number>();
+  let acceptedCount = 0;
+  let invalidCount = 0;
   for (const candidate of payload.results) {
     if (!isObject(candidate)) throw new GeocodingFailure('invalid_response');
     const featureCode = readText(candidate.feature_code);
     if (!POPULATED_PLACE_CODES.has(featureCode)) continue;
 
+    acceptedCount += 1;
+    const location = readCandidate(candidate);
+    if (location === undefined) {
+      invalidCount += 1;
+    } else if (!seenIds.has(location.id)) {
+      seenIds.add(location.id);
+      if (locations.length < 5) locations.push(location);
+    }
+  }
+  // Skip an isolated malformed place, but fail when malformed places are not a
+  // minority so a broken provider response is never cached as a short result.
+  if (invalidCount > 0 && invalidCount * 2 >= acceptedCount) {
+    throw new GeocodingFailure('invalid_response');
+  }
+  return locations;
+}
+
+function readCandidate(candidate: Record<string, unknown>): Location | undefined {
+  try {
     const id = candidate.id;
     if (typeof id !== 'number' || !Number.isSafeInteger(id) || id <= 0) {
       throw new GeocodingFailure('invalid_response');
@@ -89,15 +110,11 @@ export function normalizeGeocodingResponse(payload: unknown): readonly Location[
       candidate.admin1 === undefined || candidate.admin1 === ''
         ? null
         : readText(candidate.admin1, true) || null;
-
-    if (!seenIds.has(id)) {
-      seenIds.add(id);
-      if (locations.length < 5) {
-        locations.push({ id, name, region, country, countryCode, latitude, longitude, timezone });
-      }
-    }
+    return { id, name, region, country, countryCode, latitude, longitude, timezone };
+  } catch (failure) {
+    if (failure instanceof GeocodingFailure) return undefined;
+    throw failure;
   }
-  return locations;
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
