@@ -369,13 +369,91 @@ describe('Open-Meteo geocoding response validation', () => {
     expect(result[0]).toMatchObject({ latitude: 90, longitude: -180, name: '😀'.repeat(256) });
   });
 
-  it('rejects an invalid accepted candidate even after five valid results', () => {
+  it('validates every accepted candidate even after five valid results', () => {
     const results = [
       ...[1, 2, 3, 4, 5].map((id) => ({ ...validPlace, id })),
       { ...validPlace, id: 6, latitude: 100 },
     ];
+    expect(normalizeGeocodingResponse({ results }).map((place) => place.id)).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
+    expect(() =>
+      normalizeGeocodingResponse({
+        results: [...results, ...[7, 8, 9, 10].map((id) => ({ ...validPlace, id, name: '' }))],
+      }),
+    ).toThrowError(expect.objectContaining({ kind: 'invalid_response' }));
+  });
+
+  it('skips an isolated place missing a consumed field and keeps provider order', () => {
+    const withoutCountry: Record<string, unknown> = { ...validPlace, id: 2, name: 'Belem' };
+    delete withoutCountry.country;
+    const results = [
+      { ...validPlace, id: 1, name: 'Belém' },
+      withoutCountry,
+      { ...validPlace, id: 3, name: 'Belém do São Francisco' },
+    ];
+    expect(normalizeGeocodingResponse({ results }).map((place) => place.name)).toEqual([
+      'Belém',
+      'Belém do São Francisco',
+    ]);
+  });
+
+  it.each([
+    [1, 1],
+    [2, 2],
+    [1, 3],
+  ])(
+    'rejects the response when %i valid and %i malformed places leave no valid majority',
+    (validCount, invalidCount) => {
+      const results = [
+        ...Array.from({ length: validCount }, (_, index) => ({ ...validPlace, id: index + 1 })),
+        ...Array.from({ length: invalidCount }, (_, index) => ({
+          ...validPlace,
+          id: 100 + index,
+          timezone: 'Mars/Olympus',
+        })),
+      ];
+      expect(() => normalizeGeocodingResponse({ results })).toThrowError(
+        expect.objectContaining({ kind: 'invalid_response' }),
+      );
+    },
+  );
+
+  it('counts only accepted feature codes when deciding whether malformed places are a minority', () => {
+    const results = [
+      { ...validPlace, id: 1 },
+      { ...validPlace, id: 2, latitude: 100 },
+      ...[3, 4, 5].map((id) => ({ ...validPlace, id, feature_code: 'PPLH' })),
+    ];
     expect(() => normalizeGeocodingResponse({ results })).toThrowError(
       expect.objectContaining({ kind: 'invalid_response' }),
     );
+    expect(
+      normalizeGeocodingResponse({ results: [...results, { ...validPlace, id: 6 }] }).map(
+        (place) => place.id,
+      ),
+    ).toEqual([1, 6]);
   });
+
+  it('does not let a skipped place reserve its ID', () => {
+    const results = [
+      { ...validPlace, id: 1, name: '' },
+      { ...validPlace, id: 1, name: 'Valid' },
+      { ...validPlace, id: 2, name: 'Second' },
+    ];
+    expect(normalizeGeocodingResponse({ results }).map((place) => place.name)).toEqual([
+      'Valid',
+      'Second',
+    ]);
+  });
+
+  it.each([null, [], { ...validPlace, feature_code: '' }])(
+    'still rejects broken candidate structure next to valid places: %j',
+    (broken) => {
+      const results = [{ ...validPlace, id: 1 }, { ...validPlace, id: 2 }, broken];
+      expect(() => normalizeGeocodingResponse({ results })).toThrowError(
+        expect.objectContaining({ kind: 'invalid_response' }),
+      );
+    },
+  );
 });
