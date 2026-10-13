@@ -1,6 +1,10 @@
 # NossoClima
 
+<img src="logo/svg/logo-escuro.svg" alt="Logo do NossoClima" width="300" />
+
 Consulta meteorológica em português com busca de cidades, condições atuais e previsão de sete dias, usando dados da Open-Meteo. Na primeira visita, a tela começa neutra; depois da seleção, o navegador guarda apenas a última cidade e consulta uma previsão nova nas visitas seguintes. Limpar os dados do site remove essa preferência.
+
+**Acesse:** [nossoclima.vercel.app](https://nossoclima.vercel.app/)
 
 **Entrega:** publicado em Production em 2026-10-12, com Previews e URLs de deployment ainda protegidos. Estado e próximos passos ficam somente na [lista ativa](tasks/vercel-todo.md).
 
