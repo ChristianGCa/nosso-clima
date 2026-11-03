@@ -59,3 +59,69 @@ A entrada HTTPS temporária usada foi um Quick Tunnel, disponível sem conta/dom
 - [ ] Browser E2E, performance, acessibilidade, segurança, cobertura, CI e builds passam sem enfraquecer `CONSTRAINTS.md`.
 - [ ] O caminho de saída da revisão final continua sem encaminhar IP/canário à Open-Meteo; a confiança da identidade, o aviso de privacidade, direitos, orçamento e termos têm evidência datada.
 - [ ] Deploy protegido e rollback dos dois projetos passam; o proprietário toma decisão separada sobre publicação pública.
+
+## Medição de audiência e headers adicionais — requisitos aprovados em 2026-11-03
+
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03 (respeitar Global Privacy Control e Do Not Track; incluir os headers adicionais); **implementação aguarda autorização separada**. O comportamento no navegador está em `SPEC-weather-ui.md`, seção “Medição agregada de audiência”; motivo e teste de balanceamento em `docs/decisions/0002-vercel-web-analytics.md`.
+
+### Vercel Web Analytics
+
+- Ativar somente no projeto **web**, no plano Hobby. Não ativar no projeto da API, não contratar Pro ou Web Analytics Plus, não configurar Drains nem exportar dados do painel para o Git. Ao atingir o limite gratuito, a pausa da coleta é aceita; não há cobrança nem upgrade.
+- Script e envio de eventos usam exclusivamente a origem do web (caminhos criados pela Vercel, inclusive o caminho aleatório da versão 2). A CSP continua com `script-src 'self'` e `connect-src 'self'`; nenhum domínio é acrescentado. Se o pacote exigir outra origem, a implementação para e volta ao proprietário.
+- Ordem do release: o proprietário ativa a medição no painel do projeto web **antes** do merge (sem o script nada é coletado), e o mesmo deployment publica o script e o aviso atualizado. Não pode haver deployment de Production com coleta e aviso antigo.
+- Previews continuam protegidos; eventos de Preview, se houver, ficam separados por ambiente no painel e não são usados como estatística pública.
+
+### Aviso de privacidade
+
+Além dos itens já exigidos em “Qualidade, privacidade e direitos”, o aviso informa a medição agregada pela Vercel:
+- dados (página, site de origem, localização aproximada por IP, dispositivo, sistema e navegador);
+- ausência de cookies;
+- identificador descartado em até 24 horas;
+- exclusão do termo buscado e da cidade;
+- finalidade e legítimo interesse;
+- tratamento nos Estados Unidos, na mesma pendência de transferência internacional da lista ativa;
+- oposição por Global Privacy Control, Do Not Track ou bloqueador.
+
+### Headers adicionais do web
+
+Aplicados em `/(.*)` por `apps/web/vercel.mjs`, sem alterar os existentes:
+
+| Header | Valor | Motivo |
+|---|---|---|
+| `Permissions-Policy` | `camera=(), geolocation=(), microphone=(), payment=(), usb=()` | O site nunca usa esses recursos; o header impede que qualquer script os peça, reforçando que não há geolocalização |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Isola a janela de páginas abertas por outras origens |
+
+`scripts/web-vercel-config.test.mjs` passa a verificar os dois valores exatos e que a CSP não ganhou origens novas. Na conferência de Production, os links externos do diálogo (Open-Meteo, GitHub, CC BY 4.0) continuam abrindo normalmente.
+
+### Testes e verificação
+
+- `npm run test:e2e` mantém a asserção de zero requisições a terceiros e acrescenta dois cenários com o web compilado:
+  - sem sinal de recusa, a requisição do script de medição usa a própria origem (o 404 local é aceitável);
+  - com `navigator.globalPrivacyControl = true` definido antes da carga, nenhuma requisição de medição ocorre.
+- `npm run test:performance` mantém LCP ≤ 2,5 s e CLS ≤ 0,1 com o script ativo. Os demais gates de `CONSTRAINTS.md` também valem: `npm run check`, cobertura, axe, builds, `npm audit` e Gitleaks na CI.
+- Conferência agrupada em Production após o deployment:
+  1. as requisições de medição vão somente à origem do web;
+  2. o console não mostra violação de CSP;
+  3. não surgem cookies ou chaves de armazenamento novas;
+  4. com GPC ativo, nada é enviado;
+  5. os headers novos estão presentes;
+  6. o painel começa a registrar visitas.
+
+  Registrar só o resultado resumido, sem números de visitas, IPs, URLs de deployment ou capturas do painel.
+
+### Reavaliação obrigatória
+
+Revisar o teste de balanceamento e o aviso **no mesmo PR** se surgir:
+- evento personalizado;
+- rota ou parâmetro com dado do visitante na URL;
+- Pro, Analytics Plus, Drains ou exportação;
+- outro fornecedor de medição;
+- mudança da política de dados do Web Analytics.
+
+### Critérios de aceite
+
+- [ ] Medição somente em builds de produção, sem sinal de recusa, só com visualizações de página e URL reduzida a origem + caminho.
+- [ ] CSP inalterada; `Permissions-Policy` e `Cross-Origin-Opener-Policy` presentes e testados.
+- [ ] Aviso atualizado no mesmo deployment que inicia a coleta; teste de balanceamento registrado na ADR 0002.
+- [ ] Gates locais e CI verdes, incluindo os cenários E2E novos, sem enfraquecer `CONSTRAINTS.md`.
+- [ ] Conferência agrupada em Production registrada na lista ativa.

@@ -206,3 +206,29 @@ O proprietário pediu que as informações de privacidade deixem de ocupar o fim
 ## Ajustes de layout antes da divulgação — 2026-10-12
 
 Pedido do proprietário. Até 540 px, o logo fica centralizado na faixa superior do cabeçalho, acima da busca. Na tela neutra, a partir de 761 px, a chamada e o cartão “Como usamos seus dados” ficam em duas colunas (chamada à esquerda, cartão à direita, alinhado à borda direita da busca). Em larguras menores, o cartão continua abaixo da chamada, com largura limitada e texto ocupando o cartão. Conteúdo, comportamento e acessibilidade do diálogo não mudam.
+
+## Medição agregada de audiência — requisitos aprovados em 2026-11-03
+
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; **implementação aguarda autorização separada**. Esta seção registra a aprovação exigida em “Ask first” para analytics e substitui, somente para o Vercel Web Analytics descrito aqui, a frase do aviso “Não há publicidade, análise de audiência nem criação de perfis”. A regra “Keep query, coordinates and weather values out of browser logs and analytics” continua integral. Motivo, alternativas e teste de balanceamento estão em `docs/decisions/0002-vercel-web-analytics.md`; headers, painel e release ficam em `SPEC-production-delivery.md`.
+
+Finalidade: saber de onde vêm as visitas (site de origem e localização aproximada) e com quais dispositivos, sistemas e navegadores o site é usado, somente em números agregados.
+
+- **Pacote e ativação:** `@vercel/analytics` em versão exata no lockfile, chamado uma única vez na inicialização por um módulo próprio (`apps/web/src/analytics.ts`, importado por `main.tsx`), com `inject()`. Sem componente React adicional, sem snippet inline e sem `scriptSrc`/`endpoint` de outra origem. Somente builds de produção (`import.meta.env.PROD`) ativam a coleta; `npm run dev` e os testes unitários nunca carregam script de medição.
+- **Sinais de recusa:** antes de injetar, verificar `navigator.globalPrivacyControl === true` ou Do Not Track igual a `"1"` ou ao valor antigo `"yes"` (`navigator.doNotTrack` ou `window.doNotTrack`). Com qualquer um deles, não injetar o script e não fazer nenhuma requisição de medição. A verificação não grava nada no navegador.
+- **Dados enviados:** apenas visualizações de página automáticas. É proibido usar `track()` ou eventos personalizados. `beforeSend` reduz `url` a origem + caminho, descartando query e fragmento, e descarta o evento se a URL não for da própria origem. Termo buscado, cidade, coordenadas, fuso e valores meteorológicos nunca entram em URL, título, evento ou propriedade enviados à medição.
+- **Armazenamento:** o código da aplicação não cria cookie nem chave em `localStorage`, `sessionStorage` ou IndexedDB para a medição. A última cidade continua sendo o único registro local da aplicação.
+- **Falha isolada:** bloqueio por extensão, 404 do script fora da Vercel ou erro de rede na medição não afetam busca, previsão nem diálogo e não disparam novas tentativas. O código da aplicação não registra nada no console; a única mensagem aceita é a informativa (`console.log`) que o próprio pacote emite quando o script não carrega.
+- **Aviso de privacidade** (`site-information.tsx`), na seção “Seus dados”, em linguagem simples:
+  - a Vercel gera estatísticas de visitas sem cookies: página acessada, site de origem, localização aproximada estimada pelo IP (país, região e cidade), tipo de dispositivo, sistema e navegador;
+  - o identificador de visita é derivado da conexão e descartado em até 24 horas; o responsável vê apenas números agregados, sem IP; a eventual retenção pela Vercel segue a política dela;
+  - o termo buscado e a cidade escolhida não são enviados a essas estatísticas;
+  - com Global Privacy Control ou Do Not Track ativos, a medição não é carregada.
+- **Finalidade e base legal no aviso:** a frase final passa a citar resposta às consultas, proteção contra abuso e medição agregada do uso, com base no legítimo interesse, e mantém “Não há publicidade, venda de dados nem criação de perfis”.
+- **Direitos no aviso:** a seção “Seus direitos” informa que a pessoa pode se opor à medição ativando Global Privacy Control ou Do Not Track (bloqueadores de conteúdo também a impedem), além do contato já existente.
+- **Testes deste módulo:**
+  - o módulo de medição injeta somente em produção e sem sinal de recusa;
+  - não injeta com GPC, com DNT `"1"` em `navigator` ou em `window`, nem em desenvolvimento;
+  - `beforeSend` remove query e fragmento e descarta URL de outra origem;
+  - o diálogo contém os novos itens do aviso e não contém mais “análise de audiência” como negativa.
+
+  Cobertura, axe e contraste seguem `CONSTRAINTS.md`; o texto maior do diálogo não pode criar rolagem horizontal em 360 px.

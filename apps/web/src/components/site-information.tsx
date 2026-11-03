@@ -79,10 +79,20 @@ export function SiteInformationDialog({ open, onClose }: Props) {
               .
             </p>
             <p>
-              Usamos esses dados só para responder às suas consultas e proteger o site contra abuso,
-              com base no legítimo interesse previsto na LGPD. Eles são tratados fora do Brasil
-              pelos serviços citados. Não há publicidade, análise de audiência nem criação de
-              perfis.
+              Para entender como o site é encontrado e usado, a Vercel gera estatísticas de visitas
+              sem cookies: página acessada, site de origem, localização aproximada estimada pelo IP
+              (país, região e cidade), tipo de dispositivo, sistema e navegador. O identificador de
+              visita é derivado da conexão e descartado em até 24 horas; vemos apenas números
+              agregados, sem o IP. A eventual retenção desses registros pela Vercel segue a política
+              dela. O termo buscado e a cidade escolhida não são enviados a essas estatísticas. Se o
+              seu navegador enviar o sinal Global Privacy Control ou Do Not Track, elas não são
+              carregadas.
+            </p>
+            <p>
+              Usamos esses dados só para responder às suas consultas, proteger o site contra abuso e
+              medir de forma agregada o uso do site, com base no legítimo interesse previsto na
+              LGPD. Eles são tratados fora do Brasil pelos serviços citados. Não há publicidade,
+              venda de dados nem criação de perfis.
             </p>
           </section>
           <section id="seus-direitos" aria-labelledby="seus-direitos-titulo">
@@ -91,6 +101,11 @@ export function SiteInformationDialog({ open, onClose }: Props) {
               Você pode pedir acesso, correção ou eliminação dos seus dados, saber com quem são
               compartilhados ou se opor ao uso. Como não guardamos o IP nem criamos contas,
               normalmente não temos dados que identifiquem você.
+            </p>
+            <p>
+              Para não participar das estatísticas de visitas, ative o Global Privacy Control ou o
+              Do Not Track no navegador; bloqueadores de conteúdo também as impedem. Você também
+              pode se opor pelo contato abaixo.
             </p>
             <p>
               Respondemos em até 15 dias pelo contato abaixo. Em caso de incidente de segurança

@@ -38,6 +38,18 @@ describe('site information dialog', () => {
     expect(dialog.textContent).toContain('legítimo interesse previsto na LGPD');
     expect(dialog.textContent).toContain('tratados fora do Brasil');
     expect(dialog.textContent).toContain('avisaremos a ANPD');
+    expect(dialog.textContent).toContain('estatísticas de visitas sem cookies');
+    expect(dialog.textContent).toContain('localização aproximada estimada pelo IP');
+    expect(dialog.textContent).toContain('descartado em até 24 horas');
+    expect(dialog.textContent).toContain(
+      'O termo buscado e a cidade escolhida não são enviados a essas estatísticas',
+    );
+    expect(dialog.textContent).toContain('medir de forma agregada o uso do site');
+    expect(dialog.textContent).toContain('Global Privacy Control ou o Do Not Track');
+    expect(dialog.textContent).toContain(
+      'Não há publicidade, venda de dados nem criação de perfis',
+    );
+    expect(dialog.textContent).not.toContain('análise de audiência');
     expect(screen.getByRole('heading', { name: 'Sobre o projeto' })).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Licenças e créditos' })).toBeTruthy();
     expect(screen.getByRole('link', { name: 'Repositório no GitHub' }).getAttribute('href')).toBe(
