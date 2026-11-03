@@ -77,7 +77,7 @@ Regra nos **dois projetos**: path equals `/api` OR starts with `/api/`, IP Addre
 
 Para uma coleta necessária, usar rajada finita de busca inválida autorizada, evitando Open-Meteo. Separar chamadas permitidas, controles e amostra bloqueada. Monitor ativo/sem filtro precisa de controle positivo antes/depois; silêncio isolado não prova consumo zero. Correlacionar horários, contagens WAF e execução da Function. Se a janela renovar ou houver chamadas permitidas misturadas, registrar contaminação; não repetir por padrão. Não exportar argumentos Redis, chaves ou logs brutos.
 
-API: `Cache-Control: private, no-store`; Function define `Vercel-CDN-Cache-Control: no-store`, consumido pela Vercel. Rewrite também define no-store e desabilita caching de rewrite. CDN MISS não prova hit/miss Redis. Web aplica CSP com `connect-src 'self'`, HSTS, referrer policy e nosniff; HTML/arquivos sem hash revalidam, somente assets Vite com hash recebem immutable. Verificar comportamento efetivo restante, sem relaxar headers/proteção.
+API: `Cache-Control: private, no-store`; Function define `Vercel-CDN-Cache-Control: no-store`, consumido pela Vercel. Rewrite também define no-store e desabilita caching de rewrite. CDN MISS não prova hit/miss Redis. Web aplica CSP com `connect-src 'self'`, HSTS, referrer policy, nosniff, `Permissions-Policy` (câmera, geolocalização, microfone, pagamento e USB desativados) e `Cross-Origin-Opener-Policy: same-origin`; HTML/arquivos sem hash revalidam, somente assets Vite com hash recebem immutable. Verificar comportamento efetivo restante, sem relaxar headers/proteção.
 
 ## Privacidade e testes complementares
 

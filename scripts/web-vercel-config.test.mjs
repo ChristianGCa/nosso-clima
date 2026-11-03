@@ -45,7 +45,15 @@ test('web headers limit connection origins and cache only hashed Vite assets imm
   const all = config.headers.find(({ source }) => source === '/(.*)');
   assert.ok(all);
   const value = (rule, key) => rule.headers.find((header) => header.key === key)?.value;
-  assert.match(value(all, 'Content-Security-Policy'), /connect-src 'self'/);
+  assert.equal(
+    value(all, 'Content-Security-Policy'),
+    "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; manifest-src 'self'",
+  );
+  assert.equal(
+    value(all, 'Permissions-Policy'),
+    'camera=(), geolocation=(), microphone=(), payment=(), usb=()',
+  );
+  assert.equal(value(all, 'Cross-Origin-Opener-Policy'), 'same-origin');
   assert.match(value(all, 'Strict-Transport-Security'), /max-age=31536000/);
   assert.equal(value(all, 'X-Content-Type-Options'), 'nosniff');
   assert.equal(value(all, 'Referrer-Policy'), 'no-referrer');

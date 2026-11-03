@@ -48,14 +48,15 @@ Pedido do proprietário: saber a origem dos acessos e os dispositivos, em confor
   - Resultado: `npm audit` sem nenhuma vulnerabilidade. Gates locais verdes: `npm run check` (548 API, 103 web), cobertura API 94,93/91,95/94,8/97,9 e web 96,91/90/97,61/99,04, builds, axe e contraste, E2E (cinco), performance (LCP ≈0,96 s, CLS 0).
   - Ambiente: Node 24.18.0, npm 12.0.2, Chromium fixado pelo Playwright. Gitleaks ausente localmente; fica para a CI.
   - O merge gera um deployment novo da API; fazer smoke de busca e previsão depois dele.
-- [ ] Revisão das specs e da ADR pelo proprietário.
 - [x] Autorização de implementação dada pelo proprietário em 2026-11-03.
-- [ ] Implementação:
-  - módulo de medição com `@vercel/analytics` em versão exata;
-  - texto do aviso;
-  - headers em `vercel.mjs`;
-  - testes unitários, de configuração e E2E.
-- [ ] Gates locais: `npm run check`, cobertura, builds, `npm audit`, axe, E2E e performance. Depois, PR com CI verde.
+- [x] Implementação local (2026-11-03):
+  - `apps/web/src/analytics.ts` com `@vercel/analytics` 2.0.1 (versão exata, MIT, sem dependências), `mode: 'production'` só em build de produção, recusa por GPC/DNT e `beforeSend` que reduz a URL a origem + caminho;
+  - texto do aviso em `site-information.tsx`;
+  - `Permissions-Policy` e `Cross-Origin-Opener-Policy` em `vercel.mjs`, com a CSP inalterada;
+  - testes unitários do módulo, do aviso e da configuração, e um cenário E2E novo (script só na própria origem, sem cookies nem armazenamento, e nenhuma carga com GPC ou DNT).
+  - O bundle contém a URL do script de depuração do pacote, que só é usada em modo de desenvolvimento e nunca é ativada pelo módulo; o E2E confirma zero requisições a terceiros.
+- [x] Gates locais verdes: `npm run check` (548 API, 112 web), cobertura web 97,03/90,41/97,75/99,07, builds, `npm audit` sem vulnerabilidades, axe e contraste, E2E (seis), performance (LCP ≈0,95 s, CLS 0). Node 24.18.0, npm 12.0.2, Chromium do Playwright; Gitleaks fica para a CI.
+- [ ] Revisão do proprietário, push e PR com CI verde.
 - [ ] Proprietário ativa o Web Analytics **somente no projeto web**, antes do merge.
 - [ ] Merge. Coleta e aviso novo entram no mesmo deployment de Production.
 - [ ] Conferência agrupada em Production (lista na spec de entrega); registrar aqui só o resultado resumido.

@@ -205,7 +205,7 @@ function createFixture() {
   };
 }
 
-async function openPage(browser, origin, externalRequests) {
+async function openPage(browser, origin, externalRequests, { initScript } = {}) {
   const context = await browser.newContext({
     locale: 'pt-BR',
     timezoneId: 'America/Sao_Paulo',
@@ -214,11 +214,17 @@ async function openPage(browser, origin, externalRequests) {
       'x-test-canary': 'p8-browser-canary',
     },
   });
+  if (initScript) await context.addInitScript(initScript);
+  const measurementRequests = [];
   await context.route('**/*', async (route) => {
-    const url = route.request().url();
-    if (new URL(url).origin !== origin) {
-      externalRequests.push(url);
+    const url = new URL(route.request().url());
+    if (url.origin !== origin) {
+      externalRequests.push(url.href);
       await route.abort();
+    } else if (url.pathname.startsWith('/_vercel/insights/')) {
+      // The Vercel measurement routes exist only on the hosted web project.
+      measurementRequests.push(url.href);
+      await route.fulfill({ status: 404, body: '' });
     } else {
       await route.continue();
     }
@@ -229,7 +235,7 @@ async function openPage(browser, origin, externalRequests) {
     if (new URL(request.url()).pathname.startsWith('/api/')) apiRequests.push(request.url());
   });
   await page.goto(origin);
-  return { context, page, apiRequests };
+  return { context, page, apiRequests, measurementRequests };
 }
 
 async function chooseCity(page, query, name, beforeSelect = () => {}) {
@@ -425,6 +431,56 @@ test('P8: browser, default Vercel handler and fixture provider', async (suite) =
         } finally {
           release();
           await context.close();
+        }
+      },
+    );
+
+    await suite.test(
+      'aggregated measurement stays on the web origin and honours opt-out',
+      async () => {
+        const allowed = await openPage(browser, origin, externalRequests);
+        try {
+          await allowed.page
+            .getByRole('heading', { name: 'O clima da sua cidade, sem mistério.' })
+            .waitFor();
+          await allowed.page.waitForLoadState('networkidle');
+          assert.deepEqual(allowed.measurementRequests, [`${origin}/_vercel/insights/script.js`]);
+          assert.deepEqual(await allowed.context.cookies(), []);
+          assert.equal(await allowed.page.evaluate(() => localStorage.length), 0);
+          assert.equal(await allowed.page.evaluate(() => sessionStorage.length), 0);
+        } finally {
+          await allowed.context.close();
+        }
+
+        const optOutSignals = [
+          () =>
+            Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', {
+              configurable: true,
+              get: () => true,
+            }),
+          () =>
+            Object.defineProperty(Navigator.prototype, 'doNotTrack', {
+              configurable: true,
+              get: () => '1',
+            }),
+        ];
+        for (const initScript of optOutSignals) {
+          const optedOut = await openPage(browser, origin, externalRequests, { initScript });
+          try {
+            await optedOut.page
+              .getByRole('heading', { name: 'O clima da sua cidade, sem mistério.' })
+              .waitFor();
+            await optedOut.page.waitForLoadState('networkidle');
+            assert.deepEqual(optedOut.measurementRequests, []);
+            assert.equal(
+              await optedOut.page.evaluate(
+                () => document.querySelectorAll('script[src*="/_vercel/insights/"]').length,
+              ),
+              0,
+            );
+          } finally {
+            await optedOut.context.close();
+          }
         }
       },
     );
