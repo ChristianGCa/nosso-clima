@@ -8,6 +8,10 @@ export function localClock(validAtLocal: string): string {
   return validAtLocal.slice(11, 16);
 }
 
+export function hourLabel(hour: number): string {
+  return `${String(hour).padStart(2, '0')}h`;
+}
+
 export function retrievedTime(retrievedAtUtc: string, timezone: string): string {
   return new Intl.DateTimeFormat('pt-BR', {
     timeZone: timezone,

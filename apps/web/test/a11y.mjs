@@ -39,6 +39,14 @@ const conditions = [
   ['storm', 'Tempestade', 'tempestade', 'tempestade'],
 ];
 
+function hourlyFor(dayIndex) {
+  const hours = Array.from({ length: 24 }, (_, hour) => hour);
+  return {
+    temperatureC: hours.map((hour) => (dayIndex === 0 && hour === 16 ? null : 15 + hour / 2)),
+    precipitationMm: hours.map((hour) => (hour === 17 ? 0.4 : 0)),
+  };
+}
+
 function forecastResponse(category, label, isDay) {
   const condition = { code: 0, category, labelPt: label };
   return {
@@ -62,6 +70,7 @@ function forecastResponse(category, label, isDay) {
       precipitationProbabilityMaxPercent: null,
       precipitationSumMm: 0,
       windSpeedMaxKmh: 25,
+      hourly: hourlyFor(index),
     })),
     attribution: {
       provider: 'Open-Meteo',
@@ -285,6 +294,26 @@ try {
   );
   await page.locator('.site-shell.has-image').waitFor();
   await scan(page, 'success mobile');
+  const hourlyRegion = page.getByRole('region', { name: /Previsão por hora de/ });
+  const lastDay = page.getByRole('group', { name: 'Escolher dia' }).getByRole('button').last();
+  await lastDay.click();
+  assert.equal(await lastDay.getAttribute('aria-pressed'), 'true');
+  assert.equal(
+    await hourlyRegion.evaluate((element) => element.scrollWidth > element.clientWidth),
+    true,
+    'a full day of hours must scroll inside its own region at 360 px',
+  );
+  await lastDay.focus();
+  await page.keyboard.press('Tab');
+  assert.equal(
+    await hourlyRegion.evaluate(
+      (element) =>
+        element === document.activeElement && getComputedStyle(element).outlineWidth === '3px',
+    ),
+    true,
+    'Tab must reach the hourly region with a visible focus outline',
+  );
+  await scan(page, 'hourly full day mobile');
   await field.focus();
   await checkContrast(page, 'dia-limpo mobile');
   assert.equal(

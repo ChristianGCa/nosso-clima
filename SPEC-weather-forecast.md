@@ -1,6 +1,6 @@
 # Spec: Weather Forecast
 
-- **Status:** Local implementation complete; Checkpoint W-C approved by owner on 2026-09-24; revised on 2026-09-28 to remove UV and on 2026-10-04 to use predominant daily conditions; hourly temperature and precipitation amendment approved by owner on 2026-11-03, implementation awaiting separate authorization
+- **Status:** Local implementation complete; Checkpoint W-C approved by owner on 2026-09-24; revised on 2026-09-28 to remove UV and on 2026-10-04 to use predominant daily conditions; hourly temperature and precipitation amendment approved by owner and implemented locally on 2026-11-03
 - **Module id:** `weather-forecast`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
@@ -262,7 +262,7 @@ The owner approved the original spec and W1–W7 plan on 2026-09-23 and the comp
 
 ## Previsão por hora — requisitos aprovados em 2026-11-03
 
-**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; **implementação aguarda autorização separada**. Esta seção registra a aprovação exigida em “Ask first” para mudar campos e lista de variáveis e para acrescentar detalhe horário. Somente nesse alcance, ela substitui duas regras anteriores:
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **concluída localmente**, com gates locais verdes (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para mudar campos e lista de variáveis e para acrescentar detalhe horário. Somente nesse alcance, ela substitui duas regras anteriores:
 
 - a frase “Request only hourly weather codes; do not expose hourly values in the public response”;
 - a regra de que apenas a probabilidade diária de chuva aceita `null`.
@@ -370,18 +370,16 @@ A revisão de 2026-11-03, aprovada pelo proprietário com estes requisitos, não
   - a chave usa `v2`;
   - um valor `v1` não é lido como `v2`;
   - hit, miss e expiração de 10 minutos continuam como hoje.
-- **Fixture:** a fixture atual tem horas sintéticas.
-  - Recomendação: capturar uma resposta real nova da consulta ampliada para uma cidade pública e registrar a procedência, sem link novo.
-  - Alternativa aceitável: estender a fixture sintética com identificação explícita.
+- **Fixture:** `open-meteo-forecast-hourly.json` guarda uma resposta real da consulta ampliada, capturada em 2026-11-03 para São Paulo, com procedência registrada sem link novo. `forecast-with-hourly.ts` continua sendo a extensão sintética identificada usada pelos demais testes.
 - **Cobertura:** a API mantém pelo menos 80% em todas as métricas.
 
 ### Critérios de aceite
 
-- [ ] Cada dia expõe 24 temperaturas e 24 totais de chuva da hora anterior, alinhados à hora local, com `null` preservado e sem outros campos do provedor.
-- [ ] Dados inválidos continuam resultando em 503 seguro; o código WMO horário continua sem aceitar `null`.
-- [ ] A resposta de pior caso cabe no limite do valor Redis, e a chave de cache usa `v2`.
+- [x] Cada dia expõe 24 temperaturas e 24 totais de chuva da hora anterior, alinhados à hora local, com `null` preservado e sem outros campos do provedor.
+- [x] Dados inválidos continuam resultando em 503 seguro; o código WMO horário continua sem aceitar `null`.
+- [x] A resposta de pior caso cabe no limite do valor Redis, e a chave de cache usa `v2`.
 - [ ] O custo de 1.500 créditos está cadastrado em Preview e Production antes do merge.
-- [ ] Nenhum valor horário aparece em logs ou erros públicos; `CONSTRAINTS.md` permanece integral.
+- [x] Nenhum valor horário aparece em logs ou erros públicos; `CONSTRAINTS.md` permanece integral.
 
 ## Official Sources
 

@@ -41,7 +41,7 @@ export function canonicalizeForecastLocation(location: ForecastLocation): Foreca
 }
 
 export function forecastCacheKey(location: ForecastLocation): string {
-  return `weather-forecast:v1:${location.latitude}:${location.longitude}:${location.timezone}`;
+  return `weather-forecast:v2:${location.latitude}:${location.longitude}:${location.timezone}`;
 }
 
 function parseCoordinate(text: string, min: number, max: number): number {

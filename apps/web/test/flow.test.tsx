@@ -93,7 +93,11 @@ describe('city-to-forecast flow', () => {
     await resolveUpdates();
     expect(fetchSpy).toHaveBeenCalledTimes(2);
     expect(screen.getByRole('heading', { name: 'São Paulo, São Paulo, Brasil' })).toBeTruthy();
-    expect(screen.getAllByText('Indisponível')).toHaveLength(1);
+    expect(
+      within(screen.getByRole('region', { name: 'Previsão de 7 dias' })).getAllByText(
+        'Indisponível',
+      ),
+    ).toHaveLength(1);
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
     expect(
       screen
@@ -155,6 +159,55 @@ describe('city-to-forecast flow', () => {
       resolveSecondForecast?.(jsonResponse(forecastResponse));
     });
     expect(screen.getByRole('heading', { name: 'Santos, São Paulo, Brasil' })).toBeTruthy();
+  });
+
+  it('returns the hourly section to today when another city is selected', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (path) =>
+      String(path).includes('/locations')
+        ? jsonResponse({
+            ...locationResponse,
+            locations: [
+              locationResponse.locations[0],
+              { ...locationResponse.locations[0], id: 2, name: 'Santos' },
+            ],
+          })
+        : jsonResponse(forecastResponse),
+    );
+    render(<App />);
+    fireEvent.change(input(), { target: { value: 'São' } });
+    await advanceSearch();
+    fireEvent.click(screen.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }));
+    await resolveUpdates();
+    const days = within(screen.getByRole('group', { name: 'Escolher dia' })).getAllByRole('button');
+    fireEvent.click(days[2] as HTMLElement);
+    expect(days[2]?.getAttribute('aria-pressed')).toBe('true');
+
+    fireEvent.change(input(), { target: { value: 'San' } });
+    await advanceSearch();
+    fireEvent.click(screen.getByRole('option', { name: 'Santos, São Paulo, Brasil' }));
+    await resolveUpdates();
+    expect(screen.getByRole('heading', { name: 'Santos, São Paulo, Brasil' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hoje' }).getAttribute('aria-pressed')).toBe('true');
+  });
+
+  it('omits the hourly section when the API returns no hourly data', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (path) =>
+      String(path).includes('/locations')
+        ? jsonResponse(locationResponse)
+        : jsonResponse({
+            ...forecastResponse,
+            daily: forecastResponse.daily.map(({ hourly: _omitted, ...day }) => day),
+          }),
+    );
+    render(<App />);
+    fireEvent.change(input(), { target: { value: 'São' } });
+    await advanceSearch();
+    fireEvent.click(screen.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }));
+    await resolveUpdates();
+    expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'Previsão por hora' })).toBeNull();
   });
 
   it('distinguishes no results, search failure and explicit search retry', async () => {

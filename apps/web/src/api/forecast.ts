@@ -11,6 +11,14 @@ export type Condition = Readonly<{
   labelPt: (typeof labels)[number];
 }>;
 
+const HOURS_PER_DAY = 24;
+
+/** Position `i` is local hour `i` of the day; precipitation is the total of the hour ending then. */
+export type HourlyColumns = Readonly<{
+  temperatureC: readonly (number | null)[];
+  precipitationMm: readonly (number | null)[];
+}>;
+
 export type Daily = Readonly<{
   date: string;
   temperatureMaxC: number;
@@ -21,6 +29,8 @@ export type Daily = Readonly<{
   precipitationProbabilityMaxPercent: number | null;
   precipitationSumMm: number;
   windSpeedMaxKmh: number;
+  /** `null` only when the API omits hourly data for every day (previous API version). */
+  hourly: HourlyColumns | null;
 }>;
 
 export type Forecast = Readonly<{
@@ -49,6 +59,20 @@ function nullableNumber(value: unknown, min = -Infinity, max = Infinity): number
   return value === null ? null : finite(value, min, max);
 }
 
+function hourlyColumn(value: unknown, min = -Infinity): (number | null)[] {
+  if (!Array.isArray(value) || value.length !== HOURS_PER_DAY) throw new Error('invalid data');
+  return value.map((entry: unknown) => nullableNumber(entry, min));
+}
+
+function hourly(value: unknown): HourlyColumns | null {
+  if (value === undefined) return null;
+  const item = record(value);
+  return {
+    temperatureC: hourlyColumn(item.temperatureC),
+    precipitationMm: hourlyColumn(item.precipitationMm, 0),
+  };
+}
+
 function daily(value: unknown): Daily {
   const item = record(value);
   return {
@@ -65,6 +89,7 @@ function daily(value: unknown): Daily {
     ),
     precipitationSumMm: finite(item.precipitationSumMm, 0),
     windSpeedMaxKmh: finite(item.windSpeedMaxKmh, 0),
+    hourly: hourly(item.hourly),
   };
 }
 
@@ -84,6 +109,9 @@ export function parseForecast(value: unknown): Forecast {
   civilDate(validAtLocal.slice(0, 10));
   if (!Array.isArray(root.daily) || root.daily.length !== 7) throw new Error('invalid data');
   const days = root.daily.map(daily);
+  // Hourly data is all-or-nothing: a previous API omits it everywhere, never on some days.
+  const withHourly = days.filter((day) => day.hourly !== null).length;
+  if (withHourly !== 0 && withHourly !== days.length) throw new Error('invalid data');
   if (days[0]?.date !== validAtLocal.slice(0, 10)) throw new Error('invalid data');
   for (let index = 1; index < days.length; index += 1) {
     if (

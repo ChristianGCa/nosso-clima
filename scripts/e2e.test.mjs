@@ -24,14 +24,27 @@ const webRoot = path.join(root, 'apps/web');
 const capturedForecast = JSON.parse(
   await readFile(path.join(root, 'apps/api/test/fixtures/open-meteo-forecast.json'), 'utf8'),
 );
+// Synthetic hourly extension of the retained provider fixture, as in
+// apps/api/test/fixtures/forecast-with-hourly.ts.
 const forecastFixture = {
   ...capturedForecast,
-  hourly_units: { time: 'iso8601', weather_code: 'wmo code' },
+  hourly_units: {
+    time: 'iso8601',
+    weather_code: 'wmo code',
+    temperature_2m: '°C',
+    precipitation: 'mm',
+  },
   hourly: {
     time: capturedForecast.daily.time.flatMap((date) =>
       Array.from({ length: 24 }, (_, hour) => `${date}T${String(hour).padStart(2, '0')}:00`),
     ),
     weather_code: capturedForecast.daily.weather_code.flatMap((code) => Array(24).fill(code)),
+    temperature_2m: capturedForecast.daily.temperature_2m_min.flatMap((minimum) =>
+      Array.from({ length: 24 }, (_, hour) => Math.round((minimum + hour / 4) * 10) / 10),
+    ),
+    precipitation: capturedForecast.daily.precipitation_sum.flatMap((total) =>
+      Array.from({ length: 24 }, (_, hour) => (hour === 1 ? total : 0)),
+    ),
   },
 };
 
@@ -339,6 +352,21 @@ test('P8: browser, default Vercel handler and fixture provider', async (suite) =
           await chooseCity(page, 'São', 'São Paulo, São Paulo, Brasil');
           await page.getByRole('heading', { name: 'Previsão de 7 dias' }).waitFor();
           assert.equal(await page.locator('.today-card, .day-card').count(), 7);
+          await page.getByRole('heading', { name: 'Previsão por hora' }).waitFor();
+          const days = page.getByRole('group', { name: 'Escolher dia' }).getByRole('button');
+          assert.equal(await days.count(), 7);
+          assert.equal(await days.first().getAttribute('aria-pressed'), 'true');
+          await days.nth(1).click();
+          await page
+            .getByRole('table', { name: 'Previsão por hora de Quinta-feira, 24/09' })
+            .waitFor();
+          assert.equal(await page.locator('.hourly-table thead th').count(), 25);
+          assert.equal(await page.locator('.hourly-table tbody tr').count(), 2);
+          assert.equal(
+            await page.locator('.hourly-table tbody tr').nth(1).locator('td').nth(1).textContent(),
+            '0 mm',
+          );
+          assert.equal(fixture.providerCalls.length, 2, 'choosing a day must not call the API');
           await page.getByText('Dados por Open-Meteo', { exact: false }).waitFor();
           await page.getByRole('link', { name: 'CC BY 4.0' }).first().waitFor();
           assert.equal(fixture.providerCalls.length, 2);

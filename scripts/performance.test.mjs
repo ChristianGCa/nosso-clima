@@ -40,6 +40,10 @@ const forecast = {
     precipitationProbabilityMaxPercent: null,
     precipitationSumMm: 0,
     windSpeedMaxKmh: 25,
+    hourly: {
+      temperatureC: Array.from({ length: 24 }, (_, hour) => 15 + hour / 2),
+      precipitationMm: Array(24).fill(0),
+    },
   })),
   attribution: {
     provider: 'Open-Meteo',

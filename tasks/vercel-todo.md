@@ -86,8 +86,24 @@ Pedido do proprietário: mostrar temperatura e chuva por hora nos sete dias, em 
   - **Documentação oficial da Open-Meteo:** a chuva horária é a soma da hora anterior; o fuso usa deslocamento fixo e ignora horário de verão.
   - **Termos e licença:** relidos, sem restrição nova.
 - [x] Emendas das três specs aprovadas pelo proprietário (2026-11-03), incluindo as decisões: hora ausente como “—”/“Indisponível” sem derrubar a previsão; hoje a partir da hora atual; seção própria abaixo dos cartões; recomendação de fixture real nova.
-- [ ] Autorização de implementação.
-- [ ] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.500 em Preview e Production (proprietário).
+- [x] Implementação autorizada pelo proprietário (2026-11-03).
+- [x] Implementação local (2026-11-03, branch `feat/previsao-horaria`):
+  - API: três variáveis horárias, validação com `null` preservado, colunas `daily[].hourly`, chave de cache `weather-forecast:v2` e limite do valor Redis exportado para o teste de pior caso;
+  - fixture real `open-meteo-forecast-hourly.json` (São Paulo, 2026-11-03), com procedência registrada; extensão sintética ampliada;
+  - web: validação tudo-ou-nada, seção “Previsão por hora” com `<fieldset>` de dias, tabela rolável e nota da chuva;
+  - testes de fronteira, componente e fluxo; axe com um dia completo em 360 px e foco por Tab na região; cenário E2E de troca de dia; performance com a seção renderizada.
+- [x] Exceção aprovada em `CONSTRAINTS.md` (2026-11-03, validade 2027-02-01): um `biome-ignore` de `noNoninteractiveTabindex` na região rolável. O proprietário escolheu manter a tabela rolável em vez de uma grade sem rolagem.
+- [x] Gates locais verdes (2026-11-03):
+  - `npm run check`: 571 testes na API e 128 no web, em cerca de 10 s;
+  - cobertura: API 95,29/92,5/94,89/98,02 e web 97,03/90,59/98,07/99,14;
+  - builds e `npm audit` sem vulnerabilidades;
+  - axe e contraste nos dez fundos, com a seção visível;
+  - E2E (seis testes);
+  - performance: LCP ≈0,95 s na tela neutra e ≈1,04 s com cidade restaurada, CLS 0.
+
+  Ambiente: Chromium fixado pelo Playwright. Gitleaks fica para a CI. Revisão visual em 360 e 1280 px sem rolagem horizontal da página.
+- [ ] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.500 em Preview e Production (proprietário; ainda não alterado em 2026-11-03).
+- [ ] PR com CI verde, merge, smoke nos dois projetos e atualização do `README.md` e do `CAPABILITY-MAP.md`, conforme `SPEC-production-delivery.md`.
 
 ## Pendências de manutenção (não bloqueiam)
 

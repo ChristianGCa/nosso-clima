@@ -41,6 +41,20 @@ const CurrentSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const HourlySchema = Type.Object(
+  {
+    temperatureC: Type.Array(Type.Union([Type.Number(), Type.Null()]), {
+      minItems: 24,
+      maxItems: 24,
+    }),
+    precipitationMm: Type.Array(Type.Union([Type.Number({ minimum: 0 }), Type.Null()]), {
+      minItems: 24,
+      maxItems: 24,
+    }),
+  },
+  { additionalProperties: false },
+);
+
 const DailySchema = Type.Object(
   {
     date: Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' }),
@@ -55,6 +69,7 @@ const DailySchema = Type.Object(
     ]),
     precipitationSumMm: Type.Number({ minimum: 0 }),
     windSpeedMaxKmh: Type.Number({ minimum: 0 }),
+    hourly: HourlySchema,
   },
   { additionalProperties: false },
 );

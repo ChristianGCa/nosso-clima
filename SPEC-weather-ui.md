@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city, and on 2026-10-04 to refine daily cards; 2026-10-01 corrective checks verified locally; hourly section approved by owner on 2026-11-03, implementation awaiting separate authorization
+- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city, and on 2026-10-04 to refine daily cards; 2026-10-01 corrective checks verified locally; hourly section approved by owner and implemented locally on 2026-11-03
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -235,13 +235,13 @@ Finalidade: saber de onde vêm as visitas (site de origem e localização aproxi
 
 ## Previsão por hora — requisitos aprovados em 2026-11-03
 
-**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; **implementação aguarda autorização separada**. Esta seção registra a aprovação exigida em “Ask first” para consumir um campo novo da API. Somente para a seção descrita aqui, ela retira “hourly weather” da lista do que o site não faz. O contrato está em `SPEC-weather-forecast.md`, seção de mesma data.
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **concluída localmente**, com gates locais verdes (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para consumir um campo novo da API. Somente para a seção descrita aqui, ela retira “hourly weather” da lista do que o site não faz. O contrato está em `SPEC-weather-forecast.md`, seção de mesma data.
 
 ### Apresentação
 
 - **Posição:** a nova seção “Previsão por hora” fica depois da previsão de 7 dias e antes do rodapé com a atribuição. A hierarquia passa a ser busca, condições atuais, sete dias, horas e créditos.
 - **Escolha do dia:**
-  - um grupo rotulado “Escolher dia” tem sete botões, com “Hoje” primeiro e depois dia da semana e data curta, calculados como nos cartões diários;
+  - um `<fieldset>` com a legenda “Escolher dia” agrupa sete botões, com “Hoje” primeiro e depois dia da semana e data curta, calculados como nos cartões diários;
   - o botão ativo usa `aria-pressed="true"` e não depende só de cor;
   - “Hoje” é o padrão, e uma nova cidade volta a ele.
 - **Onde fica a escolha:** o dia escolhido existe só na memória da página. Ele não vai para URL (query ou fragmento), armazenamento do navegador, medição de audiência ou logs. A última cidade continua sendo o único registro local.
@@ -261,7 +261,8 @@ Finalidade: saber de onde vêm as visitas (site de origem e localização aproxi
 ### Layout, acessibilidade e desempenho
 
 - **Rolagem horizontal:** só a região da tabela rola na horizontal.
-  - A região tem `role="region"`, nome acessível pela legenda ou pelo título e `tabindex="0"`, para atender à regra do axe sobre regiões roláveis focáveis.
+  - A região é uma `<section>` (papel `region` implícito) com o nome da legenda da tabela e `tabindex="0"`, para atender à regra do axe sobre regiões roláveis focáveis.
+  - O Biome proíbe `tabIndex` nesse elemento. O proprietário manteve a tabela rolável em vez de uma grade sem rolagem e aprovou em 2026-11-03 a única supressão necessária, registrada como exceção em `CONSTRAINTS.md`, com validade até 2027-02-01.
   - O foco permanece visível nos dez fundos.
   - Em 360 px, a página não tem rolagem horizontal.
 - **Altura estável:** a seção reserva altura fixa, para que trocar de dia ou carregar a previsão não desloque o conteúdo (CLS).
@@ -303,8 +304,8 @@ Finalidade: saber de onde vêm as visitas (site de origem e localização aproxi
 
 ### Critérios de aceite
 
-- [ ] A pessoa escolhe qualquer um dos sete dias e vê temperatura e chuva por hora, com unidades e a semântica da chuva explícitas.
-- [ ] A tabela é acessível por teclado e leitor de tela, sem rolagem horizontal da página, e passa no axe sem violações críticas ou graves.
-- [ ] O dia escolhido não sai da memória da página; nenhum valor vai para logs, URL, armazenamento ou medição.
-- [ ] Sem `hourly`, a previsão continua funcionando sem a seção; com dados inválidos, aparece o estado de indisponibilidade.
-- [ ] LCP e CLS continuam dentro de `CONSTRAINTS.md`.
+- [x] A pessoa escolhe qualquer um dos sete dias e vê temperatura e chuva por hora, com unidades e a semântica da chuva explícitas.
+- [x] A tabela é acessível por teclado e leitor de tela, sem rolagem horizontal da página, e passa no axe sem violações críticas ou graves.
+- [x] O dia escolhido não sai da memória da página; nenhum valor vai para logs, URL, armazenamento ou medição.
+- [x] Sem `hourly`, a previsão continua funcionando sem a seção; com dados inválidos, aparece o estado de indisponibilidade.
+- [x] LCP e CLS continuam dentro de `CONSTRAINTS.md`.

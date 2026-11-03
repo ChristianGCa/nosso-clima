@@ -26,7 +26,46 @@ describe('forecast HTTP boundary', () => {
       'precipitationProbabilityMaxPercent',
       'precipitationSumMm',
       'windSpeedMaxKmh',
+      'hourly',
     ]);
+    expect(result.daily[0]?.hourly?.temperatureC).toHaveLength(24);
+    expect(result.daily[0]?.hourly?.temperatureC[16]).toBeNull();
+    expect(result.daily[1]?.hourly?.precipitationMm[3]).toBeNull();
+  });
+
+  it('accepts a previous API without hourly data on any day', () => {
+    const result = parseForecast({
+      ...forecastResponse,
+      daily: forecastResponse.daily.map(({ hourly: _omitted, ...day }) => day),
+    });
+    expect(result.daily.every((day) => day.hourly === null)).toBe(true);
+  });
+
+  it.each([
+    { temperatureC: Array(23).fill(20), precipitationMm: Array(24).fill(0) },
+    { temperatureC: Array(24).fill(20), precipitationMm: Array(25).fill(0) },
+    { temperatureC: Array(24).fill(20), precipitationMm: [-0.1, ...Array(23).fill(0)] },
+    { temperatureC: ['20', ...Array(23).fill(20)], precipitationMm: Array(24).fill(0) },
+    { temperatureC: Array(24).fill(20) },
+    null,
+  ])('rejects malformed hourly columns %#', (hourly) => {
+    expect(() =>
+      parseForecast({
+        ...forecastResponse,
+        daily: forecastResponse.daily.map((day, index) => (index === 2 ? { ...day, hourly } : day)),
+      }),
+    ).toThrow();
+  });
+
+  it('rejects hourly data present on only some days', () => {
+    expect(() =>
+      parseForecast({
+        ...forecastResponse,
+        daily: forecastResponse.daily.map(({ hourly, ...day }, index) =>
+          index === 0 ? day : { ...day, hourly },
+        ),
+      }),
+    ).toThrow();
   });
 
   it.each([

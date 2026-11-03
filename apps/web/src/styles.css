@@ -792,6 +792,124 @@ body:has(.info-dialog[open]) {
   stroke-linejoin: round;
 }
 
+.hourly-section {
+  padding-block: 0 2rem;
+  background: rgb(7 20 28 / 0.24);
+}
+
+.hourly-inner {
+  width: min(calc(100% - 3rem), 1280px);
+  margin-inline: auto;
+}
+
+.hourly-inner h2 {
+  width: fit-content;
+  margin: 0 0 0.85rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 0.45rem;
+  background: rgb(7 22 31 / 0.96);
+  color: #f5fbff;
+  font-size: 1.25rem;
+  letter-spacing: -0.02em;
+}
+
+.hourly-panel {
+  min-width: 0;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  background: rgb(7 22 31 / 0.9);
+}
+
+.hourly-days {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.hourly-picker-label {
+  width: 100%;
+  margin: 0 0 0.45rem;
+  padding: 0;
+  color: #d8eef2;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.hourly-day {
+  min-height: 2.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgb(196 243 245 / 0.65);
+  border-radius: 999px;
+  background: transparent;
+  color: #f4fbff;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.hourly-day[aria-pressed="true"] {
+  border: 2px solid #c4f3f5;
+  background: #c4f3f5;
+  color: #092944;
+  font-weight: 800;
+}
+
+.hourly-scroll {
+  margin-top: 0.85rem;
+  overflow-x: auto;
+  border-radius: 0.5rem;
+  background: rgb(4 14 20 / 0.6);
+  overscroll-behavior-x: contain;
+}
+
+.hourly-table {
+  border-collapse: collapse;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.hourly-table th,
+.hourly-table td {
+  min-width: 4.25rem;
+  padding: 0.5rem 0.6rem;
+  text-align: center;
+}
+
+.hourly-table thead th {
+  border-bottom: 1px solid rgb(204 231 235 / 0.3);
+  color: #d8eef2;
+  font-size: 0.85rem;
+}
+
+.hourly-table tbody tr + tr > * {
+  border-top: 1px solid rgb(204 231 235 / 0.18);
+}
+
+.hourly-table th[scope="row"],
+.hourly-table thead th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 7.5rem;
+  background: #07161f;
+  text-align: left;
+}
+
+.hourly-table th[scope="row"] {
+  font-size: 0.85rem;
+  white-space: normal;
+}
+
+.hourly-note {
+  margin: 0.7rem 0 0;
+  color: #d8eef2;
+  font-size: 0.85rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .info-dialog[open],
   .info-dialog[open]::backdrop,
@@ -815,6 +933,7 @@ body:has(.info-dialog[open]) {
   .header-inner,
   .current-inner,
   .daily-inner,
+  .hourly-inner,
   .footer-inner,
   .state-inner {
     width: min(calc(100% - 1.5rem), 1280px);
@@ -905,6 +1024,19 @@ body:has(.info-dialog[open]) {
 
   .daily-section {
     padding-block: 1.1rem 1.5rem;
+  }
+
+  .hourly-section {
+    padding-block: 0 1.5rem;
+  }
+
+  .hourly-panel {
+    padding: 0.75rem;
+  }
+
+  .hourly-table th[scope="row"],
+  .hourly-table thead th:first-child {
+    min-width: 6rem;
   }
 
   .daily-strip {

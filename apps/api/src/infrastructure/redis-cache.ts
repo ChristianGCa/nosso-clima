@@ -7,7 +7,7 @@ const MAX_TTL_MS = {
   'location-search': 86_400_000,
   'weather-forecast': 600_000,
 } as const;
-const MAX_VALUE_BYTES = 24_576;
+export const MAX_CACHE_VALUE_BYTES = 24_576;
 const LOCK_TTL_MS = 12_000;
 const WAIT_STEPS_MS = [100, 200, 400, 800, 1_600, 3_200] as const;
 
@@ -115,7 +115,7 @@ export function createRedisCache<Value>(options: {
       } catch {
         throw new Error('Invalid cache value');
       }
-      if (encoded === undefined || Buffer.byteLength(encoded, 'utf8') > MAX_VALUE_BYTES) {
+      if (encoded === undefined || Buffer.byteLength(encoded, 'utf8') > MAX_CACHE_VALUE_BYTES) {
         throw new Error('Invalid cache value');
       }
       try {

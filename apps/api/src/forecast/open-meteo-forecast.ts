@@ -34,7 +34,9 @@ export class ForecastFailure extends Error {
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const MAX_BODY_BYTES = 65_536;
 const CURRENT_VARIABLES = 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day';
-const HOURLY_VARIABLES = 'weather_code';
+const HOURLY_VARIABLES = 'weather_code,temperature_2m,precipitation';
+const HOURS_PER_DAY = 24;
+const FORECAST_DAYS = 7;
 const DAILY_VARIABLES =
   'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max';
 
@@ -139,7 +141,12 @@ export function normalizeForecastResponse(
     wind_speed_10m: 'km/h',
     is_day: '',
   });
-  validateUnits(hourlyUnits, { time: 'iso8601', weather_code: 'wmo code' });
+  validateUnits(hourlyUnits, {
+    time: 'iso8601',
+    weather_code: 'wmo code',
+    temperature_2m: '°C',
+    precipitation: 'mm',
+  });
   validateUnits(dailyUnits, {
     time: 'iso8601',
     temperature_2m_max: '°C',
@@ -162,6 +169,12 @@ export function normalizeForecastResponse(
     return invalidResponse();
   }
   const dailyConditions = readPredominantConditions(hourly, dates);
+  const hourlyTemperature = readHourlyValues(hourly, 'temperature_2m', readNullableFiniteValue);
+  const hourlyPrecipitation = readHourlyValues(
+    hourly,
+    'precipitation',
+    readNullableNonnegativeValue,
+  );
   const temperatureMax = readSevenValues(daily, 'temperature_2m_max');
   const temperatureMin = readSevenValues(daily, 'temperature_2m_min');
   const apparentTemperatureMax = readSevenValues(daily, 'apparent_temperature_max');
@@ -185,6 +198,10 @@ export function normalizeForecastResponse(
       precipitationProbabilityMaxPercent: probability,
       precipitationSumMm: precipitation,
       windSpeedMaxKmh: readNonnegativeNumberValue(windSpeedMax[index]),
+      hourly: {
+        temperatureC: dayColumn(hourlyTemperature, index),
+        precipitationMm: dayColumn(hourlyPrecipitation, index),
+      },
     };
   });
 
@@ -204,14 +221,40 @@ export function normalizeForecastResponse(
   };
 }
 
+// Hourly columns reuse the 168 timestamps checked by readPredominantConditions:
+// position `day * 24 + hour` is local hour `hour` of daily date `day`.
+function readHourlyValues(
+  hourly: ObjectValue,
+  key: string,
+  readEntry: (value: unknown) => number | null,
+): readonly (number | null)[] {
+  const values = readValue(hourly, key);
+  if (!Array.isArray(values) || values.length !== HOURS_PER_DAY * FORECAST_DAYS) {
+    return invalidResponse();
+  }
+  return values.map(readEntry);
+}
+
+function dayColumn(values: readonly (number | null)[], dayIndex: number): (number | null)[] {
+  return values.slice(dayIndex * HOURS_PER_DAY, (dayIndex + 1) * HOURS_PER_DAY);
+}
+
+function readNullableFiniteValue(value: unknown): number | null {
+  return value === null ? null : readFiniteNumberValue(value);
+}
+
+function readNullableNonnegativeValue(value: unknown): number | null {
+  return value === null ? null : readNonnegativeNumberValue(value);
+}
+
 function readPredominantConditions(hourly: ObjectValue, dates: readonly string[]): WmoCondition[] {
   const times = readValue(hourly, 'time');
   const codes = readValue(hourly, 'weather_code');
   if (
     !Array.isArray(times) ||
     !Array.isArray(codes) ||
-    times.length !== 24 * 7 ||
-    codes.length !== 24 * 7
+    times.length !== HOURS_PER_DAY * FORECAST_DAYS ||
+    codes.length !== HOURS_PER_DAY * FORECAST_DAYS
   ) {
     return invalidResponse();
   }

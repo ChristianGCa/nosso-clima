@@ -1,4 +1,7 @@
 import { forecastWithHourly as realForecast } from '../fixtures/forecast-with-hourly.js';
+import capturedHourlyForecast from '../fixtures/open-meteo-forecast-hourly.json' with {
+  type: 'json',
+};
 import { describe, expect, it, vi } from 'vitest';
 
 import {
@@ -34,7 +37,7 @@ describe('Open-Meteo forecast transport', () => {
       ['timezone', 'America/Sao_Paulo'],
       ['forecast_days', '7'],
       ['current', 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day'],
-      ['hourly', 'weather_code'],
+      ['hourly', 'weather_code,temperature_2m,precipitation'],
       [
         'daily',
         'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
@@ -224,9 +227,56 @@ describe('Open-Meteo forecast response validation', () => {
       'precipitationProbabilityMaxPercent',
       'precipitationSumMm',
       'windSpeedMaxKmh',
+      'hourly',
     ]);
+    expect(Object.keys(result.daily[0]?.hourly ?? {})).toEqual(['temperatureC', 'precipitationMm']);
     expect(result).not.toHaveProperty('latitude');
     expect(result.daily).toHaveLength(7);
+  });
+
+  it('splits hourly columns by local day with position equal to the hour', () => {
+    const result = normalizeForecastResponse(realForecast, location, '2026-09-23T23:00:00.000Z');
+    for (const [day, record] of result.daily.entries()) {
+      expect(record.hourly.temperatureC).toEqual(
+        realForecast.hourly.temperature_2m.slice(day * 24, (day + 1) * 24),
+      );
+      expect(record.hourly.precipitationMm).toEqual(
+        realForecast.hourly.precipitation.slice(day * 24, (day + 1) * 24),
+      );
+    }
+    expect(result.daily[0]?.hourly.temperatureC[0]).toBe(13);
+    expect(result.daily[0]?.hourly.temperatureC[23]).toBe(16.1);
+    expect(result.daily[0]?.hourly.precipitationMm.slice(0, 3)).toEqual([3.1, 3.1, 0]);
+  });
+
+  it('normalizes a captured response of the hourly query', () => {
+    const result = normalizeForecastResponse(
+      capturedHourlyForecast,
+      location,
+      '2026-11-03T23:30:00.000Z',
+    );
+    expect(result.current.validAtLocal).toBe('2026-11-03T20:15');
+    expect(result.daily.map((day) => day.date)).toEqual(capturedHourlyForecast.daily.time);
+    expect(result.daily[0]?.hourly.temperatureC).toEqual(
+      capturedHourlyForecast.hourly.temperature_2m.slice(0, 24),
+    );
+    expect(result.daily[6]?.hourly.precipitationMm).toEqual(
+      capturedHourlyForecast.hourly.precipitation.slice(144, 168),
+    );
+  });
+
+  it('preserves unavailable hourly values without turning them into zero', () => {
+    const payload = {
+      ...realForecast,
+      hourly: {
+        ...realForecast.hourly,
+        temperature_2m: [null, ...realForecast.hourly.temperature_2m.slice(1)],
+        precipitation: [...realForecast.hourly.precipitation.slice(0, 167), null],
+      },
+    };
+    const result = normalizeForecastResponse(payload, location, '2026-09-23T23:00:00.000Z');
+    expect(result.daily[0]?.hourly.temperatureC[0]).toBeNull();
+    expect(result.daily[6]?.hourly.precipitationMm[23]).toBeNull();
   });
 
   it('preserves unavailable rain probability without turning it into zero', () => {
@@ -324,6 +374,52 @@ describe('Open-Meteo forecast response validation', () => {
       hourly: {
         ...realForecast.hourly,
         time: ['2026-09-24T00:00', ...realForecast.hourly.time.slice(1)],
+      },
+    },
+    { hourly_units: { ...realForecast.hourly_units, temperature_2m: '°F' } },
+    { hourly_units: { ...realForecast.hourly_units, precipitation: 'inch' } },
+    { hourly_units: { weather_code: 'wmo code', time: 'iso8601', temperature_2m: '°C' } },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        temperature_2m: realForecast.hourly.temperature_2m.slice(1),
+      },
+    },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        precipitation: [...realForecast.hourly.precipitation, 0],
+      },
+    },
+    {
+      hourly: {
+        time: realForecast.hourly.time,
+        weather_code: realForecast.hourly.weather_code,
+        temperature_2m: realForecast.hourly.temperature_2m,
+      },
+    },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        precipitation: [-0.1, ...realForecast.hourly.precipitation.slice(1)],
+      },
+    },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        temperature_2m: ['13.0', ...realForecast.hourly.temperature_2m.slice(1)],
+      },
+    },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        temperature_2m: [Number.NaN, ...realForecast.hourly.temperature_2m.slice(1)],
+      },
+    },
+    {
+      hourly: {
+        ...realForecast.hourly,
+        precipitation: { length: 168 },
       },
     },
   ])('rejects malformed consumed provider data %#', (override) => {
