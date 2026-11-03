@@ -1,6 +1,6 @@
 # Entrega Vercel + Upstash — estado e pendências
 
-**Atualizado em 2026-10-12. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
+**Atualizado em 2026-11-03. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
 
 ## Resumo
 
@@ -36,9 +36,26 @@
    - [x] Smoke protegido e ensaio de rollback dos dois projetos em 2026-10-12: atual → par anterior → atual, com smoke da API pela CLI e do web no navegador em cada estado. Detalhes em `docs/history/preview-evidence-2026-10.md`, seção “Smoke e rollback de Production — 2026-10-12”.
    - [x] Abertura pública em 2026-10-12: o proprietário trocou a proteção dos dois projetos de “All Deployments” para a que libera somente os domínios de Production. Smoke anônimo aprovado; detalhes no histórico, seção “Abertura pública e smoke anônimo — 2026-10-12”.
 
+## Medição de audiência e headers — requisitos aprovados em 2026-11-03
+
+Pedido do proprietário: saber a origem dos acessos e os dispositivos, em conformidade com a LGPD. Decisões tomadas: respeitar Global Privacy Control e Do Not Track; incluir `Permissions-Policy` e `Cross-Origin-Opener-Policy`. Requisitos em `SPEC-weather-ui.md` e `SPEC-production-delivery.md` (seções de 2026-11-03); motivo e teste de balanceamento em `docs/decisions/0002-vercel-web-analytics.md`; procedimento no runbook (Release, item 5).
+
+- [x] Pesquisa normativa, conferência do código e da documentação do Web Analytics; specs, ADR e runbook escritos (2026-11-03, branch `docs/web-analytics-spec`).
+- [ ] Revisão das specs e da ADR pelo proprietário.
+- [ ] **Autorização de implementação**, que ainda não foi dada.
+- [ ] Implementação:
+  - módulo de medição com `@vercel/analytics` em versão exata;
+  - texto do aviso;
+  - headers em `vercel.mjs`;
+  - testes unitários, de configuração e E2E.
+- [ ] Gates locais: `npm run check`, cobertura, builds, `npm audit`, axe, E2E e performance. Depois, PR com CI verde.
+- [ ] Proprietário ativa o Web Analytics **somente no projeto web**, antes do merge.
+- [ ] Merge. Coleta e aviso novo entram no mesmo deployment de Production.
+- [ ] Conferência agrupada em Production (lista na spec de entrega); registrar aqui só o resultado resumido.
+
 ## Pendências de manutenção (não bloqueiam)
 
-- [ ] LGPD — transferência internacional: aviso atualizado em 2026-10-12 (branch `fix/lgpd-privacy-notice`) com base legal, transferência, direitos do titular, ANPD e incidentes; `Referrer-Policy` do web passou a `no-referrer`; procedimento de incidente no runbook. Os DPAs públicos de Vercel e Upstash pesquisados não mostram as cláusulas-padrão da ANPD (Res. CD/ANPD nº 19/2024). Decisão do proprietário: aceitar e manter a transparência no aviso, ou mover a Function para São Paulo e a base Upstash para a região de São Paulo (reduz, mas não elimina, a transferência, porque os fornecedores são estrangeiros). Conferir também se o apelido `ChristianGCa` basta como identificação do controlador (art. 9º, III) ou se o nome civil deve constar.
+- [ ] LGPD — transferência internacional (abrange também a medição de audiência aprovada em 2026-11-03): aviso atualizado em 2026-10-12 (branch `fix/lgpd-privacy-notice`) com base legal, transferência, direitos do titular, ANPD e incidentes; `Referrer-Policy` do web passou a `no-referrer`; procedimento de incidente no runbook. Os DPAs públicos de Vercel e Upstash pesquisados não mostram as cláusulas-padrão da ANPD (Res. CD/ANPD nº 19/2024). Decisão do proprietário: aceitar e manter a transparência no aviso, ou mover a Function para São Paulo e a base Upstash para a região de São Paulo (reduz, mas não elimina, a transferência, porque os fornecedores são estrangeiros). Conferir também se o apelido `ChristianGCa` basta como identificação do controlador (art. 9º, III) ou se o nome civil deve constar.
 - [ ] Branches: as locais foram removidas em 2026-10-12, inclusive `p1a-preview`, cujas duas correções foram restauradas na `main`. No GitHub restam `chore/vercel-p1`, `docs/release-p11`, `fix/restore-p1a-hardening` e `fix/geocoding-skip-incomplete-candidates`, todas incorporadas; a remoção fica a cargo do proprietário.
 - Após a abertura, acompanhar: 503, negações de cota, 429 externo, consumo dos planos Free, expiração de busca em 24 h, concorrência/atomicidade hospedadas e reconciliação mensal (postergados pela decisão abaixo).
 

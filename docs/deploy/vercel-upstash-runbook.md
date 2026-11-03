@@ -101,5 +101,19 @@ Se houver suspeita de acesso indevido a segredos, Redis, logs ou deployments: (1
 2. Conferir configuração Production, sem eco/segredos no web; executar gates finais locais/CI da revisão escolhida e smoke protegido. Confirmar que a revisão final mantém o transporte de saída aceito e registrar a prova separada de confiança da identidade. Gate ausente/falho continua aberto.
 3. Ensaiar reversão de API e web para deployments existentes/verificados, com ordem e smoke dos dois caminhos. IDs/URLs/comandos com valores reais ficam no painel/registro privado; no Git, usar placeholders/resultados resumidos. Preservar formatos Redis; deployment API excluído não é destino de rollback.
 4. Obter decisão explícita do proprietário para abertura pública. Após abertura, acompanhar categorias 503/negação, `upstream_rate_limited` versus limites próprios, cache hit/miss e consumo dos planos Free sem dados pessoais.
+5. **Medição de audiência (Web Analytics)**, somente após a implementação autorizada e a CI verde do PR:
+   1. Proprietário: no painel, abrir Analytics do projeto **web** e escolher Enable. Nunca ativar no projeto da API, sem Pro, Analytics Plus nem Drains.
+   2. Fazer o merge. O deployment de Production publica juntos o script e o aviso atualizado.
+   3. Conferir em janela anônima no domínio de Production (DevTools):
+      - requisições de medição somente para a própria origem;
+      - nenhuma violação de CSP no console;
+      - nenhum cookie ou chave de armazenamento novos;
+      - presença de `Permissions-Policy` e `Cross-Origin-Opener-Policy`;
+      - links externos do diálogo funcionando.
+   4. Repetir a carga com Global Privacy Control ativo (navegador ou extensão) e confirmar que nenhuma requisição de medição é feita.
+   5. Conferir no painel que as visitas começaram a aparecer.
+   6. Registrar na lista ativa só o resultado resumido, sem números, URLs ou capturas.
+
+   Rollback: reverter o web ao deployment anterior remove o script e restaura o aviso antigo no mesmo passo; desativar no painel interrompe a coleta.
 
 Se Redis/cota falhar, bloquear novas saídas e retornar erro seguro; health só indica que o processo responde. Se o eco revelar IP do visitante, interromper release e revisar transporte/topologia. Sem cobrança, retries em massa, supressões ou flexibilização de `CONSTRAINTS.md`.
