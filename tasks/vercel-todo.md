@@ -40,9 +40,16 @@
 
 Pedido do proprietário: saber a origem dos acessos e os dispositivos, em conformidade com a LGPD. Decisões tomadas: respeitar Global Privacy Control e Do Not Track; incluir `Permissions-Policy` e `Cross-Origin-Opener-Policy`. Requisitos em `SPEC-weather-ui.md` e `SPEC-production-delivery.md` (seções de 2026-11-03); motivo e teste de balanceamento em `docs/decisions/0002-vercel-web-analytics.md`; procedimento no runbook (Release, item 5).
 
-- [x] Pesquisa normativa, conferência do código e da documentação do Web Analytics; specs, ADR e runbook escritos (2026-11-03, branch `docs/web-analytics-spec`).
+- [x] Pesquisa normativa, conferência do código e da documentação do Web Analytics; specs, ADR e runbook escritos (2026-11-03, branch `feat/web-analytics`).
+- [x] Correção de todas as vulnerabilidades (2026-11-03, a pedido do proprietário, em commit próprio na branch `feat/web-analytics`). O `npm audit` da `main` acusava 8 vulnerabilidades: 2 altas, 5 moderadas e 1 baixa.
+  - Diretas: `vite` 8.3.5, `vitest`/`@vitest/coverage-v8` 5.0.3 e `fastify` 5.12.7 (runtime da API).
+  - Indiretas: `undici` 8.12.3, `fast-uri` 3.1.9/4.2.3 e `ip-address` 10.7.5.
+  - Foram escolhidas as versões corrigidas com pelo menos uma semana de publicação.
+  - Resultado: `npm audit` sem nenhuma vulnerabilidade. Gates locais verdes: `npm run check` (548 API, 103 web), cobertura API 94,93/91,95/94,8/97,9 e web 96,91/90/97,61/99,04, builds, axe e contraste, E2E (cinco), performance (LCP ≈0,96 s, CLS 0).
+  - Ambiente: Node 24.18.0, npm 12.0.2, Chromium fixado pelo Playwright. Gitleaks ausente localmente; fica para a CI.
+  - O merge gera um deployment novo da API; fazer smoke de busca e previsão depois dele.
 - [ ] Revisão das specs e da ADR pelo proprietário.
-- [ ] **Autorização de implementação**, que ainda não foi dada.
+- [x] Autorização de implementação dada pelo proprietário em 2026-11-03.
 - [ ] Implementação:
   - módulo de medição com `@vercel/analytics` em versão exata;
   - texto do aviso;
