@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city, and on 2026-10-04 to refine daily cards; 2026-10-01 corrective checks verified locally
+- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city, and on 2026-10-04 to refine daily cards; 2026-10-01 corrective checks verified locally; hourly section approved by owner on 2026-11-03, implementation awaiting separate authorization
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -232,3 +232,79 @@ Finalidade: saber de onde vêm as visitas (site de origem e localização aproxi
   - o diálogo contém os novos itens do aviso e não contém mais “análise de audiência” como negativa.
 
   Cobertura, axe e contraste seguem `CONSTRAINTS.md`; o texto maior do diálogo não pode criar rolagem horizontal em 360 px.
+
+## Previsão por hora — requisitos aprovados em 2026-11-03
+
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; **implementação aguarda autorização separada**. Esta seção registra a aprovação exigida em “Ask first” para consumir um campo novo da API. Somente para a seção descrita aqui, ela retira “hourly weather” da lista do que o site não faz. O contrato está em `SPEC-weather-forecast.md`, seção de mesma data.
+
+### Apresentação
+
+- **Posição:** a nova seção “Previsão por hora” fica depois da previsão de 7 dias e antes do rodapé com a atribuição. A hierarquia passa a ser busca, condições atuais, sete dias, horas e créditos.
+- **Escolha do dia:**
+  - um grupo rotulado “Escolher dia” tem sete botões, com “Hoje” primeiro e depois dia da semana e data curta, calculados como nos cartões diários;
+  - o botão ativo usa `aria-pressed="true"` e não depende só de cor;
+  - “Hoje” é o padrão, e uma nova cidade volta a ele.
+- **Onde fica a escolha:** o dia escolhido existe só na memória da página. Ele não vai para URL (query ou fragmento), armazenamento do navegador, medição de audiência ou logs. A última cidade continua sendo o único registro local.
+- **Tabela de horas:**
+  - o dia escolhido aparece numa `<table>` com legenda que nomeia o dia (por exemplo, “Previsão por hora de quarta-feira, 4 de novembro”);
+  - as colunas são as horas, com `<th scope="col">` no formato “14h”;
+  - as linhas são “Temperatura” e “Chuva na hora anterior”, com `<th scope="row">`.
+- **Horas exibidas:** para hoje, da hora de `current.validAtLocal` (minutos descartados) até 23h; para os outros dias, de 00h a 23h. No máximo 24 colunas são renderizadas por vez.
+- **Formato dos valores:**
+  - temperatura e chuva usam o mesmo formato `pt-BR` dos cartões, com °C e mm explícitos;
+  - um `null` aparece como “—” visível, com o texto “Indisponível” para tecnologia assistiva, e nunca como zero.
+- **Semântica da chuva:**
+  - uma nota visível sob a tabela diz que a chuva de cada horário é o total previsto para a hora que termina nele;
+  - a interface não soma nem resume as horas: os cartões diários continuam usando os totais diários da API, que podem diferir levemente da soma horária.
+- **Ícones:** só os ícones já incluídos e licenciados (termômetro e gota de medição), de forma decorativa. Um ícone novo exige revisão de direitos antes do uso.
+
+### Layout, acessibilidade e desempenho
+
+- **Rolagem horizontal:** só a região da tabela rola na horizontal.
+  - A região tem `role="region"`, nome acessível pela legenda ou pelo título e `tabindex="0"`, para atender à regra do axe sobre regiões roláveis focáveis.
+  - O foco permanece visível nos dez fundos.
+  - Em 360 px, a página não tem rolagem horizontal.
+- **Altura estável:** a seção reserva altura fixa, para que trocar de dia ou carregar a previsão não desloque o conteúdo (CLS).
+- **Movimento:** a rolagem não usa animação. `prefers-reduced-motion` continua respeitado.
+- **Superfícies e contraste:** as superfícies seguem as dos cartões, com contraste verificado nos dez fundos e no estado neutro, em mobile e desktop.
+- **Desempenho:** a seção não traz imagens nem afeta o elemento de LCP. O DOM extra fica limitado a um dia por vez.
+
+### Validação no navegador e compatibilidade
+
+- **Validação de `daily[].hourly`:** a fronteira HTTP confere o campo; os valores que ela recusa levam a previsão ao estado de indisponibilidade, como os demais dados inválidos. São exigidos:
+  - exatamente 24 entradas em `temperatureC` e em `precipitationMm`;
+  - temperatura finita ou `null`;
+  - chuva finita ≥ 0 ou `null`.
+- **Rollback:** se **nenhum** dia trouxer `hourly` (API anterior durante deploy ou rollback), a seção horária é omitida sem mensagem de erro e o restante funciona. Presença parcial (alguns dias com, outros sem) é dado inválido.
+- **Web anterior com API nova:** o web publicado hoje ignora o campo novo, porque `record()` em `validation.ts` não rejeita chaves extras (conferido em 2026-11-03). Assim, web e API podem ser revertidos de forma independente.
+
+### Privacidade e licença
+
+- **Proibições:** nenhum valor meteorológico, cidade ou dia escolhido vai para console, medição, URL ou armazenamento. A regra “Keep query, coordinates and weather values out of browser logs and analytics” continua integral, e eventos personalizados continuam proibidos.
+- **Aviso de privacidade:** o aviso não muda, porque não há dado pessoal, destinatário ou armazenamento novo.
+- **Atribuição:** a atribuição da Open-Meteo e a indicação de dados adaptados continuam visíveis na mesma tela da previsão.
+
+### Testes
+
+- **Componentes:**
+  - seleção de dia por teclado e ponteiro, com `aria-pressed`;
+  - hoje começando na hora atual e outros dias com 24 horas;
+  - “—” com “Indisponível” para `null`;
+  - nota da chuva;
+  - volta a “Hoje” ao trocar de cidade;
+  - seção omitida quando a API não traz horas;
+  - estado de indisponibilidade para horas inválidas ou parciais.
+- **Fronteira HTTP:** comprimentos, tipos, negativos e `null`.
+- **Navegador:**
+  - axe e contraste com a seção visível em mobile e desktop;
+  - ausência de rolagem horizontal da página em 360 px;
+  - foco visível na região rolável.
+- **Cobertura:** o web mantém pelo menos 80% em todas as métricas.
+
+### Critérios de aceite
+
+- [ ] A pessoa escolhe qualquer um dos sete dias e vê temperatura e chuva por hora, com unidades e a semântica da chuva explícitas.
+- [ ] A tabela é acessível por teclado e leitor de tela, sem rolagem horizontal da página, e passa no axe sem violações críticas ou graves.
+- [ ] O dia escolhido não sai da memória da página; nenhum valor vai para logs, URL, armazenamento ou medição.
+- [ ] Sem `hourly`, a previsão continua funcionando sem a seção; com dados inválidos, aparece o estado de indisponibilidade.
+- [ ] LCP e CLS continuam dentro de `CONSTRAINTS.md`.

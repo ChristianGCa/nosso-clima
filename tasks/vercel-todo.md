@@ -76,6 +76,19 @@ Pedido do proprietário: saber a origem dos acessos e os dispositivos, em confor
     - links externos do diálogo funcionando com o COOP.
   - Firefox em janela privada, sem bloqueador: `navigator.globalPrivacyControl === true`, nenhuma requisição `insights` e nenhum `<script>` de medição no DOM. A recusa por GPC fica comprovada em Production, separada do bloqueio dos Shields do Brave.
 
+## Previsão por hora — requisitos aprovados em 2026-11-03
+
+Pedido do proprietário: mostrar temperatura e chuva por hora nos sete dias, em colunas. Requisitos nas seções de 2026-11-03 de `SPEC-weather-forecast.md`, `SPEC-weather-ui.md` e `SPEC-production-delivery.md`.
+
+- [x] Análise de viabilidade e revisão de segurança, privacidade e licença (2026-11-03).
+  - **Medições:** resposta real da Open-Meteo com 6.724 bytes, para limite de 65.536. Contrato no pior caso com 5.541 bytes, para limite de 24.576 do valor Redis.
+  - **Custo:** 1,5 chamada por previsão.
+  - **Documentação oficial da Open-Meteo:** a chuva horária é a soma da hora anterior; o fuso usa deslocamento fixo e ignora horário de verão.
+  - **Termos e licença:** relidos, sem restrição nova.
+- [x] Emendas das três specs aprovadas pelo proprietário (2026-11-03), incluindo as decisões: hora ausente como “—”/“Indisponível” sem derrubar a previsão; hoje a partir da hora atual; seção própria abaixo dos cartões; recomendação de fixture real nova.
+- [ ] Autorização de implementação.
+- [ ] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.500 em Preview e Production (proprietário).
+
 ## Pendências de manutenção (não bloqueiam)
 
 - [ ] LGPD — transferência internacional (abrange também a medição de audiência aprovada em 2026-11-03): aviso atualizado em 2026-10-12 (branch `fix/lgpd-privacy-notice`) com base legal, transferência, direitos do titular, ANPD e incidentes; `Referrer-Policy` do web passou a `no-referrer`; procedimento de incidente no runbook. Os DPAs públicos de Vercel e Upstash pesquisados não mostram as cláusulas-padrão da ANPD (Res. CD/ANPD nº 19/2024). Decisão do proprietário: aceitar e manter a transparência no aviso, ou mover a Function para São Paulo e a base Upstash para a região de São Paulo (reduz, mas não elimina, a transferência, porque os fornecedores são estrangeiros). Conferir também se o apelido `ChristianGCa` basta como identificação do controlador (art. 9º, III) ou se o nome civil deve constar.
