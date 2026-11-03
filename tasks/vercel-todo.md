@@ -67,7 +67,14 @@ Pedido do proprietário: saber a origem dos acessos e os dispositivos, em confor
   - o script da Vercel envia para `/_vercel/insights/view` e ignora navegadores automatizados.
 
   Por relato do proprietário: o painel registrou a visita feita fora do Brave, e o acesso pelo Brave não foi contado, como esperado com GPC e Shields.
-- [ ] Complementar quando houver ocasião, sem urgência: no DevTools de Production, confirmar que o console não mostra violação de CSP e que não surgem cookies nem armazenamento novos. Confirmar também a recusa com GPC num navegador sem bloqueador, para separar o efeito do GPC do bloqueio dos Shields do Brave.
+- [x] Conferência complementar no DevTools (2026-11-03), feita pelo proprietário com capturas revisadas nesta sessão.
+  - Chromium com perfil limpo:
+    - `script.js` e `view` (POST 200) somente na origem do web, com payload `o` reduzido a `/`, sem query, cidade ou coordenadas;
+    - fora da origem, só URIs `data:` dos ícones embutidos, nenhuma requisição de rede a terceiros;
+    - headers de segurança presentes e nenhuma violação de CSP no console;
+    - nenhum cookie; Local storage somente com `nosso-clima:last-location:v1` após escolher a cidade; Session storage e IndexedDB vazios;
+    - links externos do diálogo funcionando com o COOP.
+  - Firefox em janela privada, sem bloqueador: `navigator.globalPrivacyControl === true`, nenhuma requisição `insights` e nenhum `<script>` de medição no DOM. A recusa por GPC fica comprovada em Production, separada do bloqueio dos Shields do Brave.
 
 ## Pendências de manutenção (não bloqueiam)
 
