@@ -103,6 +103,8 @@ Se houver suspeita de acesso indevido a segredos, Redis, logs ou deployments: (1
 4. Obter decisão explícita do proprietário para abertura pública. Após abertura, acompanhar categorias 503/negação, `upstream_rate_limited` versus limites próprios, cache hit/miss e consumo dos planos Free sem dados pessoais.
 5. **Medição de audiência (Web Analytics)**, somente após a implementação autorizada e a CI verde do PR:
    1. Proprietário: no painel, abrir Analytics do projeto **web** e escolher Enable. Nunca ativar no projeto da API, sem Pro, Analytics Plus nem Drains.
+      - A ativação vale a partir do deployment seguinte. Se ela vier depois do merge, fazer Redeploy do web em Production.
+      - `/_vercel/insights/script.js` pode responder 200 mesmo sem ativação. Por isso, só a requisição `view` com 2xx e a visita no painel comprovam a coleta.
    2. Fazer o merge. O deployment de Production publica juntos o script e o aviso atualizado.
    3. Conferir em janela anônima no domínio de Production (DevTools):
       - requisições de medição somente para a própria origem;

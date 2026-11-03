@@ -56,10 +56,25 @@ Pedido do proprietário: saber a origem dos acessos e os dispositivos, em confor
   - testes unitários do módulo, do aviso e da configuração, e um cenário E2E novo (script só na própria origem, sem cookies nem armazenamento, e nenhuma carga com GPC ou DNT).
   - O bundle contém a URL do script de depuração do pacote, que só é usada em modo de desenvolvimento e nunca é ativada pelo módulo; o E2E confirma zero requisições a terceiros.
 - [x] Gates locais verdes: `npm run check` (548 API, 112 web), cobertura web 97,03/90,41/97,75/99,07, builds, `npm audit` sem vulnerabilidades, axe e contraste, E2E (seis), performance (LCP ≈0,95 s, CLS 0). Node 24.18.0, npm 12.0.2, Chromium do Playwright; Gitleaks fica para a CI.
-- [ ] Revisão do proprietário, push e PR com CI verde.
-- [ ] Proprietário ativa o Web Analytics **somente no projeto web**, antes do merge.
-- [ ] Merge. Coleta e aviso novo entram no mesmo deployment de Production.
-- [ ] Conferência agrupada em Production (lista na spec de entrega); registrar aqui só o resultado resumido.
+- [x] Push, CI verde e merge pelo PR #11 (2026-11-03), conduzidos pelo proprietário. Por relato dele, o site funcionou depois do deploy, incluindo o deployment novo da API com `fastify` 5.12.7.
+- [x] Web Analytics ativado pelo proprietário **somente no projeto web**, seguido de redeploy do web (2026-11-03).
+  - A ativação ocorreu depois do merge, não antes como previa a ordem. Não houve coleta sem aviso, porque o aviso novo já estava publicado.
+  - Lição registrada no runbook: o script responde 200 mesmo antes da ativação.
+- [x] Conferência em Production (2026-11-03). Observado por requisições de leitura, sem gerar visita:
+  - `Permissions-Policy` e `Cross-Origin-Opener-Policy` presentes;
+  - `/_vercel/insights/script.js` responde 200 na própria origem;
+  - o bundle publicado carrega o script em modo produção e verifica GPC;
+  - o script da Vercel envia para `/_vercel/insights/view` e ignora navegadores automatizados.
+
+  Por relato do proprietário: o painel registrou a visita feita fora do Brave, e o acesso pelo Brave não foi contado, como esperado com GPC e Shields.
+- [x] Conferência complementar no DevTools (2026-11-03), feita pelo proprietário com capturas revisadas nesta sessão.
+  - Chromium com perfil limpo:
+    - `script.js` e `view` (POST 200) somente na origem do web, com payload `o` reduzido a `/`, sem query, cidade ou coordenadas;
+    - fora da origem, só URIs `data:` dos ícones embutidos, nenhuma requisição de rede a terceiros;
+    - headers de segurança presentes e nenhuma violação de CSP no console;
+    - nenhum cookie; Local storage somente com `nosso-clima:last-location:v1` após escolher a cidade; Session storage e IndexedDB vazios;
+    - links externos do diálogo funcionando com o COOP.
+  - Firefox em janela privada, sem bloqueador: `navigator.globalPrivacyControl === true`, nenhuma requisição `insights` e nenhum `<script>` de medição no DOM. A recusa por GPC fica comprovada em Production, separada do bloqueio dos Shields do Brave.
 
 ## Pendências de manutenção (não bloqueiam)
 
