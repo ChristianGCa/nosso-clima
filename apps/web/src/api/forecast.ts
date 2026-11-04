@@ -1,5 +1,5 @@
+import { requestErrorFrom, requestJson } from './http';
 import type { Location } from './locations';
-import { requestJson, requestErrorFrom } from './http';
 import { boolean, civilDate, exact, finite, oneOf, record, text, timezone } from './validation';
 
 const categories = ['clear', 'cloudy', 'rain', 'snow', 'storm'] as const;
@@ -11,6 +11,29 @@ export type Condition = Readonly<{
   labelPt: (typeof labels)[number];
 }>;
 
+const HOURS_PER_DAY = 24;
+
+/** Position `i` is local hour `i` of the day; precipitation is the total of the hour ending then. */
+export type HourlyColumns = Readonly<{
+  temperatureC: readonly (number | null)[];
+  precipitationMm: readonly (number | null)[];
+  conditionCategory: readonly Condition['category'][];
+  isDay: readonly boolean[];
+}>;
+
+const categoryLabels: Readonly<Record<Condition['category'], Condition['labelPt']>> = {
+  clear: 'Limpo',
+  cloudy: 'Nublado',
+  rain: 'Chuva',
+  snow: 'Neve',
+  storm: 'Tempestade',
+};
+
+/** Portuguese label for a backend category, matching the labels the API sends with conditions. */
+export function categoryLabel(category: Condition['category']): Condition['labelPt'] {
+  return categoryLabels[category];
+}
+
 export type Daily = Readonly<{
   date: string;
   temperatureMaxC: number;
@@ -21,6 +44,8 @@ export type Daily = Readonly<{
   precipitationProbabilityMaxPercent: number | null;
   precipitationSumMm: number;
   windSpeedMaxKmh: number;
+  /** `null` only when the API omits hourly data for every day (previous API version). */
+  hourly: HourlyColumns | null;
 }>;
 
 export type Forecast = Readonly<{
@@ -49,6 +74,22 @@ function nullableNumber(value: unknown, min = -Infinity, max = Infinity): number
   return value === null ? null : finite(value, min, max);
 }
 
+function hourlyColumn<Entry>(value: unknown, readEntry: (entry: unknown) => Entry): Entry[] {
+  if (!Array.isArray(value) || value.length !== HOURS_PER_DAY) throw new Error('invalid data');
+  return value.map((entry: unknown) => readEntry(entry));
+}
+
+function hourly(value: unknown): HourlyColumns | null {
+  if (value === undefined) return null;
+  const item = record(value);
+  return {
+    temperatureC: hourlyColumn(item.temperatureC, (entry) => nullableNumber(entry)),
+    precipitationMm: hourlyColumn(item.precipitationMm, (entry) => nullableNumber(entry, 0)),
+    conditionCategory: hourlyColumn(item.conditionCategory, (entry) => oneOf(entry, categories)),
+    isDay: hourlyColumn(item.isDay, boolean),
+  };
+}
+
 function daily(value: unknown): Daily {
   const item = record(value);
   return {
@@ -65,6 +106,7 @@ function daily(value: unknown): Daily {
     ),
     precipitationSumMm: finite(item.precipitationSumMm, 0),
     windSpeedMaxKmh: finite(item.windSpeedMaxKmh, 0),
+    hourly: hourly(item.hourly),
   };
 }
 
@@ -84,6 +126,9 @@ export function parseForecast(value: unknown): Forecast {
   civilDate(validAtLocal.slice(0, 10));
   if (!Array.isArray(root.daily) || root.daily.length !== 7) throw new Error('invalid data');
   const days = root.daily.map(daily);
+  // Hourly data is all-or-nothing: a previous API omits it everywhere, never on some days.
+  const withHourly = days.filter((day) => day.hourly !== null).length;
+  if (withHourly !== 0 && withHourly !== days.length) throw new Error('invalid data');
   if (days[0]?.date !== validAtLocal.slice(0, 10)) throw new Error('invalid data');
   for (let index = 1; index < days.length; index += 1) {
     if (

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { CitySearch } from './components/city-search';
 import { ForecastStatus } from './components/forecast-state';
+import { hourlyNoticeActive } from './components/hourly-notice';
 import { SiteInformationDialog } from './components/site-information';
 import logoEscuro from './assets/brand/logo-escuro.svg';
 import { useForecast } from './hooks/use-forecast';
@@ -12,6 +13,9 @@ export function App() {
   const [informationOpen, setInformationOpen] = useState(false);
   const openInformation = useCallback(() => setInformationOpen(true), []);
   const closeInformation = useCallback(() => setInformationOpen(false), []);
+  // Page memory only: once closed, the notice stays closed for other cities until a reload.
+  const [hourlyNotice, setHourlyNotice] = useState(() => hourlyNoticeActive(Date.now()));
+  const dismissHourlyNotice = useCallback(() => setHourlyNotice(false), []);
   return (
     <div
       className={`site-shell${background ? ' has-image' : ''}`}
@@ -30,6 +34,7 @@ export function App() {
           state={forecast.state}
           onRetry={forecast.retry}
           onOpenInformation={openInformation}
+          {...(hourlyNotice ? { onDismissHourlyNotice: dismissHourlyNotice } : {})}
         />
       </main>
       <footer className="site-footer">

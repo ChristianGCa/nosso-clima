@@ -5,3 +5,10 @@
 - Place: São Paulo, Brazil; request coordinates are rounded to three decimal places by the forecast query contract.
 - The JSON file retains values from the captured provider response for the fields now consumed. Unused fields were pruned. Tests may clone it in memory for explicitly labelled malformed, missing and nullable-field cases; they must not mutate the committed baseline.
 - The 2026-10-04 predominant-condition amendment adds `forecast-with-hourly.ts` as an **offline synthetic extension** of this retained baseline: it generates 24 hourly timestamps and repeated codes per day for integration tests. The added hourly arrays were not captured from Open-Meteo. Unit tests separately override them to prove predominance, ties and invalid-hour rejection.
+
+## Hourly temperature and precipitation fixture
+
+- File: `open-meteo-forecast-hourly.json`, added with the 2026-11-03 hourly amendment.
+- Captured: 2026-11-03 (America/Sao_Paulo), from the Open-Meteo forecast endpoint used by `fetchForecastJson`, for São Paulo, Brazil, with latitude `-23.548`, longitude `-46.636` and the same `timezone`, `forecast_days`, `current`, `daily` and unit parameters as `open-meteo-forecast.ts`, plus `hourly=weather_code,temperature_2m,precipitation,is_day`. It replaced, on the same day, an earlier capture without `is_day`.
+- The JSON retains the captured provider values unchanged. Top-level fields not consumed (for example `current.interval`) remain only where the provider returned them; no value was edited or synthesized.
+- The older `forecast-with-hourly.ts` remains a labelled **synthetic** extension of the 2026-09-23 baseline: its hourly temperatures rise linearly from each day's minimum to maximum, and rainy days receive precipitation in their first two hours, and daytime runs from 06h to 17h.

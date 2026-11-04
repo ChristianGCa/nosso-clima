@@ -23,6 +23,24 @@ export const locationResponse = {
 } as const;
 
 const clear = { code: 0, category: 'clear', labelPt: 'Limpo' } as const;
+const hours = Array.from({ length: 24 }, (_, hour) => hour);
+
+/**
+ * Synthetic hourly columns: today's 16h temperature and the next day's 3h rain are unavailable;
+ * 17h is rainy, 18h stormy, night starts at 18h.
+ */
+function hourlyFor(dayIndex: number) {
+  return {
+    temperatureC: hours.map((hour) => (dayIndex === 0 && hour === 16 ? null : 15 + hour / 2)),
+    precipitationMm: hours.map((hour) =>
+      dayIndex === 1 && hour === 3 ? null : hour === 17 ? 0.4 : 0,
+    ),
+    conditionCategory: hours.map((hour) =>
+      hour === 17 ? 'rain' : hour === 18 ? 'storm' : hour < 12 ? 'cloudy' : 'clear',
+    ),
+    isDay: hours.map((hour) => hour >= 6 && hour < 18),
+  };
+}
 
 export const forecastResponse = {
   timezone: 'America/Sao_Paulo',
@@ -45,6 +63,7 @@ export const forecastResponse = {
     precipitationProbabilityMaxPercent: index === 0 ? null : 70,
     precipitationSumMm: index === 0 ? 0 : 8.4,
     windSpeedMaxKmh: 25,
+    hourly: hourlyFor(index),
   })),
   attribution: {
     provider: 'Open-Meteo',

@@ -8,16 +8,18 @@ export const FORECAST_ATTRIBUTION = Object.freeze({
   providerUrl: 'https://open-meteo.com/',
 } as const);
 
+const CategorySchema = Type.Union([
+  Type.Literal('clear'),
+  Type.Literal('cloudy'),
+  Type.Literal('rain'),
+  Type.Literal('snow'),
+  Type.Literal('storm'),
+]);
+
 const ConditionSchema = Type.Object(
   {
     code: Type.Integer(),
-    category: Type.Union([
-      Type.Literal('clear'),
-      Type.Literal('cloudy'),
-      Type.Literal('rain'),
-      Type.Literal('snow'),
-      Type.Literal('storm'),
-    ]),
+    category: CategorySchema,
     labelPt: Type.Union([
       Type.Literal('Limpo'),
       Type.Literal('Nublado'),
@@ -41,6 +43,22 @@ const CurrentSchema = Type.Object(
   { additionalProperties: false },
 );
 
+const HourlySchema = Type.Object(
+  {
+    temperatureC: Type.Array(Type.Union([Type.Number(), Type.Null()]), {
+      minItems: 24,
+      maxItems: 24,
+    }),
+    precipitationMm: Type.Array(Type.Union([Type.Number({ minimum: 0 }), Type.Null()]), {
+      minItems: 24,
+      maxItems: 24,
+    }),
+    conditionCategory: Type.Array(CategorySchema, { minItems: 24, maxItems: 24 }),
+    isDay: Type.Array(Type.Boolean(), { minItems: 24, maxItems: 24 }),
+  },
+  { additionalProperties: false },
+);
+
 const DailySchema = Type.Object(
   {
     date: Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}$' }),
@@ -55,6 +73,7 @@ const DailySchema = Type.Object(
     ]),
     precipitationSumMm: Type.Number({ minimum: 0 }),
     windSpeedMaxKmh: Type.Number({ minimum: 0 }),
+    hourly: HourlySchema,
   },
   { additionalProperties: false },
 );

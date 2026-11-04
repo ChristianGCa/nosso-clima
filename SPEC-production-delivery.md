@@ -125,3 +125,36 @@ Revisar o teste de balanceamento e o aviso **no mesmo PR** se surgir:
 - [ ] Aviso atualizado no mesmo deployment que inicia a coleta; teste de balanceamento registrado na ADR 0002.
 - [ ] Gates locais e CI verdes, incluindo os cenários E2E novos, sem enfraquecer `CONSTRAINTS.md`.
 - [ ] Conferência agrupada em Production registrada na lista ativa.
+
+## Previsão por hora — requisitos de entrega aprovados em 2026-11-03
+
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03, junto com as seções de mesma data de `SPEC-weather-forecast.md` e `SPEC-weather-ui.md`; implementação autorizada e concluída localmente em 2026-11-03, com o release ainda pendente. Não há mudança de topologia, headers, CSP, WAF, região, fornecedor ou aviso de privacidade.
+
+### Ordem do release
+
+1. Antes do merge, o proprietário atualiza `OPEN_METEO_FORECAST_CREDITS` para 1.600 em Preview e Production (revisado de 1.500 no mesmo dia, com a inclusão de `is_day` por hora). O custo maior é seguro para o código em execução, porque reserva a mais e nunca a menos. Os tetos agregados não mudam.
+2. **Gates:** antes do merge, os gates locais e a CI passam na revisão do PR, sem enfraquecer `CONSTRAINTS.md`:
+   - `npm run check`, cobertura, builds e `npm audit`;
+   - axe e contraste, E2E e performance;
+   - Gitleaks.
+3. **Smoke depois do deployment dos dois projetos:**
+   - busca e previsão de uma cidade pública;
+   - abrir “Ver por hora” num cartão e conferir ícones, temperatura e chuva;
+   - previsão repetida dentro de 10 minutos, servida pelo cache;
+   - console sem violação de CSP.
+
+   Registrar só o resultado resumido na lista ativa.
+4. Depois do smoke, atualizar a descrição do produto no `README.md` e no `CAPABILITY-MAP.md`.
+
+### Testes de entrega
+
+- `npm run test:e2e` acrescenta um cenário com o web compilado e serviços simulados: escolher uma cidade, abrir “Ver por hora” num cartão e confirmar a tabela dentro dele, sem nova chamada à API. Também mantém a asserção de zero requisições a terceiros.
+- `npm run test:performance` mantém LCP ≤ 2,5 s e CLS ≤ 0,1 com os dados horários na resposta.
+
+### Rollback
+
+- **Independência:** web e API podem voltar de forma independente.
+  - O web anterior ignora o campo novo.
+  - O web novo omite os botões “Ver por hora” quando a API anterior não traz horas.
+  - A chave de cache `v2` impede que as duas versões leiam o valor uma da outra na base Upstash compartilhada.
+- **Custo:** depois de um rollback, o custo de 1.600 créditos pode permanecer, porque só reserva a mais. Voltar a 1.300 é opcional e cabe ao proprietário.

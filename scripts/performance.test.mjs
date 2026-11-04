@@ -40,6 +40,12 @@ const forecast = {
     precipitationProbabilityMaxPercent: null,
     precipitationSumMm: 0,
     windSpeedMaxKmh: 25,
+    hourly: {
+      temperatureC: Array.from({ length: 24 }, (_, hour) => 15 + hour / 2),
+      precipitationMm: Array(24).fill(0),
+      conditionCategory: Array(24).fill('clear'),
+      isDay: Array.from({ length: 24 }, (_, hour) => hour >= 6 && hour < 18),
+    },
   })),
   attribution: {
     provider: 'Open-Meteo',
@@ -62,6 +68,8 @@ async function measure(browser, origin, restored) {
   });
   try {
     const page = await context.newPage();
+    // Inside the hourly-notice window, so the restored city is measured with the notice.
+    await page.clock.setFixedTime(new Date('2026-11-05T12:00:00Z'));
     await page.addInitScript(
       (savedLocation) => {
         if (savedLocation) {

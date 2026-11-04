@@ -1,6 +1,6 @@
 # Spec: Weather UI
 
-- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city, and on 2026-10-04 to refine daily cards; 2026-10-01 corrective checks verified locally
+- **Status:** Local flow approved at Checkpoint U-C on 2026-09-24; revised by owner requests on 2026-09-28 to remove UV maximum and risk and remember the last selected city, and on 2026-10-04 to refine daily cards; 2026-10-01 corrective checks verified locally; hourly section approved by owner and implemented locally on 2026-11-03
 - **Module id:** `weather-ui`
 - **Depends on:** `location-search`, `weather-forecast`
 - **Consumer:** `production-delivery`
@@ -232,3 +232,134 @@ Finalidade: saber de onde vêm as visitas (site de origem e localização aproxi
   - o diálogo contém os novos itens do aviso e não contém mais “análise de audiência” como negativa.
 
   Cobertura, axe e contraste seguem `CONSTRAINTS.md`; o texto maior do diálogo não pode criar rolagem horizontal em 360 px.
+
+## Previsão por hora — requisitos aprovados em 2026-11-03
+
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **concluída localmente**, com gates locais verdes (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para consumir um campo novo da API. Somente para a seção descrita aqui, ela retira “hourly weather” da lista do que o site não faz. O contrato está em `SPEC-weather-forecast.md`, seção de mesma data.
+
+**Revisão do mesmo dia, a pedido do proprietário:** as horas passam para dentro de cada cartão diário, abertas por um botão; cada hora mostra um ícone de condição, com variante noturna; ícones substituem os rótulos visíveis das linhas; e a nota visível sobre a chuva sai. Esta revisão substitui a seção separada, os botões de escolha de dia e a nota da primeira versão.
+
+**Ajustes do mesmo dia, a pedido do proprietário:** a unidade fica embaixo do número em cada célula; o botão segue os cantos arredondados de 0,45rem dos demais botões, com cores discretas; e o cartão HOJE mostra as 24 horas, com a hora atual destacada e a tabela rolada até ela ao abrir. Estes ajustes substituem a decisão anterior de começar o HOJE na hora atual. Na conferência visual do proprietário, também no mesmo dia: o cabeçalho da hora atual passa a uma linha só (“Agora”), porque a segunda linha aumentava a altura do cabeçalho; e abrir um painel faz crescer só aquele cartão, sem esticar os vizinhos.
+
+### Apresentação
+
+- **Posição:** cada cartão diário (HOJE e os seis seguintes) termina com um botão “Ver por hora”. Ao ser acionado, ele abre a faixa de horas **dentro do próprio cartão**, e o texto passa a “Ocultar horas”.
+- **Botão:**
+  - usa `aria-expanded` e `aria-controls` apontando para o painel;
+  - tem nome acessível com o dia (“Ver por hora de Sexta-feira, 25/09”), que começa pelo texto visível, conforme o critério 2.5.3 da WCAG;
+  - cantos de 0,45rem, como os demais botões; fechado, fundo escuro translúcido e borda ciano fraca; aberto, só um preenchimento ciano leve e borda um pouco mais visível, sem o preenchimento claro dos botões principais;
+  - o estado aberto também muda o preenchimento e a seta (▾/▴), sem depender só de cor;
+  - cada cartão abre e fecha de forma independente, e todos começam fechados.
+- **Onde fica o estado:** quais cartões estão abertos existe só na memória da página. Isso não vai para URL (query ou fragmento), armazenamento do navegador, medição de audiência ou logs. Uma nova cidade recria os cartões fechados. A última cidade continua sendo o único registro local.
+- **Tabela de horas:**
+  - fica numa `<table>` com legenda oculta que nomeia o dia (“Previsão por hora de Sexta-feira, 25/09”);
+  - as colunas são as horas, com `<th scope="col">` no formato “14h”;
+  - as linhas, com `<th scope="row">`, são condição, temperatura e chuva.
+- **Rótulos das linhas:** a linha de temperatura usa o ícone de termômetro, e a de chuva o ícone de gota de medição, sem texto visível. Os nomes “Condição”, “Temperatura” e “Chuva na hora anterior” continuam disponíveis para tecnologia assistiva.
+- **Condição por hora:** cada hora mostra o ícone da sua categoria, como nos cartões, usando a variante noturna para céu limpo e tempestade quando `isDay` é falso. O rótulo em português (Limpo, Nublado, Chuva, Neve, Tempestade) fica disponível para tecnologia assistiva.
+- **Horas exibidas:** todos os cartões, inclusive HOJE, mostram de 00h a 23h. O painel fechado não renderiza a tabela.
+- **Hora atual (só HOJE):**
+  - a coluna da hora de `current.validAtLocal` (minutos descartados) recebe um preenchimento leve, e o cabeçalho dela mostra “Agora” no lugar da hora, numa linha só, sem depender só de cor; a hora (“21h”) continua disponível para tecnologia assistiva;
+  - ao abrir o painel, a tabela rola de imediato, sem animação, até essa coluna ficar logo depois da coluna fixa dos ícones; perto do fim do dia, a rolagem para no máximo possível. As horas anteriores ficam acessíveis rolando para a esquerda;
+  - os outros cartões não têm destaque nem rolagem inicial.
+- **Formato dos valores:**
+  - temperatura e chuva usam o mesmo formato `pt-BR` dos cartões, com °C e mm explícitos;
+  - a unidade fica numa linha própria, embaixo do número, em fonte menor; o texto da célula continua “22,5 °C” para tecnologia assistiva;
+  - um `null` aparece como “—” visível, com o texto “Indisponível” para tecnologia assistiva, e nunca como zero.
+- **Semântica da chuva:**
+  - sem nota visível, por decisão do proprietário; o nome acessível da linha mantém “Chuva na hora anterior”;
+  - a interface não soma nem resume as horas: os cartões continuam usando os totais diários da API, que podem diferir levemente da soma horária.
+- **Ícones:** os de condição, a gota de medição e um termômetro derivado do `thermometer-warmer` do mesmo conjunto Meteocons (licença MIT), sem as setas. A derivação está registrada em `third-party-licenses.txt`. Todos são decorativos (`alt=""`).
+
+### Layout, acessibilidade e desempenho
+
+- **Rolagem horizontal:** só a região da tabela, dentro do cartão, rola na horizontal.
+  - A região é uma `<section>` (papel `region` implícito) com o nome da legenda da tabela e `tabindex="0"`, para atender à regra do axe sobre regiões roláveis focáveis.
+  - O Biome proíbe `tabIndex` nesse elemento. O proprietário manteve a tabela rolável em vez de uma grade sem rolagem e aprovou em 2026-11-03 a única supressão necessária, registrada como exceção em `CONSTRAINTS.md`, com validade até 2027-02-01.
+  - A região é `position: relative`, para que os rótulos ocultos das células distantes não escapem do recorte e criem rolagem na página.
+  - A coluna de ícones das linhas fica fixa à esquerda, com fundo opaco.
+  - A barra de rolagem é fina e discreta (`scrollbar-width` e `scrollbar-color`), onde o navegador aceita.
+  - O foco permanece visível nos dez fundos, e em 360 px a página não tem rolagem horizontal.
+- **Grade dos cartões:**
+  - com todos os painéis fechados, as linhas da grade mantêm a mesma altura;
+  - com um painel aberto, só aquele cartão cresce. Os demais mantêm a altura de quando todos estavam fechados, e o fundo fica visível ao lado do cartão aberto. A linha seguinte começa abaixo dele;
+  - essa altura é medida pela interface enquanto todos estão fechados. Se a largura mudar com um painel aberto, os demais passam à própria altura até todos fecharem;
+  - no celular, a coluna única usa `minmax(0, 1fr)`, para que a tabela não alargue o cartão.
+- **Movimento:** abrir e rolar não usa animação. `prefers-reduced-motion` continua respeitado.
+- **Superfícies e contraste:** as superfícies seguem as dos cartões, com contraste verificado nos dez fundos e no estado neutro, em mobile e desktop, inclusive com um painel aberto.
+- **Desempenho:** os painéis começam fechados, então a carga inicial e o elemento de LCP não mudam. Abrir um painel é ação da pessoa, fora da medição de CLS.
+
+### Aviso temporário da novidade — aprovado em 2026-11-03
+
+Pedido do proprietário: avisar os visitantes sobre a previsão por hora por uma semana. Ele escolheu a opção sem armazenamento.
+
+- **Onde e quando:**
+  - fica entre o título “Previsão de 7 dias” e os cartões, só quando a previsão traz horas;
+  - não aparece na tela neutra, no carregamento nem nos erros.
+- **Texto:** selo “Novidade” e “Previsão por hora: toque em “Ver por hora” em qualquer dia para ver a condição, a temperatura e a chuva de cada hora.”
+- **Prazo:**
+  - aparece até 23h59min59s de 2026-11-10, no horário de Brasília (`HOURLY_NOTICE_ENDS_AT` em `hourly-notice.tsx`), comparado ao relógio do visitante;
+  - depois disso some sem novo deploy;
+  - a data pode ser ajustada no merge para uma semana após a publicação;
+  - depois do prazo, o código do aviso é removido.
+- **Fechar:**
+  - o botão “Fechar” tem o nome acessível “Fechar aviso de novidade”;
+  - o aviso fica fechado só na memória da página: continua fechado ao trocar de cidade e volta numa nova visita, se ainda estiver no prazo;
+  - nada vai para armazenamento do navegador, URL, medição ou logs. A última cidade continua sendo o único registro local, e o aviso de privacidade não muda;
+  - ao fechar, o foco vai para o botão “Ver por hora” do HOJE.
+- **Visual:**
+  - superfície escura dos cartões, borda ciano fraca e cantos de 0,75rem;
+  - selo no estilo do selo HOJE e botão no estilo de “Ver por hora”, sem animação;
+  - no celular, o botão fica abaixo do texto.
+- **Testes:**
+  - exibição antes do prazo e ausência a partir dele, ou sem horas;
+  - fechamento com foco, persistência ao trocar de cidade e nada no armazenamento;
+  - limite exato do prazo;
+  - o axe, o contraste nos dez fundos e a performance usam data fixa dentro do prazo, para verificar o aviso visível em qualquer data.
+
+### Validação no navegador e compatibilidade
+
+- **Validação de `daily[].hourly`:** a fronteira HTTP confere o campo; os valores que ela recusa levam a previsão ao estado de indisponibilidade, como os demais dados inválidos. São exigidos:
+  - exatamente 24 entradas em `temperatureC`, `precipitationMm`, `conditionCategory` e `isDay`;
+  - temperatura finita ou `null`;
+  - chuva finita ≥ 0 ou `null`;
+  - categoria entre as cinco aceitas;
+  - `isDay` booleano.
+- **Rollback:** se **nenhum** dia trouxer `hourly` (API anterior durante deploy ou rollback), os botões “Ver por hora” não aparecem e o restante funciona. Presença parcial (alguns dias com, outros sem) é dado inválido.
+- **Web anterior com API nova:** o web publicado hoje ignora o campo novo, porque `record()` em `validation.ts` não rejeita chaves extras (conferido em 2026-11-03). Assim, web e API podem ser revertidos de forma independente.
+
+### Privacidade e licença
+
+- **Proibições:** nenhum valor meteorológico, cidade ou painel aberto vai para console, medição, URL ou armazenamento. A regra “Keep query, coordinates and weather values out of browser logs and analytics” continua integral, e eventos personalizados continuam proibidos.
+- **Aviso de privacidade:** o aviso não muda, porque não há dado pessoal, destinatário ou armazenamento novo.
+- **Atribuição:** a atribuição da Open-Meteo e a indicação de dados adaptados continuam visíveis na mesma tela da previsão.
+
+### Testes
+
+- **Componentes:**
+  - botão fechado por padrão, com `aria-expanded`, `aria-controls` e nome acessível com o dia;
+  - abrir e fechar, com a tabela renderizada só quando aberta;
+  - todos os dias com 24 horas; no HOJE, só a coluna da hora atual destacada, com “Agora” e a hora oculta, e rolagem até ela ao abrir;
+  - unidade em elemento próprio, embaixo do número;
+  - ícones e nomes ocultos das linhas, sem nota visível;
+  - ícone de condição por hora, com variante noturna e rótulo em português;
+  - “—” com “Indisponível” para `null`;
+  - sete botões, um por cartão, e todos fechados ao trocar de cidade;
+  - botões omitidos quando a API não traz horas;
+  - estado de indisponibilidade para horas inválidas ou parciais.
+- **Fronteira HTTP:** comprimentos, tipos, negativos, categorias, `isDay` e `null`.
+- **Navegador:**
+  - axe e contraste com um painel aberto em 360 px, inclusive o do HOJE com a hora atual destacada, e axe com o HOJE aberto em 1280 px;
+  - em 1280 px, abrir o HOJE mantém os outros seis cartões na altura de fechados, e a linha seguinte começa abaixo dele;
+  - hora atual logo depois da coluna fixa ao abrir o HOJE em 360 px;
+  - ausência de rolagem horizontal da página;
+  - foco visível na região rolável alcançada por Tab a partir do botão.
+- **Cobertura:** o web mantém pelo menos 80% em todas as métricas.
+
+### Critérios de aceite
+
+- [x] Cada cartão diário abre, dentro dele, a condição, a temperatura e a chuva de cada hora, com ícones e unidades explícitas.
+- [x] A tabela é acessível por teclado e leitor de tela, sem rolagem horizontal da página, e passa no axe sem violações críticas ou graves.
+- [x] Quais cartões estão abertos não sai da memória da página; nenhum valor vai para logs, URL, armazenamento ou medição.
+- [x] Sem `hourly`, a previsão continua funcionando sem os botões; com dados inválidos, aparece o estado de indisponibilidade.
+- [x] LCP e CLS continuam dentro de `CONSTRAINTS.md`.

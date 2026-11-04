@@ -1,6 +1,6 @@
 # Spec: Weather Forecast
 
-- **Status:** Local implementation complete; Checkpoint W-C approved by owner on 2026-09-24; revised on 2026-09-28 to remove UV and on 2026-10-04 to use predominant daily conditions
+- **Status:** Local implementation complete; Checkpoint W-C approved by owner on 2026-09-24; revised on 2026-09-28 to remove UV and on 2026-10-04 to use predominant daily conditions; hourly temperature and precipitation amendment approved by owner and implemented locally on 2026-11-03
 - **Module id:** `weather-forecast`
 - **Depends on:** `backend-platform`
 - **Consumer:** `weather-ui`
@@ -259,6 +259,137 @@ The original decisions were confirmed on 2026-09-23; later amendments are dated 
 6. **UV removal:** The owner requested removal of UV maximum and derived risk from the provider query, response contract and UI on 2026-09-28.
 
 The owner approved the original spec and W1–W7 plan on 2026-09-23 and the completed local module at Checkpoint W-C on 2026-09-24. Later owner requests on 2026-09-28 and 2026-10-04 amended the local contract as recorded above. The Redis migration was approved for implementation at P0 on 2026-10-04 and remains subject to the P1 viability gate.
+
+## Previsão por hora — requisitos aprovados em 2026-11-03
+
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **concluída localmente**, com gates locais verdes (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para mudar campos e lista de variáveis e para acrescentar detalhe horário. Somente nesse alcance, ela substitui duas regras anteriores:
+
+- a frase “Request only hourly weather codes; do not expose hourly values in the public response”;
+- a regra de que apenas a probabilidade diária de chuva aceita `null`.
+
+A interface correspondente está em `SPEC-weather-ui.md`, e a entrega em `SPEC-production-delivery.md`, ambas nas seções de mesma data.
+
+**Revisão do mesmo dia, a pedido do proprietário:** cada hora ganha também a categoria da condição, derivada do `weather_code` horário já consultado, e o indicador dia/noite (`is_day`), para que a interface mostre um ícone de condição por hora, com variante noturna. O proprietário aceitou o custo de 1,6 chamada.
+
+**Finalidade:** mostrar, para cada um dos sete dias, a condição, a temperatura e a chuva previstas para cada hora local. Nenhuma outra variável horária entra no contrato.
+
+### Consulta à Open-Meteo
+
+- `hourly` passa de `weather_code` para `weather_code,temperature_2m,precipitation,is_day`. Os demais parâmetros não mudam, e nenhum valor controlado pelo visitante entra na URL.
+- **Custo ponderado:** a consulta passa de 13 para 16 variáveis, ou seja, de 1,3 para **1,6 chamada** (1.600 créditos). A regra de contagem fracionária está na página oficial *Open-Meteo Pricing*, consultada em 2026-11-03: acima de 10 variáveis, o custo cresce proporcionalmente.
+- **Tamanho:** em 2026-11-03, uma resposta real para São Paulo com essa consulta teve 7.081 bytes. O limite de 65.536 bytes do transporte continua com folga de quase dez vezes. Timeout, redirect, status e content-type seguem as regras atuais.
+
+### Semântica do provedor
+
+Conferida em 2026-11-03 na documentação oficial da Forecast API (tabela *Hourly Parameter Definition* e parâmetro `timezone`):
+
+- `temperature_2m` é o valor instantâneo na hora indicada, a 2 m do solo.
+- `weather_code` e `is_day` também são instantâneos. `is_day` vale 1 de dia e 0 à noite, com unidade vazia, como no bloco `current`.
+- `precipitation` é a **soma da hora anterior**: chuva, pancadas e neve em equivalente de água, com precisão de 0,1 mm.
+  - O valor de 14:00 cobre 13:00–14:00.
+  - O valor de 00:00 de um dia cobre 23:00–00:00 do dia anterior.
+  - A API repassa o valor sem deslocá-lo; a interface explica a semântica.
+- A Open-Meteo usa o deslocamento UTC vigente no momento da consulta para todo o período e ignora trocas de horário de verão dentro dele.
+  - Isso já vale hoje para as datas diárias e para o cálculo da condição predominante.
+  - Em fusos com horário de verão, depois de uma troca dentro dos sete dias, os rótulos de hora ficam deslocados em 1 h em relação ao relógio local.
+  - Limitação aceita, porque o Brasil não adota horário de verão. Corrigi-la exigiria `timeformat=unixtime` e conversão própria, o que fica fora deste escopo.
+
+### Validação externa
+
+- `hourly_units` deve conter `time: iso8601`, `weather_code: wmo code`, `temperature_2m: °C`, `precipitation: mm` e `is_day` vazio.
+- `hourly.temperature_2m`, `hourly.precipitation` e `hourly.is_day` devem ter 168 entradas cada, alinhadas a `hourly.time`. Esse array já é validado como 00:00–23:00 de cada uma das sete datas diárias.
+- Cada temperatura deve ser um número finito ou `null`. Cada precipitação deve ser um número finito não negativo ou `null`.
+  - Um `null` do provedor é preservado no campo correspondente; nenhum valor é fabricado nem convertido em zero.
+  - Motivo: um valor horário ausente não deve derrubar a previsão inteira. A probabilidade diária de chuva já segue essa política.
+- Cada `is_day` deve ser exatamente 0 ou 1. Cada código WMO horário é convertido na sua categoria pela mesma tabela da condição atual; código desconhecido continua recusado.
+- Array ausente, comprimento diferente, outro tipo, número não finito, precipitação negativa ou unidade divergente continuam sendo uma falha `invalid_response`, que resulta em 503 seguro.
+- `hourly.weather_code` continua sem aceitar `null`, porque calcula a condição predominante.
+
+### Contrato público
+
+Cada registro de `daily` ganha o objeto `hourly`, em colunas:
+
+```json
+{
+  "date": "2026-11-03",
+  "hourly": {
+    "temperatureC": [18.2, 17.9, 17.5, "… 24 valores"],
+    "precipitationMm": [0, 0, 0.4, "… 24 valores"],
+    "conditionCategory": ["cloudy", "cloudy", "rain", "… 24 valores"],
+    "isDay": [false, false, false, "… 24 valores"]
+  }
+}
+```
+
+O exemplo abrevia as listas; os demais campos diários não mudam.
+
+- **Formato das listas:** cada lista tem exatamente 24 entradas. A posição `i` corresponde à hora local `i` (00 a 23) daquela `date`, no `timezone` retornado e com a ressalva de horário de verão acima.
+- **Chuva por posição:** `precipitationMm[i]` é o total previsto para a hora que termina em `i`:00.
+- **Condição por posição:** `conditionCategory[i]` é uma das cinco categorias públicas (`clear`, `cloudy`, `rain`, `snow`, `storm`), e `isDay[i]` indica dia ou noite naquela hora. O rótulo em português de cada categoria é o mesmo da tabela de condições.
+- **Campos ausentes:** não há horários textuais, códigos WMO, coordenadas nem outros campos do provedor. A hora é a posição na lista.
+- **Esquema:**
+  - `temperatureC`: números ou `null`;
+  - `precipitationMm`: números ≥ 0 ou `null`;
+  - `conditionCategory`: uma das cinco categorias;
+  - `isDay`: booleanos;
+  - `minItems` e `maxItems` iguais a 24;
+  - `additionalProperties: false` em `hourly` e em cada registro diário.
+- **Limite do Redis:** o valor serializado deve caber em 24.576 bytes, conforme `redis-cache.ts`.
+  - Sem isso, a gravação no cache falha com erro genérico e a entrada Vercel responde 500 depois de consumir a cota. O cache local em memória não tem esse limite, então só um teste específico detecta o problema.
+  - No pior caso medido em 2026-11-03, a resposta completa ocupa 8.379 bytes (34% do limite): valores com largura máxima, a categoria mais longa, `false` em todas as horas, fuso longo e todos os campos diários no maior tamanho.
+
+### Cache e compatibilidade
+
+- A resposta completa, incluindo as horas, continua numa única entrada com TTL de 10 minutos e as mesmas regras: sem dado vencido e sem cache de falha.
+- **Versão da chave:** o prefixo de `forecastCacheKey` passa de `weather-forecast:v1` para `weather-forecast:v2`. A troca é **obrigatória**, por três motivos:
+  - Preview e Production usam a mesma base Upstash;
+  - pelo `additionalProperties: false`, o esquema de cada versão rejeita o valor gravado pela outra;
+  - um valor rejeitado é tratado como falha do Redis, e a previsão daquela cidade responderia 503 por até 10 minutos.
+
+  Com chaves separadas, as duas versões convivem durante o Preview, o deploy e um rollback. As entradas `v1` expiram sozinhas em até 10 minutos.
+- **Ordem do custo e do deploy:** `OPEN_METEO_FORECAST_CREDITS` deve passar a 1.600 em Preview e Production **antes** do merge. O valor maior é seguro para o código atual, porque reserva a mais e nunca a menos. Os tetos agregados não mudam.
+
+### Segurança, privacidade e licença
+
+A revisão de 2026-11-03, aprovada pelo proprietário com estes requisitos, não encontrou superfície nova:
+
+- **Entrada e saída:**
+  - a rota e a validação da consulta não mudam;
+  - o destino da Open-Meteo continua fixo, e só a lista fixa de variáveis cresce;
+  - não há novo destinatário, dependência, segredo, cookie nem armazenamento no navegador.
+- **Dados enviados e cache:**
+  - a Open-Meteo recebe as mesmas coordenadas e o mesmo fuso de hoje;
+  - a Upstash guarda o mesmo tipo de dado (valores de previsão sob chave HMAC, TTL de 10 minutos, sem IP);
+  - o aviso de privacidade continua exato.
+- **Logs:** a regra que proíbe registrar valores diários em logs e telemetria vale também para os valores horários.
+- **Licença:** os dados continuam sob CC BY 4.0, com a indicação de que foram adaptados (`isModified: true`).
+  - A página oficial *Licence* pede crédito com link junto aos dados exibidos; a seção horária fica na mesma tela da atribuição já exibida com a previsão.
+  - Os termos oficiais (*Terms & Privacy*), relidos em 2026-11-03, mantêm uso não comercial e os limites de 600/min, 5.000/h, 10.000/dia e 300.000/mês, sem restrição específica para dados horários.
+  - A página de licença lista os serviços nacionais de origem sem exigir crédito separado na exibição.
+
+### Testes
+
+- **Adaptador:**
+  - URL com as quatro variáveis horárias e unidades novas;
+  - 168 entradas por variável e divisão correta por dia (posição = hora);
+  - categoria por hora para cada grupo de códigos e `is_day` convertido em booleano;
+  - `null` preservado;
+  - recusa de precipitação negativa, valor não finito, `is_day` diferente de 0/1, comprimento errado, array ausente e unidade divergente.
+- **Contrato:** um teste serializa a resposta de pior caso (valores com largura máxima, fuso longo) e confirma que ela não passa de 24.576 bytes.
+- **Serviço:**
+  - a chave usa `v2`;
+  - um valor `v1` não é lido como `v2`;
+  - hit, miss e expiração de 10 minutos continuam como hoje.
+- **Fixture:** `open-meteo-forecast-hourly.json` guarda uma resposta real da consulta ampliada, com as quatro variáveis horárias, capturada em 2026-11-03 para São Paulo, com procedência registrada sem link novo. `forecast-with-hourly.ts` continua sendo a extensão sintética identificada usada pelos demais testes.
+- **Cobertura:** a API mantém pelo menos 80% em todas as métricas.
+
+### Critérios de aceite
+
+- [x] Cada dia expõe 24 temperaturas, 24 totais de chuva da hora anterior, 24 categorias de condição e 24 indicadores dia/noite, alinhados à hora local, com `null` preservado nos valores numéricos e sem outros campos do provedor.
+- [x] Dados inválidos continuam resultando em 503 seguro; o código WMO horário continua sem aceitar `null`.
+- [x] A resposta de pior caso cabe no limite do valor Redis, e a chave de cache usa `v2`.
+- [ ] O custo de 1.600 créditos está cadastrado em Preview e Production antes do merge.
+- [x] Nenhum valor horário aparece em logs ou erros públicos; `CONSTRAINTS.md` permanece integral.
 
 ## Official Sources
 

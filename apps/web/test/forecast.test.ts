@@ -26,7 +26,71 @@ describe('forecast HTTP boundary', () => {
       'precipitationProbabilityMaxPercent',
       'precipitationSumMm',
       'windSpeedMaxKmh',
+      'hourly',
     ]);
+    expect(result.daily[0]?.hourly?.temperatureC).toHaveLength(24);
+    expect(result.daily[0]?.hourly?.temperatureC[16]).toBeNull();
+    expect(result.daily[1]?.hourly?.precipitationMm[3]).toBeNull();
+  });
+
+  it('accepts a previous API without hourly data on any day', () => {
+    const result = parseForecast({
+      ...forecastResponse,
+      daily: forecastResponse.daily.map(({ hourly: _omitted, ...day }) => day),
+    });
+    expect(result.daily.every((day) => day.hourly === null)).toBe(true);
+  });
+
+  it.each([
+    { temperatureC: Array(23).fill(20) },
+    { precipitationMm: Array(25).fill(0) },
+    { precipitationMm: [-0.1, ...Array(23).fill(0)] },
+    { temperatureC: ['20', ...Array(23).fill(20)] },
+    { conditionCategory: ['fog', ...Array(23).fill('rain')] },
+    { conditionCategory: Array(23).fill('rain') },
+    { isDay: ['yes', ...Array(23).fill(true)] },
+    { isDay: undefined },
+  ])('rejects malformed hourly columns %#', (override) => {
+    expect(() =>
+      parseForecast({
+        ...forecastResponse,
+        daily: forecastResponse.daily.map((day, index) =>
+          index === 2 ? { ...day, hourly: { ...day.hourly, ...override } } : day,
+        ),
+      }),
+    ).toThrow();
+  });
+
+  it('rejects a null hourly object', () => {
+    expect(() =>
+      parseForecast({
+        ...forecastResponse,
+        daily: forecastResponse.daily.map((day, index) =>
+          index === 2 ? { ...day, hourly: null } : day,
+        ),
+      }),
+    ).toThrow();
+  });
+
+  it('keeps hourly condition categories and day/night flags', () => {
+    const result = parseForecast(forecastResponse);
+    expect(result.daily[0]?.hourly?.conditionCategory.slice(16, 19)).toEqual([
+      'clear',
+      'rain',
+      'storm',
+    ]);
+    expect(result.daily[0]?.hourly?.isDay.slice(17, 19)).toEqual([true, false]);
+  });
+
+  it('rejects hourly data present on only some days', () => {
+    expect(() =>
+      parseForecast({
+        ...forecastResponse,
+        daily: forecastResponse.daily.map(({ hourly, ...day }, index) =>
+          index === 0 ? day : { ...day, hourly },
+        ),
+      }),
+    ).toThrow();
   });
 
   it.each([

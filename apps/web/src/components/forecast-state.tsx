@@ -3,9 +3,20 @@ import { locationLabel } from './city-search';
 import { CurrentConditions } from './current-conditions';
 import { DailyForecast } from './daily-forecast';
 
-type Props = { state: ForecastState; onRetry: () => void; onOpenInformation: () => void };
+type Props = {
+  state: ForecastState;
+  onRetry: () => void;
+  onOpenInformation: () => void;
+  /** Present while the hourly notice should show; it closes the notice. */
+  onDismissHourlyNotice?: () => void;
+};
 
-export function ForecastStatus({ state, onRetry, onOpenInformation }: Props) {
+export function ForecastStatus({
+  state,
+  onRetry,
+  onOpenInformation,
+  onDismissHourlyNotice,
+}: Props) {
   if (state.status === 'idle') {
     return (
       <section className="state-panel state-panel--idle">
@@ -74,7 +85,11 @@ export function ForecastStatus({ state, onRetry, onOpenInformation }: Props) {
           <CurrentConditions forecast={state.forecast} />
         </div>
       </div>
-      <DailyForecast daily={state.forecast.daily} />
+      <DailyForecast
+        daily={state.forecast.daily}
+        validAtLocal={state.forecast.current.validAtLocal}
+        {...(onDismissHourlyNotice ? { onDismissHourlyNotice } : {})}
+      />
     </div>
   );
 }

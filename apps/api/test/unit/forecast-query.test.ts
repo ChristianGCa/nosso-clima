@@ -6,6 +6,7 @@ import {
   ForecastResponseSchema,
 } from '../../src/forecast/forecast-contract.js';
 import { forecastCacheKey, parseForecastQuery } from '../../src/forecast/forecast-query.js';
+import { MAX_CACHE_VALUE_BYTES } from '../../src/infrastructure/redis-cache.js';
 
 const query = (parameters: string) => `/api/v1/forecast?${parameters}`;
 
@@ -86,6 +87,17 @@ describe('forecast query boundary', () => {
   });
 });
 
+describe('forecast cache key', () => {
+  it('uses the v2 namespace so values from the previous contract are never read', () => {
+    const key = forecastCacheKey({
+      latitude: -23.548,
+      longitude: -46.636,
+      timezone: 'America/Sao_Paulo',
+    });
+    expect(key).toBe('weather-forecast:v2:-23.548:-46.636:America/Sao_Paulo');
+  });
+});
+
 describe('forecast response contract', () => {
   const day = {
     date: '2026-09-23',
@@ -97,6 +109,12 @@ describe('forecast response contract', () => {
     precipitationProbabilityMaxPercent: 70,
     precipitationSumMm: 8.4,
     windSpeedMaxKmh: 18.6,
+    hourly: {
+      temperatureC: Array(24).fill(21.3),
+      precipitationMm: Array(24).fill(0.4),
+      conditionCategory: Array(24).fill('rain'),
+      isDay: Array(24).fill(true),
+    },
   };
   const response = {
     timezone: 'America/Sao_Paulo',
@@ -121,6 +139,93 @@ describe('forecast response contract', () => {
         daily: [{ ...day, precipitationProbabilityMaxPercent: null }, ...response.daily.slice(1)],
       }),
     ).toBe(true);
+  });
+
+  it('accepts unavailable hourly values without turning them into zero', () => {
+    const hourly = {
+      ...day.hourly,
+      temperatureC: [null, ...day.hourly.temperatureC.slice(1)],
+      precipitationMm: [null, ...day.hourly.precipitationMm.slice(1)],
+    };
+    expect(
+      Value.Check(ForecastResponseSchema, {
+        ...response,
+        daily: [{ ...day, hourly }, ...response.daily.slice(1)],
+      }),
+    ).toBe(true);
+  });
+
+  it.each([
+    { temperatureC: Array(23).fill(21.3) },
+    { precipitationMm: Array(25).fill(0) },
+    { precipitationMm: [-0.1, ...Array(23).fill(0)] },
+    { temperatureC: ['21.3', ...Array(23).fill(21.3)] },
+    { conditionCategory: ['fog', ...Array(23).fill('rain')] },
+    { conditionCategory: Array(23).fill('rain') },
+    { isDay: [null, ...Array(23).fill(true)] },
+    { isDay: Array(25).fill(true) },
+    { time: [] },
+  ])('rejects malformed hourly columns %#', (override) => {
+    expect(
+      Value.Check(ForecastResponseSchema, {
+        ...response,
+        daily: [{ ...day, hourly: { ...day.hourly, ...override } }, ...response.daily.slice(1)],
+      }),
+    ).toBe(false);
+    const { isDay: _omitted, ...withoutIsDay } = day.hourly;
+    expect(
+      Value.Check(ForecastResponseSchema, {
+        ...response,
+        daily: [{ ...day, hourly: withoutIsDay }, ...response.daily.slice(1)],
+      }),
+    ).toBe(false);
+  });
+
+  it('requires hourly columns on every day', () => {
+    const { hourly: _omitted, ...withoutHourly } = day;
+    expect(
+      Value.Check(ForecastResponseSchema, {
+        ...response,
+        daily: [withoutHourly, ...response.daily.slice(1)],
+      }),
+    ).toBe(false);
+  });
+
+  it('keeps the widest valid response within the shared cache value limit', () => {
+    const widestDay = {
+      ...day,
+      temperatureMaxC: -123.45,
+      temperatureMinC: -123.45,
+      apparentTemperatureMaxC: -123.45,
+      apparentTemperatureMinC: -123.45,
+      condition: { code: 99, category: 'storm', labelPt: 'Tempestade' },
+      precipitationProbabilityMaxPercent: 100,
+      precipitationSumMm: 1234.56,
+      windSpeedMaxKmh: 1234.56,
+      hourly: {
+        temperatureC: Array(24).fill(-123.45),
+        precipitationMm: Array(24).fill(1234.56),
+        conditionCategory: Array(24).fill('cloudy'),
+        isDay: Array(24).fill(false),
+      },
+    };
+    const widest = {
+      ...response,
+      timezone: 'America/Argentina/ComodRivadavia',
+      retrievedAtUtc: '2026-12-31T23:59:59.999Z',
+      current: {
+        ...response.current,
+        temperatureC: -123.45,
+        apparentTemperatureC: -123.45,
+        condition: { code: 99, category: 'storm', labelPt: 'Tempestade' },
+        windSpeedKmh: 1234.56,
+      },
+      daily: Array(7).fill(widestDay),
+    };
+    expect(Value.Check(ForecastResponseSchema, widest)).toBe(true);
+    expect(Buffer.byteLength(JSON.stringify(widest), 'utf8')).toBeLessThanOrEqual(
+      MAX_CACHE_VALUE_BYTES,
+    );
   });
 
   it('rejects extra fields, changed attribution and null elsewhere', () => {

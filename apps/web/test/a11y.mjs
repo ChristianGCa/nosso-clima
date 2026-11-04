@@ -39,6 +39,18 @@ const conditions = [
   ['storm', 'Tempestade', 'tempestade', 'tempestade'],
 ];
 
+function hourlyFor(dayIndex) {
+  const hours = Array.from({ length: 24 }, (_, hour) => hour);
+  return {
+    temperatureC: hours.map((hour) => (dayIndex === 0 && hour === 16 ? null : 15 + hour / 2)),
+    precipitationMm: hours.map((hour) => (hour === 17 ? 0.4 : 0)),
+    conditionCategory: hours.map((hour) =>
+      hour === 17 ? 'rain' : hour === 18 ? 'storm' : hour < 12 ? 'cloudy' : 'clear',
+    ),
+    isDay: hours.map((hour) => hour >= 6 && hour < 18),
+  };
+}
+
 function forecastResponse(category, label, isDay) {
   const condition = { code: 0, category, labelPt: label };
   return {
@@ -62,6 +74,7 @@ function forecastResponse(category, label, isDay) {
       precipitationProbabilityMaxPercent: null,
       precipitationSumMm: 0,
       windSpeedMaxKmh: 25,
+      hourly: hourlyFor(index),
     })),
     attribution: {
       provider: 'Open-Meteo',
@@ -136,6 +149,8 @@ try {
     timezoneId: 'Pacific/Honolulu',
   });
   const page = await context.newPage();
+  // Inside the hourly-notice window (hourly-notice.tsx), so the notice is always scanned.
+  await page.clock.setFixedTime(new Date('2026-11-05T12:00:00Z'));
   const assetRequests = [];
   const apiRequests = [];
   page.on('request', (request) => {
@@ -277,6 +292,11 @@ try {
   );
   assert.equal(await page.getByRole('heading', { name: 'Quinta-feira, 24/09' }).count(), 1);
   assert.equal(
+    await page.getByRole('button', { name: 'Fechar aviso de novidade' }).count(),
+    1,
+    'the hourly notice must show during its window',
+  );
+  assert.equal(
     await page
       .locator('.today-metrics')
       .evaluate((element) => getComputedStyle(element).gridTemplateColumns.split(' ').length),
@@ -285,8 +305,58 @@ try {
   );
   await page.locator('.site-shell.has-image').waitFor();
   await scan(page, 'success mobile');
+  const hourlyRegion = page.getByRole('region', { name: /Previsão por hora de/ });
+  const lastDay = page.getByRole('button', { name: /^Ver por hora de/ }).last();
+  await lastDay.click();
+  const openToggle = page.getByRole('button', { name: /^Ocultar horas de/ });
+  assert.equal(await openToggle.getAttribute('aria-expanded'), 'true');
+  assert.equal(
+    await hourlyRegion.evaluate((element) => element.scrollWidth > element.clientWidth),
+    true,
+    'a full day of hours must scroll inside its own region at 360 px',
+  );
+  await openToggle.focus();
+  await page.keyboard.press('Tab');
+  assert.equal(
+    await hourlyRegion.evaluate(
+      (element) =>
+        element === document.activeElement && getComputedStyle(element).outlineWidth === '3px',
+    ),
+    true,
+    'Tab must reach the hourly region with a visible focus outline',
+  );
+  await scan(page, 'hourly full day mobile');
   await field.focus();
   await checkContrast(page, 'dia-limpo mobile');
+  if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
+    await page.screenshot({ path: '/tmp/nosso-clima-hourly-mobile.png', fullPage: true });
+  }
+  await openToggle.click();
+  assert.equal(await hourlyRegion.count(), 0, 'closing must remove the hourly table');
+  await page
+    .getByRole('button', { name: /^Ver por hora de/ })
+    .first()
+    .click();
+  const todayRegion = page.locator('.today-card .hourly-scroll');
+  assert.equal(await todayRegion.locator('thead th').count(), 25, 'today must show all 24 hours');
+  assert.equal(
+    await todayRegion.evaluate((element) => {
+      const now = element.querySelector('thead .hourly-now');
+      const sticky = element.querySelector('thead th');
+      if (!now || !sticky) return false;
+      const offset = now.getBoundingClientRect().left - sticky.getBoundingClientRect().right;
+      return element.scrollLeft > 0 && Math.abs(offset) <= 1;
+    }),
+    true,
+    'opening today must scroll the current hour next to the row icons',
+  );
+  await scan(page, 'hourly today mobile');
+  await field.focus();
+  await checkContrast(page, 'dia-limpo mobile, today hourly open');
+  if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
+    await page.screenshot({ path: '/tmp/nosso-clima-hourly-today-mobile.png', fullPage: true });
+  }
+  await page.getByRole('button', { name: /^Ocultar horas de/ }).click();
   assert.equal(
     await page
       .locator('.search-field')
@@ -340,6 +410,41 @@ try {
   if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
     await page.screenshot({ path: '/tmp/nosso-clima-desktop.png', fullPage: true });
   }
+  const cardHeights = () =>
+    page
+      .locator('.today-card, .day-card')
+      .evaluateAll((cards) => cards.map((card) => card.getBoundingClientRect().height));
+  const closedHeights = await cardHeights();
+  await page
+    .getByRole('button', { name: /^Ver por hora de/ })
+    .first()
+    .click();
+  const openHeights = await cardHeights();
+  assert.ok(openHeights[0] > closedHeights[0], 'the open card must grow');
+  assert.deepEqual(
+    openHeights.slice(1).map((height, index) => Math.abs(height - closedHeights[index + 1]) < 1),
+    Array(6).fill(true),
+    'opening one card must keep every other card at its closed height',
+  );
+  assert.equal(
+    await page.evaluate(() => {
+      const open = document.querySelector('.today-card').getBoundingClientRect();
+      const below = document.querySelectorAll('.day-card')[2].getBoundingClientRect();
+      return below.top >= open.bottom;
+    }),
+    true,
+    'the next row must start below the open card',
+  );
+  assert.equal(
+    await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth),
+    true,
+    'an open hourly panel must not scroll the desktop page horizontally',
+  );
+  await scan(page, 'hourly today desktop');
+  if (process.env.NOSSO_CLIMA_VISUAL_REVIEW === '1') {
+    await page.screenshot({ path: '/tmp/nosso-clima-hourly-today-desktop.png', fullPage: true });
+  }
+  await page.getByRole('button', { name: /^Ocultar horas de/ }).click();
   const priorForecastCalls = forecastCalls;
   const priorLocationCalls = apiRequests.filter((url) => url.includes('/locations?')).length;
   await page.reload();

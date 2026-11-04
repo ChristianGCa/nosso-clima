@@ -76,6 +76,70 @@ Pedido do proprietário: saber a origem dos acessos e os dispositivos, em confor
     - links externos do diálogo funcionando com o COOP.
   - Firefox em janela privada, sem bloqueador: `navigator.globalPrivacyControl === true`, nenhuma requisição `insights` e nenhum `<script>` de medição no DOM. A recusa por GPC fica comprovada em Production, separada do bloqueio dos Shields do Brave.
 
+## Previsão por hora — requisitos aprovados em 2026-11-03
+
+Pedido do proprietário: mostrar temperatura e chuva por hora nos sete dias, em colunas; revisado no mesmo dia para incluir ícone de condição por hora e abrir as horas dentro de cada cartão. Requisitos nas seções de 2026-11-03 de `SPEC-weather-forecast.md`, `SPEC-weather-ui.md` e `SPEC-production-delivery.md`.
+
+- [x] Análise de viabilidade e revisão de segurança, privacidade e licença (2026-11-03).
+  - **Medições:** resposta real da Open-Meteo com 6.724 bytes, para limite de 65.536. Contrato no pior caso com 5.541 bytes, para limite de 24.576 do valor Redis.
+  - **Custo:** 1,5 chamada por previsão.
+  - **Documentação oficial da Open-Meteo:** a chuva horária é a soma da hora anterior; o fuso usa deslocamento fixo e ignora horário de verão.
+  - **Termos e licença:** relidos, sem restrição nova.
+- [x] Emendas das três specs aprovadas pelo proprietário (2026-11-03), incluindo as decisões: hora ausente como “—”/“Indisponível” sem derrubar a previsão; hoje a partir da hora atual; seção própria abaixo dos cartões; recomendação de fixture real nova.
+- [x] Implementação autorizada pelo proprietário (2026-11-03).
+- [x] Implementação local (2026-11-03, branch `feat/previsao-horaria`):
+  - API: três variáveis horárias, validação com `null` preservado, colunas `daily[].hourly`, chave de cache `weather-forecast:v2` e limite do valor Redis exportado para o teste de pior caso;
+  - fixture real `open-meteo-forecast-hourly.json` (São Paulo, 2026-11-03), com procedência registrada; extensão sintética ampliada;
+  - web: validação tudo-ou-nada, seção “Previsão por hora” com `<fieldset>` de dias, tabela rolável e nota da chuva;
+  - testes de fronteira, componente e fluxo; axe com um dia completo em 360 px e foco por Tab na região; cenário E2E de troca de dia; performance com a seção renderizada.
+- [x] Exceção aprovada em `CONSTRAINTS.md` (2026-11-03, validade 2027-02-01): um `biome-ignore` de `noNoninteractiveTabindex` na região rolável. O proprietário escolheu manter a tabela rolável em vez de uma grade sem rolagem.
+- [x] Gates locais verdes (2026-11-03):
+  - `npm run check`: 571 testes na API e 128 no web, em cerca de 10 s;
+  - cobertura: API 95,29/92,5/94,89/98,02 e web 97,03/90,59/98,07/99,14;
+  - builds e `npm audit` sem vulnerabilidades;
+  - axe e contraste nos dez fundos, com a seção visível;
+  - E2E (seis testes);
+  - performance: LCP ≈0,95 s na tela neutra e ≈1,04 s com cidade restaurada, CLS 0.
+
+  Ambiente: Chromium fixado pelo Playwright. Gitleaks fica para a CI. Revisão visual em 360 e 1280 px sem rolagem horizontal da página.
+- [x] Revisão da interface pedida pelo proprietário (2026-11-03, mesma branch), com as decisões tomadas por ele:
+  - ícone de condição por hora com variante noturna; `is_day` por hora incluído, e o custo sobe para 1,6 chamada;
+  - termômetro e gota no lugar dos rótulos das linhas;
+  - botão “Ver por hora” dentro de cada cartão, em vez de uma seção separada com escolha de dia;
+  - nota visível sobre a chuva removida.
+- [x] Implementação da revisão (2026-11-03):
+  - API: `conditionCategory` e `isDay` em `daily[].hourly`; fixture real recapturada com `is_day` (7.081 bytes); pior caso de 8.379 bytes;
+  - web: painel no cartão com `aria-expanded`/`aria-controls`, `aria-label` com o dia e termômetro derivado do Meteocons, registrado em `third-party-licenses.txt`;
+  - duas correções de layout encontradas na revisão visual: a região rolável passou a `position: relative`, porque os rótulos ocultos das células distantes escapavam do recorte, e a coluna única do celular passou a `minmax(0, 1fr)`.
+- [x] Gates locais verdes após a revisão (2026-11-03):
+  - `npm run check`: 579 testes na API e 133 no web, em cerca de 11 s;
+  - cobertura: API 95,32/92,44/94,93/98,03 e web 97,56/91,64/98,14/99,15;
+  - builds e `npm audit` sem vulnerabilidades;
+  - axe e contraste nos dez fundos, com painel aberto em 360 px;
+  - E2E (seis testes);
+  - performance: LCP ≈0,96 s e ≈1,04 s, CLS 0.
+
+  Revisão visual em 360 e 1280 px sem rolagem horizontal da página.
+- [x] Ajustes visuais pedidos pelo proprietário e aprovados por ele (2026-11-03, mesma branch; emenda em `SPEC-weather-ui.md`):
+  - unidade embaixo do número nas células;
+  - botão com cantos de 0,45rem, como os demais, e cores discretas;
+  - HOJE com as 24 horas, a hora atual destacada e rolagem até ela ao abrir. Mudança só no web: a API já entregava as 24 horas, e custo, cache e contrato não mudam;
+  - depois da conferência visual do proprietário: o cabeçalho da hora atual passou a uma linha só (“Agora”), que tirava o espaço extra; abrir um painel passou a crescer só aquele cartão, com os vizinhos na altura de fechados; e a barra de rolagem da tabela ficou fina e discreta.
+- [x] Gates locais verdes após os ajustes (2026-11-03):
+  - `npm run check`: 579 testes na API e 137 no web, em cerca de 11 s;
+  - cobertura: API 95,32/92,44/94,93/98,03 e web 97,73/92,17/98,26/99,21;
+  - builds e `npm audit` sem vulnerabilidades;
+  - axe e contraste nos dez fundos, com o HOJE aberto em 360 px; axe com o HOJE aberto em 1280 px, com os outros seis cartões na altura de fechados;
+  - E2E (seis testes);
+  - performance: LCP ≈0,94 s e ≈1,04 s, CLS 0.
+
+  Revisão visual em 360 e 1280 px sem rolagem horizontal da página.
+- [x] Aviso temporário da novidade (2026-11-03, aprovado pelo proprietário na opção sem armazenamento; requisitos em `SPEC-weather-ui.md`, seção “Aviso temporário da novidade”). Fica acima dos cartões até 2026-11-10, 23h59 de Brasília, e “Fechar” vale só para a página aberta. Gates locais verdes: `npm run check` (579 API, 140 web), cobertura web 97,77/92,32/98,33/99,23, builds, `npm audit` sem vulnerabilidades, axe e contraste nos dez fundos com o aviso visível, E2E (seis), performance com o aviso (LCP ≈0,95 s e ≈1,05 s, CLS 0).
+- [ ] No merge: se a publicação passar de 2026-11-03, ajustar `HOURLY_NOTICE_ENDS_AT` para uma semana após a publicação, junto com a data fixa do axe e da performance.
+- [ ] Após o prazo do aviso: remover `hourly-notice.tsx`, a ligação no `App`, os estilos e os testes, e marcar a seção do spec como encerrada.
+- [x] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.600 em Preview e Production, alterado pelo proprietário em 2026-11-03 (por relato; valor no painel, fora do Git). Vale para os próximos deployments da API.
+- [ ] PR com CI verde, merge, smoke nos dois projetos e atualização do `README.md` e do `CAPABILITY-MAP.md`, conforme `SPEC-production-delivery.md`.
+
 ## Pendências de manutenção (não bloqueiam)
 
 - [ ] LGPD — transferência internacional (abrange também a medição de audiência aprovada em 2026-11-03): aviso atualizado em 2026-10-12 (branch `fix/lgpd-privacy-notice`) com base legal, transferência, direitos do titular, ANPD e incidentes; `Referrer-Policy` do web passou a `no-referrer`; procedimento de incidente no runbook. Os DPAs públicos de Vercel e Upstash pesquisados não mostram as cláusulas-padrão da ANPD (Res. CD/ANPD nº 19/2024). Decisão do proprietário: aceitar e manter a transparência no aviso, ou mover a Function para São Paulo e a base Upstash para a região de São Paulo (reduz, mas não elimina, a transferência, porque os fornecedores são estrangeiros). Conferir também se o apelido `ChristianGCa` basta como identificação do controlador (art. 9º, III) ou se o nome civil deve constar.

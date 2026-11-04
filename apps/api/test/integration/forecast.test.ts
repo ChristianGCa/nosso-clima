@@ -230,7 +230,7 @@ describe('GET /api/v1/forecast', () => {
       expect(logText).not.toContain('Sao_Paulo');
       expect(logText).not.toContain('private-body');
       expect(logText).not.toContain('203.0.113.33');
-      expect(logText).not.toContain('weather-forecast:v1:');
+      expect(logText).not.toContain('weather-forecast:v');
       expect(logText).not.toContain('api.open-meteo.com');
       expect(
         records.every((r) => Object.keys(r).filter((k) => k === 'requestId').length === 1),
@@ -299,7 +299,7 @@ describe('GET /api/v1/forecast', () => {
     expect(logText).not.toContain('-23.548');
     expect(logText).not.toContain('-46.636');
     expect(logText).not.toContain('Sao_Paulo');
-    expect(logText).not.toContain('weather-forecast:v1:');
+    expect(logText).not.toContain('weather-forecast:v');
     expect(logText).not.toContain('api.open-meteo.com');
   });
 });

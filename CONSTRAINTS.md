@@ -50,4 +50,10 @@ Approved exception, 2026-10-05:
 |---|---|---|---|---|
 | Secret scanning: Gitleaks `generic-api-key` historical finding only | `apps/api/test/unit/open-meteo-transport.test.ts`; rewritten commit `45b204c564c524e7be1a4c17a663fa5a21dcb2f0`, line 27; exact fingerprint in `.gitleaksignore` | The old test used the Open-Meteo forecast host with port 8443 as a non-secret allowlist fixture. The current test builds this URL in parts, and a full current-tree scan is clean. The owner approved the one-fingerprint exception in this conversation on 2026-10-05. | ChristianGCa | 2026-12-31 |
 
+Approved exception, 2026-11-03:
+
+| Rule | Path / fingerprint | Reason | Owner | Expires |
+|---|---|---|---|---|
+| Floor: no new `biome-ignore`; one `lint/a11y/noNoninteractiveTabindex` suppression only | `apps/web/src/components/hourly-forecast.tsx`, the `<section className="hourly-scroll">` that wraps the hourly table | The approved hourly-forecast amendment in `SPEC-weather-ui.md` keeps a horizontally scrollable table. Keyboard users can reach a scroll container without focusable content only with `tabIndex={0}`, and axe reports its absence as a serious `scrollable-region-focusable` violation, while Biome rejects `tabIndex` on non-interactive elements. Alternatives without scrolling (wrapping grid or vertical table) were offered; the owner chose the scrollable table and approved this exception in this conversation on 2026-11-03. Review before expiry whether a newer Biome release accepts focusable scroll regions. | ChristianGCa | 2027-02-01 |
+
 Any future exception must record the rule, path, reason, owner and an expiry date no more than 90 days away.
