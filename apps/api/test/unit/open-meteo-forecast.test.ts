@@ -37,7 +37,7 @@ describe('Open-Meteo forecast transport', () => {
       ['timezone', 'America/Sao_Paulo'],
       ['forecast_days', '7'],
       ['current', 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day'],
-      ['hourly', 'weather_code,temperature_2m,precipitation'],
+      ['hourly', 'weather_code,temperature_2m,precipitation,is_day'],
       [
         'daily',
         'temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max',
@@ -229,7 +229,12 @@ describe('Open-Meteo forecast response validation', () => {
       'windSpeedMaxKmh',
       'hourly',
     ]);
-    expect(Object.keys(result.daily[0]?.hourly ?? {})).toEqual(['temperatureC', 'precipitationMm']);
+    expect(Object.keys(result.daily[0]?.hourly ?? {})).toEqual([
+      'temperatureC',
+      'precipitationMm',
+      'conditionCategory',
+      'isDay',
+    ]);
     expect(result).not.toHaveProperty('latitude');
     expect(result.daily).toHaveLength(7);
   });
@@ -247,6 +252,27 @@ describe('Open-Meteo forecast response validation', () => {
     expect(result.daily[0]?.hourly.temperatureC[0]).toBe(13);
     expect(result.daily[0]?.hourly.temperatureC[23]).toBe(16.1);
     expect(result.daily[0]?.hourly.precipitationMm.slice(0, 3)).toEqual([3.1, 3.1, 0]);
+    expect(result.daily[0]?.hourly.isDay.slice(5, 7)).toEqual([false, true]);
+    expect(result.daily[0]?.hourly.isDay.slice(17, 19)).toEqual([true, false]);
+  });
+
+  it('maps each hourly WMO code to its category without exposing the code', () => {
+    const payload = {
+      ...realForecast,
+      hourly: {
+        ...realForecast.hourly,
+        weather_code: [0, 3, 61, 71, 95, ...realForecast.hourly.weather_code.slice(5)],
+      },
+    };
+    const result = normalizeForecastResponse(payload, location, '2026-09-23T23:00:00.000Z');
+    expect(result.daily[0]?.hourly.conditionCategory.slice(0, 5)).toEqual([
+      'clear',
+      'cloudy',
+      'rain',
+      'snow',
+      'storm',
+    ]);
+    expect(result.daily[0]?.hourly.conditionCategory).toHaveLength(24);
   });
 
   it('normalizes a captured response of the hourly query', () => {
@@ -255,13 +281,16 @@ describe('Open-Meteo forecast response validation', () => {
       location,
       '2026-11-03T23:30:00.000Z',
     );
-    expect(result.current.validAtLocal).toBe('2026-11-03T20:15');
+    expect(result.current.validAtLocal).toBe('2026-11-03T21:00');
     expect(result.daily.map((day) => day.date)).toEqual(capturedHourlyForecast.daily.time);
     expect(result.daily[0]?.hourly.temperatureC).toEqual(
       capturedHourlyForecast.hourly.temperature_2m.slice(0, 24),
     );
     expect(result.daily[6]?.hourly.precipitationMm).toEqual(
       capturedHourlyForecast.hourly.precipitation.slice(144, 168),
+    );
+    expect(result.daily[0]?.hourly.isDay).toEqual(
+      capturedHourlyForecast.hourly.is_day.slice(0, 24).map((value) => value === 1),
     );
   });
 
@@ -378,6 +407,12 @@ describe('Open-Meteo forecast response validation', () => {
     },
     { hourly_units: { ...realForecast.hourly_units, temperature_2m: '°F' } },
     { hourly_units: { ...realForecast.hourly_units, precipitation: 'inch' } },
+    { hourly_units: { ...realForecast.hourly_units, is_day: 'flag' } },
+    { hourly: { ...realForecast.hourly, is_day: [2, ...realForecast.hourly.is_day.slice(1)] } },
+    {
+      hourly: { ...realForecast.hourly, is_day: [true, ...realForecast.hourly.is_day.slice(1)] },
+    },
+    { hourly: { ...realForecast.hourly, is_day: realForecast.hourly.is_day.slice(1) } },
     { hourly_units: { weather_code: 'wmo code', time: 'iso8601', temperature_2m: '°C' } },
     {
       hourly: {

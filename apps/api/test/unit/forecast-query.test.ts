@@ -112,6 +112,8 @@ describe('forecast response contract', () => {
     hourly: {
       temperatureC: Array(24).fill(21.3),
       precipitationMm: Array(24).fill(0.4),
+      conditionCategory: Array(24).fill('rain'),
+      isDay: Array(24).fill(true),
     },
   };
   const response = {
@@ -141,6 +143,7 @@ describe('forecast response contract', () => {
 
   it('accepts unavailable hourly values without turning them into zero', () => {
     const hourly = {
+      ...day.hourly,
       temperatureC: [null, ...day.hourly.temperatureC.slice(1)],
       precipitationMm: [null, ...day.hourly.precipitationMm.slice(1)],
     };
@@ -153,17 +156,27 @@ describe('forecast response contract', () => {
   });
 
   it.each([
-    { temperatureC: Array(23).fill(21.3), precipitationMm: Array(24).fill(0) },
-    { temperatureC: Array(24).fill(21.3), precipitationMm: Array(25).fill(0) },
-    { temperatureC: Array(24).fill(21.3), precipitationMm: [-0.1, ...Array(23).fill(0)] },
-    { temperatureC: ['21.3', ...Array(23).fill(21.3)], precipitationMm: Array(24).fill(0) },
-    { temperatureC: Array(24).fill(21.3), precipitationMm: Array(24).fill(0), time: [] },
-    { temperatureC: Array(24).fill(21.3) },
-  ])('rejects malformed hourly columns %#', (hourly) => {
+    { temperatureC: Array(23).fill(21.3) },
+    { precipitationMm: Array(25).fill(0) },
+    { precipitationMm: [-0.1, ...Array(23).fill(0)] },
+    { temperatureC: ['21.3', ...Array(23).fill(21.3)] },
+    { conditionCategory: ['fog', ...Array(23).fill('rain')] },
+    { conditionCategory: Array(23).fill('rain') },
+    { isDay: [null, ...Array(23).fill(true)] },
+    { isDay: Array(25).fill(true) },
+    { time: [] },
+  ])('rejects malformed hourly columns %#', (override) => {
     expect(
       Value.Check(ForecastResponseSchema, {
         ...response,
-        daily: [{ ...day, hourly }, ...response.daily.slice(1)],
+        daily: [{ ...day, hourly: { ...day.hourly, ...override } }, ...response.daily.slice(1)],
+      }),
+    ).toBe(false);
+    const { isDay: _omitted, ...withoutIsDay } = day.hourly;
+    expect(
+      Value.Check(ForecastResponseSchema, {
+        ...response,
+        daily: [{ ...day, hourly: withoutIsDay }, ...response.daily.slice(1)],
       }),
     ).toBe(false);
   });
@@ -192,6 +205,8 @@ describe('forecast response contract', () => {
       hourly: {
         temperatureC: Array(24).fill(-123.45),
         precipitationMm: Array(24).fill(1234.56),
+        conditionCategory: Array(24).fill('cloudy'),
+        isDay: Array(24).fill(false),
       },
     };
     const widest = {

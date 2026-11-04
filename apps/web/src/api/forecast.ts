@@ -1,5 +1,5 @@
+import { requestErrorFrom, requestJson } from './http';
 import type { Location } from './locations';
-import { requestJson, requestErrorFrom } from './http';
 import { boolean, civilDate, exact, finite, oneOf, record, text, timezone } from './validation';
 
 const categories = ['clear', 'cloudy', 'rain', 'snow', 'storm'] as const;
@@ -17,7 +17,22 @@ const HOURS_PER_DAY = 24;
 export type HourlyColumns = Readonly<{
   temperatureC: readonly (number | null)[];
   precipitationMm: readonly (number | null)[];
+  conditionCategory: readonly Condition['category'][];
+  isDay: readonly boolean[];
 }>;
+
+const categoryLabels: Readonly<Record<Condition['category'], Condition['labelPt']>> = {
+  clear: 'Limpo',
+  cloudy: 'Nublado',
+  rain: 'Chuva',
+  snow: 'Neve',
+  storm: 'Tempestade',
+};
+
+/** Portuguese label for a backend category, matching the labels the API sends with conditions. */
+export function categoryLabel(category: Condition['category']): Condition['labelPt'] {
+  return categoryLabels[category];
+}
 
 export type Daily = Readonly<{
   date: string;
@@ -59,17 +74,19 @@ function nullableNumber(value: unknown, min = -Infinity, max = Infinity): number
   return value === null ? null : finite(value, min, max);
 }
 
-function hourlyColumn(value: unknown, min = -Infinity): (number | null)[] {
+function hourlyColumn<Entry>(value: unknown, readEntry: (entry: unknown) => Entry): Entry[] {
   if (!Array.isArray(value) || value.length !== HOURS_PER_DAY) throw new Error('invalid data');
-  return value.map((entry: unknown) => nullableNumber(entry, min));
+  return value.map((entry: unknown) => readEntry(entry));
 }
 
 function hourly(value: unknown): HourlyColumns | null {
   if (value === undefined) return null;
   const item = record(value);
   return {
-    temperatureC: hourlyColumn(item.temperatureC),
-    precipitationMm: hourlyColumn(item.precipitationMm, 0),
+    temperatureC: hourlyColumn(item.temperatureC, (entry) => nullableNumber(entry)),
+    precipitationMm: hourlyColumn(item.precipitationMm, (entry) => nullableNumber(entry, 0)),
+    conditionCategory: hourlyColumn(item.conditionCategory, (entry) => oneOf(entry, categories)),
+    isDay: hourlyColumn(item.isDay, boolean),
   };
 }
 

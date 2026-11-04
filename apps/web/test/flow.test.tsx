@@ -161,7 +161,7 @@ describe('city-to-forecast flow', () => {
     expect(screen.getByRole('heading', { name: 'Santos, São Paulo, Brasil' })).toBeTruthy();
   });
 
-  it('returns the hourly section to today when another city is selected', async () => {
+  it('offers hourly details in every card and closes them for another city', async () => {
     vi.useFakeTimers();
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (path) =>
       String(path).includes('/locations')
@@ -179,19 +179,27 @@ describe('city-to-forecast flow', () => {
     await advanceSearch();
     fireEvent.click(screen.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }));
     await resolveUpdates();
-    const days = within(screen.getByRole('group', { name: 'Escolher dia' })).getAllByRole('button');
-    fireEvent.click(days[2] as HTMLElement);
-    expect(days[2]?.getAttribute('aria-pressed')).toBe('true');
+    const toggles = screen.getAllByRole('button', { name: /^Ver por hora de/ });
+    expect(toggles).toHaveLength(7);
+    expect(toggles[0]?.closest('article')?.className).toBe('today-card');
+    fireEvent.click(toggles[2] as HTMLElement);
+    expect(toggles[2]?.getAttribute('aria-expanded')).toBe('true');
+    expect(screen.getAllByRole('table')).toHaveLength(1);
 
     fireEvent.change(input(), { target: { value: 'San' } });
     await advanceSearch();
     fireEvent.click(screen.getByRole('option', { name: 'Santos, São Paulo, Brasil' }));
     await resolveUpdates();
     expect(screen.getByRole('heading', { name: 'Santos, São Paulo, Brasil' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Hoje' }).getAttribute('aria-pressed')).toBe('true');
+    expect(screen.queryByRole('table')).toBeNull();
+    expect(
+      screen
+        .getAllByRole('button', { name: /Ver por hora de/ })
+        .every((button) => button.getAttribute('aria-expanded') === 'false'),
+    ).toBe(true);
   });
 
-  it('omits the hourly section when the API returns no hourly data', async () => {
+  it('omits hourly details when the API returns no hourly data', async () => {
     vi.useFakeTimers();
     vi.spyOn(globalThis, 'fetch').mockImplementation(async (path) =>
       String(path).includes('/locations')
@@ -207,7 +215,7 @@ describe('city-to-forecast flow', () => {
     fireEvent.click(screen.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }));
     await resolveUpdates();
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Previsão por hora' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Ver por hora/ })).toBeNull();
   });
 
   it('distinguishes no results, search failure and explicit search retry', async () => {

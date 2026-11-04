@@ -2,15 +2,6 @@ import type { ForecastState } from '../hooks/use-forecast';
 import { locationLabel } from './city-search';
 import { CurrentConditions } from './current-conditions';
 import { DailyForecast } from './daily-forecast';
-import { HourlyForecast } from './hourly-forecast';
-import type { Daily, HourlyColumns } from '../api/forecast';
-
-/** A previous API omits hourly data for every day; the section is then left out. */
-function hasHourly(
-  daily: readonly Daily[],
-): daily is readonly (Daily & Readonly<{ hourly: HourlyColumns }>)[] {
-  return daily.every((day) => day.hourly !== null);
-}
 
 type Props = { state: ForecastState; onRetry: () => void; onOpenInformation: () => void };
 
@@ -83,13 +74,10 @@ export function ForecastStatus({ state, onRetry, onOpenInformation }: Props) {
           <CurrentConditions forecast={state.forecast} />
         </div>
       </div>
-      <DailyForecast daily={state.forecast.daily} />
-      {hasHourly(state.forecast.daily) && (
-        <HourlyForecast
-          daily={state.forecast.daily}
-          validAtLocal={state.forecast.current.validAtLocal}
-        />
-      )}
+      <DailyForecast
+        daily={state.forecast.daily}
+        validAtLocal={state.forecast.current.validAtLocal}
+      />
     </div>
   );
 }

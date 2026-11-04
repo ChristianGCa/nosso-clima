@@ -401,6 +401,20 @@ a {
   align-items: stretch;
 }
 
+/*
+ * An open hourly panel grows only its own card. The other cards keep the height they had
+ * with every panel closed (measured in daily-forecast.tsx), so the background shows beside
+ * the open card and the next row starts below it.
+ */
+.daily-strip:has(.hourly-scroll) {
+  grid-auto-rows: auto;
+  align-items: start;
+}
+
+.daily-strip:has(.hourly-scroll) > article {
+  min-height: var(--closed-card-height, auto);
+}
+
 .today-card,
 .day-card {
   min-width: 0;
@@ -792,101 +806,68 @@ body:has(.info-dialog[open]) {
   stroke-linejoin: round;
 }
 
-.hourly-section {
-  padding-block: 0 2rem;
-  background: rgb(7 20 28 / 0.24);
+.hourly-details {
+  padding-top: 0.25rem;
 }
 
-.hourly-inner {
-  width: min(calc(100% - 3rem), 1280px);
-  margin-inline: auto;
-}
-
-.hourly-inner h2 {
-  width: fit-content;
-  margin: 0 0 0.85rem;
-  padding: 0.4rem 0.65rem;
-  border-radius: 0.45rem;
-  background: rgb(7 22 31 / 0.96);
-  color: #f5fbff;
-  font-size: 1.25rem;
-  letter-spacing: -0.02em;
-}
-
-.hourly-panel {
-  min-width: 0;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  background: rgb(7 22 31 / 0.9);
-}
-
-.hourly-days {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.45rem;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.hourly-picker-label {
-  width: 100%;
-  margin: 0 0 0.45rem;
-  padding: 0;
-  color: #d8eef2;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.hourly-day {
+.hourly-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   min-height: 2.5rem;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid rgb(196 243 245 / 0.65);
-  border-radius: 999px;
-  background: transparent;
+  margin-top: 0.75rem;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid rgb(196 243 245 / 0.32);
+  border-radius: 0.45rem;
+  background: rgb(4 14 20 / 0.45);
   color: #f4fbff;
   font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
 }
 
-.hourly-day[aria-pressed="true"] {
-  border: 2px solid #c4f3f5;
-  background: #c4f3f5;
-  color: #092944;
-  font-weight: 800;
+.hourly-toggle:hover {
+  border-color: rgb(196 243 245 / 0.55);
+  background: rgb(196 243 245 / 0.08);
+}
+
+/* Open: a slightly lighter fill and the ▴ mark, not the bright primary-button fill. */
+.hourly-toggle[aria-expanded="true"] {
+  border-color: rgb(196 243 245 / 0.55);
+  background: rgb(196 243 245 / 0.14);
 }
 
 .hourly-scroll {
-  margin-top: 0.85rem;
+  /* Contains the absolutely positioned visually hidden labels inside the scrolled cells. */
+  position: relative;
+  margin-top: 0.75rem;
   overflow-x: auto;
   border-radius: 0.5rem;
   background: rgb(4 14 20 / 0.6);
   overscroll-behavior-x: contain;
+  scrollbar-color: rgb(196 243 245 / 0.45) transparent;
+  scrollbar-width: thin;
 }
 
 .hourly-table {
   border-collapse: collapse;
   color: #fff;
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .hourly-table th,
 .hourly-table td {
-  min-width: 4.25rem;
-  padding: 0.5rem 0.6rem;
+  min-width: 3.1rem;
+  padding: 0.35rem 0.4rem;
   text-align: center;
 }
 
 .hourly-table thead th {
   border-bottom: 1px solid rgb(204 231 235 / 0.3);
   color: #d8eef2;
-  font-size: 0.85rem;
-}
-
-.hourly-table tbody tr + tr > * {
-  border-top: 1px solid rgb(204 231 235 / 0.18);
+  font-size: 0.8rem;
 }
 
 .hourly-table th[scope="row"],
@@ -894,20 +875,42 @@ body:has(.info-dialog[open]) {
   position: sticky;
   left: 0;
   z-index: 1;
-  min-width: 7.5rem;
+  min-width: 2.5rem;
   background: #07161f;
-  text-align: left;
 }
 
-.hourly-table th[scope="row"] {
-  font-size: 0.85rem;
-  white-space: normal;
+.hourly-table td .condition-icon {
+  display: block;
+  width: 2rem;
+  height: 2rem;
+  margin-inline: auto;
 }
 
-.hourly-note {
-  margin: 0.7rem 0 0;
-  color: #d8eef2;
-  font-size: 0.85rem;
+.hourly-number,
+.hourly-unit {
+  display: block;
+}
+
+.hourly-unit {
+  color: #c9dfe5;
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+/* Current hour on today's card: a light column fill plus the visible "Agora" header. */
+.hourly-table .hourly-now {
+  background: rgb(196 243 245 / 0.14);
+}
+
+.hourly-table thead .hourly-now {
+  color: #fff;
+}
+
+.hourly-row-icon {
+  display: block;
+  width: auto;
+  height: 1.4rem;
+  margin-inline: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -933,7 +936,6 @@ body:has(.info-dialog[open]) {
   .header-inner,
   .current-inner,
   .daily-inner,
-  .hourly-inner,
   .footer-inner,
   .state-inner {
     width: min(calc(100% - 1.5rem), 1280px);
@@ -1026,22 +1028,14 @@ body:has(.info-dialog[open]) {
     padding-block: 1.1rem 1.5rem;
   }
 
-  .hourly-section {
-    padding-block: 0 1.5rem;
-  }
-
-  .hourly-panel {
-    padding: 0.75rem;
-  }
-
-  .hourly-table th[scope="row"],
-  .hourly-table thead th:first-child {
-    min-width: 6rem;
-  }
-
   .daily-strip {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-auto-rows: auto;
+  }
+
+  /* One column: no card beside the open one, so every card keeps its own height. */
+  .daily-strip:has(.hourly-scroll) > article {
+    min-height: 0;
   }
 
   .today-card {

@@ -5,7 +5,7 @@ const hours = Array.from({ length: 24 }, (_, hour) => hour);
 // Synthetic hourly data extends the retained 2026-09-23 provider fixture for offline tests.
 // It is not represented as a newly captured Open-Meteo response. Temperatures rise linearly
 // from each day's minimum to its maximum; a rainy day's precipitation falls in its first two
-// hours. Hourly sums are not required to match daily totals.
+// hours; daytime runs from 06h to 17h. Hourly sums are not required to match daily totals.
 export const forecastWithHourly = {
   ...capturedForecast,
   hourly_units: {
@@ -13,6 +13,7 @@ export const forecastWithHourly = {
     weather_code: 'wmo code',
     temperature_2m: '°C',
     precipitation: 'mm',
+    is_day: '',
   },
   hourly: {
     time: capturedForecast.daily.time.flatMap((date) =>
@@ -27,6 +28,9 @@ export const forecastWithHourly = {
     }),
     precipitation: capturedForecast.daily.precipitation_sum.flatMap((total) =>
       hours.map((hour) => (hour < 2 ? Math.round((total / 2) * 10) / 10 : 0)),
+    ),
+    is_day: capturedForecast.daily.time.flatMap(() =>
+      hours.map((hour) => (hour >= 6 && hour < 18 ? 1 : 0)),
     ),
   },
 };

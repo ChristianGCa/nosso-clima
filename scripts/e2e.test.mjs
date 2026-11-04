@@ -33,6 +33,7 @@ const forecastFixture = {
     weather_code: 'wmo code',
     temperature_2m: '°C',
     precipitation: 'mm',
+    is_day: '',
   },
   hourly: {
     time: capturedForecast.daily.time.flatMap((date) =>
@@ -44,6 +45,9 @@ const forecastFixture = {
     ),
     precipitation: capturedForecast.daily.precipitation_sum.flatMap((total) =>
       Array.from({ length: 24 }, (_, hour) => (hour === 1 ? total : 0)),
+    ),
+    is_day: capturedForecast.daily.time.flatMap(() =>
+      Array.from({ length: 24 }, (_, hour) => (hour >= 6 && hour < 18 ? 1 : 0)),
     ),
   },
 };
@@ -352,21 +356,24 @@ test('P8: browser, default Vercel handler and fixture provider', async (suite) =
           await chooseCity(page, 'São', 'São Paulo, São Paulo, Brasil');
           await page.getByRole('heading', { name: 'Previsão de 7 dias' }).waitFor();
           assert.equal(await page.locator('.today-card, .day-card').count(), 7);
-          await page.getByRole('heading', { name: 'Previsão por hora' }).waitFor();
-          const days = page.getByRole('group', { name: 'Escolher dia' }).getByRole('button');
-          assert.equal(await days.count(), 7);
-          assert.equal(await days.first().getAttribute('aria-pressed'), 'true');
-          await days.nth(1).click();
-          await page
-            .getByRole('table', { name: 'Previsão por hora de Quinta-feira, 24/09' })
-            .waitFor();
-          assert.equal(await page.locator('.hourly-table thead th').count(), 25);
-          assert.equal(await page.locator('.hourly-table tbody tr').count(), 2);
+          const toggles = page.getByRole('button', { name: /^Ver por hora de/ });
+          assert.equal(await toggles.count(), 7);
+          await page.getByRole('button', { name: 'Ver por hora de Quinta-feira, 24/09' }).click();
+          const table = page.getByRole('table', {
+            name: 'Previsão por hora de Quinta-feira, 24/09',
+          });
+          await table.waitFor();
           assert.equal(
-            await page.locator('.hourly-table tbody tr').nth(1).locator('td').nth(1).textContent(),
-            '0 mm',
+            await table.evaluate((element) => element.closest('article')?.className),
+            'day-card',
+            'the hourly table must open inside its daily card',
           );
-          assert.equal(fixture.providerCalls.length, 2, 'choosing a day must not call the API');
+          assert.equal(await table.locator('thead th').count(), 25);
+          const bodyRows = table.locator('tbody tr');
+          assert.equal(await bodyRows.count(), 3);
+          assert.equal(await bodyRows.nth(0).locator('td').nth(1).textContent(), 'Nublado');
+          assert.equal(await bodyRows.nth(2).locator('td').nth(1).textContent(), '0 mm');
+          assert.equal(fixture.providerCalls.length, 2, 'opening hours must not call the API');
           await page.getByText('Dados por Open-Meteo', { exact: false }).waitFor();
           await page.getByRole('link', { name: 'CC BY 4.0' }).first().waitFor();
           assert.equal(fixture.providerCalls.length, 2);

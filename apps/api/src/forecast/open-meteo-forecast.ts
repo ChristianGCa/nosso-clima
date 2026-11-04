@@ -34,7 +34,7 @@ export class ForecastFailure extends Error {
 const FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const MAX_BODY_BYTES = 65_536;
 const CURRENT_VARIABLES = 'temperature_2m,apparent_temperature,weather_code,wind_speed_10m,is_day';
-const HOURLY_VARIABLES = 'weather_code,temperature_2m,precipitation';
+const HOURLY_VARIABLES = 'weather_code,temperature_2m,precipitation,is_day';
 const HOURS_PER_DAY = 24;
 const FORECAST_DAYS = 7;
 const DAILY_VARIABLES =
@@ -146,6 +146,7 @@ export function normalizeForecastResponse(
     weather_code: 'wmo code',
     temperature_2m: '°C',
     precipitation: 'mm',
+    is_day: '',
   });
   validateUnits(dailyUnits, {
     time: 'iso8601',
@@ -175,6 +176,8 @@ export function normalizeForecastResponse(
     'precipitation',
     readNullableNonnegativeValue,
   );
+  const hourlyCategory = readHourlyValues(hourly, 'weather_code', readConditionCategory);
+  const hourlyIsDay = readHourlyValues(hourly, 'is_day', readIsDay);
   const temperatureMax = readSevenValues(daily, 'temperature_2m_max');
   const temperatureMin = readSevenValues(daily, 'temperature_2m_min');
   const apparentTemperatureMax = readSevenValues(daily, 'apparent_temperature_max');
@@ -201,6 +204,8 @@ export function normalizeForecastResponse(
       hourly: {
         temperatureC: dayColumn(hourlyTemperature, index),
         precipitationMm: dayColumn(hourlyPrecipitation, index),
+        conditionCategory: dayColumn(hourlyCategory, index),
+        isDay: dayColumn(hourlyIsDay, index),
       },
     };
   });
@@ -223,11 +228,11 @@ export function normalizeForecastResponse(
 
 // Hourly columns reuse the 168 timestamps checked by readPredominantConditions:
 // position `day * 24 + hour` is local hour `hour` of daily date `day`.
-function readHourlyValues(
+function readHourlyValues<Entry>(
   hourly: ObjectValue,
   key: string,
-  readEntry: (value: unknown) => number | null,
-): readonly (number | null)[] {
+  readEntry: (value: unknown) => Entry,
+): readonly Entry[] {
   const values = readValue(hourly, key);
   if (!Array.isArray(values) || values.length !== HOURS_PER_DAY * FORECAST_DAYS) {
     return invalidResponse();
@@ -235,8 +240,17 @@ function readHourlyValues(
   return values.map(readEntry);
 }
 
-function dayColumn(values: readonly (number | null)[], dayIndex: number): (number | null)[] {
+function dayColumn<Entry>(values: readonly Entry[], dayIndex: number): Entry[] {
   return values.slice(dayIndex * HOURS_PER_DAY, (dayIndex + 1) * HOURS_PER_DAY);
+}
+
+function readConditionCategory(value: unknown): WmoCondition['category'] {
+  return mapWmoCondition(value)?.category ?? invalidResponse();
+}
+
+function readIsDay(value: unknown): boolean {
+  if (value !== 0 && value !== 1) return invalidResponse();
+  return value === 1;
 }
 
 function readNullableFiniteValue(value: unknown): number | null {

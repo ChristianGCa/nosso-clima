@@ -132,14 +132,14 @@ Revisar o teste de balanceamento e o aviso **no mesmo PR** se surgir:
 
 ### Ordem do release
 
-1. Antes do merge, o proprietário atualiza `OPEN_METEO_FORECAST_CREDITS` para 1.500 em Preview e Production. O custo maior é seguro para o código em execução, porque reserva a mais e nunca a menos. Os tetos agregados não mudam.
+1. Antes do merge, o proprietário atualiza `OPEN_METEO_FORECAST_CREDITS` para 1.600 em Preview e Production (revisado de 1.500 no mesmo dia, com a inclusão de `is_day` por hora). O custo maior é seguro para o código em execução, porque reserva a mais e nunca a menos. Os tetos agregados não mudam.
 2. **Gates:** antes do merge, os gates locais e a CI passam na revisão do PR, sem enfraquecer `CONSTRAINTS.md`:
    - `npm run check`, cobertura, builds e `npm audit`;
    - axe e contraste, E2E e performance;
    - Gitleaks.
 3. **Smoke depois do deployment dos dois projetos:**
    - busca e previsão de uma cidade pública;
-   - seção horária com a escolha de outro dia;
+   - abrir “Ver por hora” num cartão e conferir ícones, temperatura e chuva;
    - previsão repetida dentro de 10 minutos, servida pelo cache;
    - console sem violação de CSP.
 
@@ -148,13 +148,13 @@ Revisar o teste de balanceamento e o aviso **no mesmo PR** se surgir:
 
 ### Testes de entrega
 
-- `npm run test:e2e` acrescenta um cenário com o web compilado e serviços simulados: escolher uma cidade, trocar o dia na seção horária e confirmar a tabela. Também mantém a asserção de zero requisições a terceiros.
-- `npm run test:performance` mantém LCP ≤ 2,5 s e CLS ≤ 0,1 com a seção horária renderizada.
+- `npm run test:e2e` acrescenta um cenário com o web compilado e serviços simulados: escolher uma cidade, abrir “Ver por hora” num cartão e confirmar a tabela dentro dele, sem nova chamada à API. Também mantém a asserção de zero requisições a terceiros.
+- `npm run test:performance` mantém LCP ≤ 2,5 s e CLS ≤ 0,1 com os dados horários na resposta.
 
 ### Rollback
 
 - **Independência:** web e API podem voltar de forma independente.
   - O web anterior ignora o campo novo.
-  - O web novo omite a seção quando a API anterior não traz horas.
+  - O web novo omite os botões “Ver por hora” quando a API anterior não traz horas.
   - A chave de cache `v2` impede que as duas versões leiam o valor uma da outra na base Upstash compartilhada.
-- **Custo:** depois de um rollback, o custo de 1.500 créditos pode permanecer, porque só reserva a mais. Voltar a 1.300 é opcional e cabe ao proprietário.
+- **Custo:** depois de um rollback, o custo de 1.600 créditos pode permanecer, porque só reserva a mais. Voltar a 1.300 é opcional e cabe ao proprietário.

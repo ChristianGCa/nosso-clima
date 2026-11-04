@@ -8,16 +8,18 @@ export const FORECAST_ATTRIBUTION = Object.freeze({
   providerUrl: 'https://open-meteo.com/',
 } as const);
 
+const CategorySchema = Type.Union([
+  Type.Literal('clear'),
+  Type.Literal('cloudy'),
+  Type.Literal('rain'),
+  Type.Literal('snow'),
+  Type.Literal('storm'),
+]);
+
 const ConditionSchema = Type.Object(
   {
     code: Type.Integer(),
-    category: Type.Union([
-      Type.Literal('clear'),
-      Type.Literal('cloudy'),
-      Type.Literal('rain'),
-      Type.Literal('snow'),
-      Type.Literal('storm'),
-    ]),
+    category: CategorySchema,
     labelPt: Type.Union([
       Type.Literal('Limpo'),
       Type.Literal('Nublado'),
@@ -51,6 +53,8 @@ const HourlySchema = Type.Object(
       minItems: 24,
       maxItems: 24,
     }),
+    conditionCategory: Type.Array(CategorySchema, { minItems: 24, maxItems: 24 }),
+    isDay: Type.Array(Type.Boolean(), { minItems: 24, maxItems: 24 }),
   },
   { additionalProperties: false },
 );

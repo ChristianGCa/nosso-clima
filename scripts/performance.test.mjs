@@ -43,6 +43,8 @@ const forecast = {
     hourly: {
       temperatureC: Array.from({ length: 24 }, (_, hour) => 15 + hour / 2),
       precipitationMm: Array(24).fill(0),
+      conditionCategory: Array(24).fill('clear'),
+      isDay: Array.from({ length: 24 }, (_, hour) => hour >= 6 && hour < 18),
     },
   })),
   attribution: {

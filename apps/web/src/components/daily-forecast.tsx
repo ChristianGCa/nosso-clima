@@ -1,8 +1,10 @@
+import { useLayoutEffect, useRef } from 'react';
 import type { Forecast } from '../api/forecast';
 import rainVolumeIcon from '../assets/icons/raindrop-measure.svg';
 import rainChanceIcon from '../assets/icons/umbrella.svg';
 import { compactDayLabel, dayLabel, metric } from '../format/weather-format';
 import { ConditionIcon } from './condition-icon';
+import { HourlyDetails } from './hourly-forecast';
 
 function MetricIcon({ source }: { source: string }) {
   return <img className="metric-icon" src={source} alt="" aria-hidden="true" />;
@@ -23,15 +25,52 @@ function TemperatureRange({ maximum, minimum }: { maximum: number; minimum: numb
   );
 }
 
-export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
+/**
+ * Keeps `--closed-card-height` on the strip: the height every card has while all hourly panels
+ * are closed (rows share one height). The CSS uses it so that opening a panel grows only that
+ * card. A width change while a panel is open makes the value stale, so it is dropped and the
+ * other cards fall back to their own height until every panel is closed again.
+ */
+function useClosedCardHeight() {
+  const stripRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const strip = stripRef.current;
+    if (!strip || typeof ResizeObserver === 'undefined') return;
+    let measuredWidth: number | null = null;
+    const observer = new ResizeObserver(() => {
+      const card = strip.querySelector<HTMLElement>('.day-card');
+      if (!strip.querySelector('.hourly-scroll') && card) {
+        strip.style.setProperty('--closed-card-height', `${card.getBoundingClientRect().height}px`);
+        measuredWidth = strip.clientWidth;
+      } else if (strip.clientWidth !== measuredWidth) {
+        strip.style.removeProperty('--closed-card-height');
+        measuredWidth = null;
+      }
+    });
+    observer.observe(strip);
+    return () => observer.disconnect();
+  }, []);
+  return stripRef;
+}
+
+export function DailyForecast({
+  daily,
+  validAtLocal,
+}: {
+  daily: Forecast['daily'];
+  validAtLocal: string;
+}) {
+  const stripRef = useClosedCardHeight();
   const [today, ...upcoming] = daily;
   if (!today) return null;
+  // Today's card highlights the hour of the current conditions (same local date, validated).
+  const currentHour = Number(validAtLocal.slice(11, 13));
 
   return (
     <section className="daily-section" aria-labelledby="daily-title">
       <div className="daily-inner">
         <h2 id="daily-title">Previsão de 7 dias</h2>
-        <div className="daily-strip">
+        <div className="daily-strip" ref={stripRef}>
           <article className="today-card">
             <h3 className="today-date">
               <span className="today-badge">HOJE</span>
@@ -82,6 +121,9 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
                 </dd>
               </div>
             </dl>
+            {today.hourly && (
+              <HourlyDetails date={today.date} hourly={today.hourly} currentHour={currentHour} />
+            )}
           </article>
           {upcoming.map((day) => (
             <article className="day-card" key={day.date}>
@@ -115,6 +157,7 @@ export function DailyForecast({ daily }: { daily: Forecast['daily'] }) {
                   </dd>
                 </div>
               </dl>
+              {day.hourly && <HourlyDetails date={day.date} hourly={day.hourly} />}
             </article>
           ))}
         </div>
