@@ -289,6 +289,34 @@ Finalidade: saber de onde vêm as visitas (site de origem e localização aproxi
 - **Superfícies e contraste:** as superfícies seguem as dos cartões, com contraste verificado nos dez fundos e no estado neutro, em mobile e desktop, inclusive com um painel aberto.
 - **Desempenho:** os painéis começam fechados, então a carga inicial e o elemento de LCP não mudam. Abrir um painel é ação da pessoa, fora da medição de CLS.
 
+### Aviso temporário da novidade — aprovado em 2026-11-03
+
+Pedido do proprietário: avisar os visitantes sobre a previsão por hora por uma semana. Ele escolheu a opção sem armazenamento.
+
+- **Onde e quando:**
+  - fica entre o título “Previsão de 7 dias” e os cartões, só quando a previsão traz horas;
+  - não aparece na tela neutra, no carregamento nem nos erros.
+- **Texto:** selo “Novidade” e “Previsão por hora: toque em “Ver por hora” em qualquer dia para ver a condição, a temperatura e a chuva de cada hora.”
+- **Prazo:**
+  - aparece até 23h59min59s de 2026-11-10, no horário de Brasília (`HOURLY_NOTICE_ENDS_AT` em `hourly-notice.tsx`), comparado ao relógio do visitante;
+  - depois disso some sem novo deploy;
+  - a data pode ser ajustada no merge para uma semana após a publicação;
+  - depois do prazo, o código do aviso é removido.
+- **Fechar:**
+  - o botão “Fechar” tem o nome acessível “Fechar aviso de novidade”;
+  - o aviso fica fechado só na memória da página: continua fechado ao trocar de cidade e volta numa nova visita, se ainda estiver no prazo;
+  - nada vai para armazenamento do navegador, URL, medição ou logs. A última cidade continua sendo o único registro local, e o aviso de privacidade não muda;
+  - ao fechar, o foco vai para o botão “Ver por hora” do HOJE.
+- **Visual:**
+  - superfície escura dos cartões, borda ciano fraca e cantos de 0,75rem;
+  - selo no estilo do selo HOJE e botão no estilo de “Ver por hora”, sem animação;
+  - no celular, o botão fica abaixo do texto.
+- **Testes:**
+  - exibição antes do prazo e ausência a partir dele, ou sem horas;
+  - fechamento com foco, persistência ao trocar de cidade e nada no armazenamento;
+  - limite exato do prazo;
+  - o axe, o contraste nos dez fundos e a performance usam data fixa dentro do prazo, para verificar o aviso visível em qualquer data.
+
 ### Validação no navegador e compatibilidade
 
 - **Validação de `daily[].hourly`:** a fronteira HTTP confere o campo; os valores que ela recusa levam a previsão ao estado de indisponibilidade, como os demais dados inválidos. São exigidos:

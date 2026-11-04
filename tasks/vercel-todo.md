@@ -134,6 +134,9 @@ Pedido do proprietário: mostrar temperatura e chuva por hora nos sete dias, em 
   - performance: LCP ≈0,94 s e ≈1,04 s, CLS 0.
 
   Revisão visual em 360 e 1280 px sem rolagem horizontal da página.
+- [x] Aviso temporário da novidade (2026-11-03, aprovado pelo proprietário na opção sem armazenamento; requisitos em `SPEC-weather-ui.md`, seção “Aviso temporário da novidade”). Fica acima dos cartões até 2026-11-10, 23h59 de Brasília, e “Fechar” vale só para a página aberta. Gates locais verdes: `npm run check` (579 API, 140 web), cobertura web 97,77/92,32/98,33/99,23, builds, `npm audit` sem vulnerabilidades, axe e contraste nos dez fundos com o aviso visível, E2E (seis), performance com o aviso (LCP ≈0,95 s e ≈1,05 s, CLS 0).
+- [ ] No merge: se a publicação passar de 2026-11-03, ajustar `HOURLY_NOTICE_ENDS_AT` para uma semana após a publicação, junto com a data fixa do axe e da performance.
+- [ ] Após o prazo do aviso: remover `hourly-notice.tsx`, a ligação no `App`, os estilos e os testes, e marcar a seção do spec como encerrada.
 - [ ] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.600 em Preview e Production (proprietário; ainda não alterado em 2026-11-03).
 - [ ] PR com CI verde, merge, smoke nos dois projetos e atualização do `README.md` e do `CAPABILITY-MAP.md`, conforme `SPEC-production-delivery.md`.
 
