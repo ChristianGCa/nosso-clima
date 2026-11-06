@@ -262,7 +262,7 @@ The owner approved the original spec and W1–W7 plan on 2026-09-23 and the comp
 
 ## Previsão por hora — requisitos aprovados em 2026-11-03
 
-**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **concluída localmente**, com gates locais verdes (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para mudar campos e lista de variáveis e para acrescentar detalhe horário. Somente nesse alcance, ela substitui duas regras anteriores:
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **publicada em Production** pelo PR #13, em 2026-11-03 (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para mudar campos e lista de variáveis e para acrescentar detalhe horário. Somente nesse alcance, ela substitui duas regras anteriores:
 
 - a frase “Request only hourly weather codes; do not expose hourly values in the public response”;
 - a regra de que apenas a probabilidade diária de chuva aceita `null`.
