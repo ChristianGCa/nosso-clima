@@ -68,13 +68,12 @@ describe('hourly details inside a daily card', () => {
     }
   });
 
-  it('scrolls the current hour next to the row icons when today opens', () => {
-    const rect = (left: number, width: number) => ({ left, width }) as DOMRect;
+  it('scrolls the current hour to the start of the region when today opens', () => {
+    const rect = (left: number, width: number) => ({ left, width, right: left + width }) as DOMRect;
     const original = HTMLElement.prototype.getBoundingClientRect;
     HTMLElement.prototype.getBoundingClientRect = function getRect(this: HTMLElement) {
       if (this.classList.contains('hourly-scroll')) return rect(10, 300);
-      if (this.classList.contains('hourly-now')) return rect(10 + 40 + 15 * 50, 50);
-      if (this.tagName === 'TH') return rect(10, 40);
+      if (this.classList.contains('hourly-now')) return rect(10 + 15 * 50, 50);
       return original.call(this);
     };
     try {
@@ -93,8 +92,8 @@ describe('hourly details inside a daily card', () => {
     expect(screen.getByRole('region', { name: /Previsão por hora de/ }).scrollLeft).toBe(0);
   });
 
-  it('labels rows with icons and keeps their names for assistive technology', () => {
-    renderDetails(0, 15);
+  it('names rows only for assistive technology, without a visible label column', () => {
+    const { container } = renderDetails(0, 15);
     fireEvent.click(toggle());
     const [, condition, temperature, rain] = rows();
     expect(within(condition as HTMLElement).getByRole('rowheader').textContent).toBe('Condição');
@@ -104,12 +103,8 @@ describe('hourly details inside a daily card', () => {
     expect(within(rain as HTMLElement).getByRole('rowheader').textContent).toBe(
       'Chuva na hora anterior',
     );
-    expect(
-      within(temperature as HTMLElement)
-        .getByRole('rowheader')
-        .querySelector('img')
-        ?.getAttribute('src'),
-    ).toContain('thermometer');
+    // No visible label column: the row names exist only for assistive technology.
+    expect(container.querySelector('.hourly-table img:not(.condition-icon)')).toBeNull();
     expect(screen.queryByText(/hora que termina/)).toBeNull();
   });
 

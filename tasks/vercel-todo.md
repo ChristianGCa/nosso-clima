@@ -1,6 +1,6 @@
 # Entrega Vercel + Upstash — estado e pendências
 
-**Atualizado em 2026-11-03. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
+**Atualizado em 2026-11-05. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
 
 ## Resumo
 
@@ -139,6 +139,23 @@ Pedido do proprietário: mostrar temperatura e chuva por hora nos sete dias, em 
 - [ ] Após o prazo do aviso: remover `hourly-notice.tsx`, a ligação no `App`, os estilos e os testes, e marcar a seção do spec como encerrada.
 - [x] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.600 em Preview e Production, alterado pelo proprietário em 2026-11-03 (por relato; valor no painel, fora do Git). Vale para os próximos deployments da API.
 - [ ] PR com CI verde, merge, smoke nos dois projetos e atualização do `README.md` e do `CAPABILITY-MAP.md`, conforme `SPEC-production-delivery.md`.
+
+## Ajustes visuais — 2026-11-05
+
+Pedido do proprietário a partir de capturas de Production: previsão por hora maior, cartão de condições atuais menos vazio e tela neutra e rodapé centralizados. Requisitos em `SPEC-weather-ui.md`, seção “Ajustes visuais — 2026-11-05”. Só o web muda; API, contrato, custo e cache não mudam.
+
+- [x] Implementação local (2026-11-05): blocos de sensação térmica e vento com ícones, tabela de horas ampliada, tela neutra e rodapé centralizados.
+- [x] Conferência do proprietário no mesmo dia: rodapé do celular ainda deslocado à esquerda em 400 px (a grade herdava `space-between` do desktop), corrigido; coluna de ícones das linhas removida, com nomes mantidos para tecnologia assistiva, e `thermometer.svg` excluído com sua nota de licença. A rolagem até “Agora” passa a medir a partir da borda interna da região.
+- [x] Gates locais verdes (2026-11-05):
+  - `npm run check`: 579 testes na API e 140 no web;
+  - cobertura web 97,77/92,61/98,33/99,22;
+  - builds e `npm audit` sem vulnerabilidades;
+  - axe e contraste nos dez fundos, em mobile e desktop;
+  - E2E (seis testes);
+  - performance: LCP ≈0,96 s e ≈1,06 s, CLS 0.
+
+  Após a conferência do proprietário. Revisão visual em 360, 400, 900 e 1440 px sem rolagem horizontal da página. Ambiente: Node 24.18.0, Chromium fixado pelo Playwright; Gitleaks fica para a CI.
+- [ ] PR com CI verde, merge e smoke do web, conduzidos pelo proprietário.
 
 ## Pendências de manutenção (não bloqueiam)
 
