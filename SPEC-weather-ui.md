@@ -246,7 +246,7 @@ Finalidade: saber de onde vêm as visitas (site de origem e localização aproxi
 
 ## Previsão por hora — requisitos aprovados em 2026-11-03
 
-**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **concluída localmente**, com gates locais verdes (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para consumir um campo novo da API. Somente para a seção descrita aqui, ela retira “hourly weather” da lista do que o site não faz. O contrato está em `SPEC-weather-forecast.md`, seção de mesma data.
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03; implementação autorizada no mesmo dia e **publicada em Production** pelo PR #13, em 2026-11-03 (resultado em `tasks/vercel-todo.md`). Esta seção registra a aprovação exigida em “Ask first” para consumir um campo novo da API. Somente para a seção descrita aqui, ela retira “hourly weather” da lista do que o site não faz. O contrato está em `SPEC-weather-forecast.md`, seção de mesma data.
 
 **Revisão do mesmo dia, a pedido do proprietário:** as horas passam para dentro de cada cartão diário, abertas por um botão; cada hora mostra um ícone de condição, com variante noturna; ícones substituem os rótulos visíveis das linhas; e a nota visível sobre a chuva sai. Esta revisão substitui a seção separada, os botões de escolha de dia e a nota da primeira versão.
 

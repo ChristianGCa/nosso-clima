@@ -6,9 +6,9 @@
 
 - **Local:** P0 e P2–P9 implementados. Todos os gates locais passaram em 2026-10-10 (detalhes abaixo), com navegador Chromium do Fedora em vez do fixado pelo Playwright.
 - **Preview:** protegido e funcional com dados reais; eco retirado; Redis preservado.
-- **Production:** pública desde 2026-10-12. Ativa em `8194c92` nos dois projetos, com smoke público aprovado (incluindo a busca “Belém”) e CI verde; destino de rollback em `7ed53e2`, anterior à correção da busca. O proprietário mantém só esses dois deployments Production em cada projeto e exclui os novos gerados por commits só de documentação.
+- **Production:** pública desde 2026-10-12. Por relato do proprietário em 2026-11-05, todo o site funciona depois do merge do PR #14 (`83938db`), com a previsão por hora e os ajustes visuais. A revisão ativa e o destino de rollback nos painéis não foram reconferidos nesta atualização; o último registro conferido (ativa `8194c92`, rollback `7ed53e2`) é anterior aos PRs #9 a #14.
 - **Publicação:** aberta em 2026-10-12 por decisão do proprietário. Proteção “Standard” (domínios de Production públicos; Previews e URLs de deployment protegidos); smoke público aprovado.
-- **Git:** trabalho integrado à `main` pelos PRs #2 a #6, com CI verde em todos. **Todo commit na `main` gera deployments Production**, mesmo quando só a documentação muda. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
+- **Git:** trabalho integrado à `main` pelos PRs #2 a #14. CI verde nos merges dos PRs #13 e #14, conferida pela API pública do GitHub em 2026-11-05. **Todo commit na `main` gera deployments Production**, mesmo quando só a documentação muda. Obter a revisão atual com `git rev-parse HEAD`, sem confundi-la com a revisão hospedada.
 
 | Etapa | Estado |
 |---|---|
@@ -135,10 +135,10 @@ Pedido do proprietário: mostrar temperatura e chuva por hora nos sete dias, em 
 
   Revisão visual em 360 e 1280 px sem rolagem horizontal da página.
 - [x] Aviso temporário da novidade (2026-11-03, aprovado pelo proprietário na opção sem armazenamento; requisitos em `SPEC-weather-ui.md`, seção “Aviso temporário da novidade”). Fica acima dos cartões até 2026-11-10, 23h59 de Brasília, e “Fechar” vale só para a página aberta. Gates locais verdes: `npm run check` (579 API, 140 web), cobertura web 97,77/92,32/98,33/99,23, builds, `npm audit` sem vulnerabilidades, axe e contraste nos dez fundos com o aviso visível, E2E (seis), performance com o aviso (LCP ≈0,95 s e ≈1,05 s, CLS 0).
-- [ ] No merge: se a publicação passar de 2026-11-03, ajustar `HOURLY_NOTICE_ENDS_AT` para uma semana após a publicação, junto com a data fixa do axe e da performance.
+- [x] No merge: o PR #13 entrou na `main` em 2026-11-03, então o prazo de 2026-11-10 já é uma semana após a publicação e `HOURLY_NOTICE_ENDS_AT` não mudou.
 - [ ] Após o prazo do aviso: remover `hourly-notice.tsx`, a ligação no `App`, os estilos e os testes, e marcar a seção do spec como encerrada.
 - [x] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.600 em Preview e Production, alterado pelo proprietário em 2026-11-03 (por relato; valor no painel, fora do Git). Vale para os próximos deployments da API.
-- [ ] PR com CI verde, merge, smoke nos dois projetos e atualização do `README.md` e do `CAPABILITY-MAP.md`, conforme `SPEC-production-delivery.md`.
+- [x] PR #13 com CI verde (`verify` em `5daf1e2`) e merge em 2026-11-03. Smoke nos dois projetos por relato do proprietário em 2026-11-05: busca, previsão e previsão por hora funcionando em Production. `README.md` e `CAPABILITY-MAP.md` descrevem a previsão por hora.
 
 ## Ajustes visuais — 2026-11-05
 
@@ -155,7 +155,7 @@ Pedido do proprietário a partir de capturas de Production: previsão por hora m
   - performance: LCP ≈0,96 s e ≈1,06 s, CLS 0.
 
   Após a conferência do proprietário. Revisão visual em 360, 400, 900 e 1440 px sem rolagem horizontal da página. Ambiente: Node 24.18.0, Chromium fixado pelo Playwright; Gitleaks fica para a CI.
-- [ ] PR com CI verde, merge e smoke do web, conduzidos pelo proprietário.
+- [x] PR #14 com CI verde (`verify` em `83938db`) e merge em 2026-11-05, conduzidos pelo proprietário. Smoke do web por relato dele no mesmo dia: site todo funcional.
 
 ## Pendências de manutenção (não bloqueiam)
 
@@ -180,7 +180,7 @@ Pedido do proprietário a partir de capturas de Production: previsão por hora m
 | Retirada das fixtures | Variáveis de eco removidas; API Preview redeployada; previsão real 200; proteção mantida | `CACHE_HMAC_KEY` da branch mantida; Redis intacto |
 | Cliente web e 429 | Qualquer 429 vira `rate_limited` pelo status, inclusive HTML do WAF | `apps/web/src/api/http.ts`, commit `e0021b4`, com testes |
 | Privacidade e ativos | Aviso atualizado; Function em `iad1` e plano Hobby pela CLI; Redis na Virgínia do Norte e backup diário desativado por relato; direitos dos fundos/logo revisados | `docs/history/preview-evidence-2026-10.md` e `docs/deploy/image-rights.md`. Reconfirmar se configuração/plano mudar |
-| Peso Open-Meteo | Busca: uma chamada, peso 1,0. Previsão: 13 variáveis (5 atuais, 1 horária, 7 diárias), 7 dias, 1 local → 1,3 | Regra de contagem fracionária da página oficial *Open-Meteo Pricing*, consultada em 2026-10-10 (>10 variáveis e >2 semanas multiplicam), e parâmetros em `open-meteo-forecast.ts`. Limites gratuitos: 600/min, 5.000/h, 10.000/dia, 300.000/mês (mensal ainda não aplicado pelo provedor) |
+| Peso Open-Meteo | Busca: uma chamada, peso 1,0. Previsão: 13 variáveis (5 atuais, 1 horária, 7 diárias), 7 dias, 1 local → 1,3. Com a previsão por hora (2026-11-03), 16 variáveis → 1,6, e `OPEN_METEO_FORECAST_CREDITS` = 1.600 em Preview e Production | Regra de contagem fracionária da página oficial *Open-Meteo Pricing*, consultada em 2026-10-10 (>10 variáveis e >2 semanas multiplicam), e parâmetros em `open-meteo-forecast.ts`. Limites gratuitos: 600/min, 5.000/h, 10.000/dia, 300.000/mês (mensal ainda não aplicado pelo provedor) |
 | Revisão sincronizada e credenciais do eco | `chore/vercel-p1` enviada; Quality gates `success` em `e9ba52e`. Tokens de `.env.preview-probe` revogados e arquivo excluído pelo proprietário | CI conferida pela API pública do GitHub; revogação por relato; arquivo ausente conferido localmente |
 | Repositório público | Link “Repositório no GitHub” da interface responde 200 sem autenticação | Conferido em 2026-10-10 |
 | Busca com resultado incompleto (“Belém”) | Em 2026-10-12, a busca “Belém” retornava 503 em `7ed53e2` e `e6bede3`: um dos dez resultados da Open-Meteo (Belém da Palestina) vinha sem `country`, e a spec recusava a resposta inteira. Com aprovação do proprietário, um resultado aceito com campo inválido passa a ser descartado; a resposta continua recusada se os inválidos não forem minoria estrita ou se a estrutura for inválida. A resposta real normalizada voltou cinco resultados, com Belém (Pará) primeiro. Local: `npm run check` (548 API, 103 web), cobertura API 94,93/91,95/94,8/97,9, builds, audit zero, axe, E2E e performance (LCP ≈1,02 s, CLS 0) | `SPEC-location-search.md`, validação externa; `open-meteo-geocoding.ts` e testes. Chromium Fedora 154; Gitleaks fica para a CI |

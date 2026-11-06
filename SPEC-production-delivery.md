@@ -128,7 +128,7 @@ Revisar o teste de balanceamento e o aviso **no mesmo PR** se surgir:
 
 ## Previsão por hora — requisitos de entrega aprovados em 2026-11-03
 
-**Estado:** requisitos aprovados pelo proprietário em 2026-11-03, junto com as seções de mesma data de `SPEC-weather-forecast.md` e `SPEC-weather-ui.md`; implementação autorizada e concluída localmente em 2026-11-03, com o release ainda pendente. Não há mudança de topologia, headers, CSP, WAF, região, fornecedor ou aviso de privacidade.
+**Estado:** requisitos aprovados pelo proprietário em 2026-11-03, junto com as seções de mesma data de `SPEC-weather-forecast.md` e `SPEC-weather-ui.md`; implementação autorizada e concluída localmente em 2026-11-03; release pelo PR #13 no mesmo dia, com smoke nos dois projetos por relato do proprietário em 2026-11-05. Não há mudança de topologia, headers, CSP, WAF, região, fornecedor ou aviso de privacidade.
 
 ### Ordem do release
 
