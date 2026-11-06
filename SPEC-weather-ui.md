@@ -205,7 +205,18 @@ O proprietário pediu que as informações de privacidade deixem de ocupar o fim
 
 ## Ajustes de layout antes da divulgação — 2026-10-12
 
-Pedido do proprietário. Até 540 px, o logo fica centralizado na faixa superior do cabeçalho, acima da busca. Na tela neutra, a partir de 761 px, a chamada e o cartão “Como usamos seus dados” ficam em duas colunas (chamada à esquerda, cartão à direita, alinhado à borda direita da busca). Em larguras menores, o cartão continua abaixo da chamada, com largura limitada e texto ocupando o cartão. Conteúdo, comportamento e acessibilidade do diálogo não mudam.
+Pedido do proprietário. Até 540 px, o logo fica centralizado na faixa superior do cabeçalho, acima da busca. Na tela neutra, a partir de 761 px, a chamada e o cartão “Como usamos seus dados” ficam em duas colunas (chamada à esquerda, cartão à direita, alinhado à borda direita da busca). Em larguras menores, o cartão continua abaixo da chamada, com largura limitada e texto ocupando o cartão. Conteúdo, comportamento e acessibilidade do diálogo não mudam. A disposição da tela neutra foi substituída em 2026-11-05 (seção abaixo).
+
+## Ajustes visuais — 2026-11-05
+
+Pedido do proprietário, com a escolha “centralizar tudo” para a tela neutra. Mudança só de apresentação: conteúdo, dados, contrato, armazenamento e comportamento não mudam.
+
+- **Condições atuais:** sensação térmica e vento viram dois blocos lado a lado, com borda fraca, ícone de linha decorativo (`aria-hidden`) e valor maior. No desktop, ocupam a área à direita da temperatura, em vez de uma coluna estreita na borda; até 1050 px, ficam abaixo da temperatura, ocupando a largura do cartão.
+- **Previsão por hora:** colunas e ícones maiores, temperatura em destaque, linhas separadas por traços fracos, borda na região rolável e a coluna “Agora” com traços laterais. Até 540 px, a região avança um pouco sobre o recuo do cartão para caber mais horas.
+- **Sem coluna de rótulos (conferência do proprietário no mesmo dia):** a coluna fixa com o termômetro e a gota sai, porque não acrescentava informação: as unidades (°C e mm) já distinguem as linhas. Os `<th scope="row">` continuam na tabela, sem largura visível, com os nomes “Condição”, “Temperatura” e “Chuva na hora anterior” só para tecnologia assistiva. Ao abrir o HOJE, a hora atual passa a ser a primeira coluna visível (perto do fim do dia, a rolagem para no máximo possível). O `thermometer.svg` derivado deixa de ser usado e sai do repositório e de `third-party-licenses.txt`. Isto substitui, na seção “Previsão por hora”, os rótulos das linhas por ícones, a coluna fixa e o termômetro derivado.
+- **Rodapé no celular, correção:** a regra `justify-content: space-between` do desktop encolhia a coluna única da grade e a deixava à esquerda; a grade passa a ter uma coluna de largura total.
+- **Tela neutra:** chamada, subtítulo e cartão “Como usamos seus dados” ficam empilhados e centralizados em todas as larguras, substituindo as duas colunas de 2026-10-12.
+- **Rodapé:** centralizado até 760 px e, em qualquer largura, quando só há o bloco do site (tela neutra). No desktop com previsão, continua com o bloco do site à esquerda e a atribuição à direita.
 
 ## Medição agregada de audiência — requisitos aprovados em 2026-11-03
 

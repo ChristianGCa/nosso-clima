@@ -1,7 +1,5 @@
 import { useId, useLayoutEffect, useRef, useState } from 'react';
 import { categoryLabel, type HourlyColumns } from '../api/forecast';
-import rainVolumeIcon from '../assets/icons/raindrop-measure.svg';
-import temperatureIcon from '../assets/icons/thermometer.svg';
 import { dayLabel, hourLabel, metric } from '../format/weather-format';
 import { ConditionIcon } from './condition-icon';
 
@@ -19,15 +17,6 @@ function HourlyValue({ value, unit }: { value: number | null; unit: string }) {
     <>
       <span className="hourly-number">{metric(value, '')}</span>{' '}
       <span className="hourly-unit">{unit}</span>
-    </>
-  );
-}
-
-function RowIcon({ source, label }: { source: string; label: string }) {
-  return (
-    <>
-      <img className="hourly-row-icon" src={source} alt="" aria-hidden="true" />
-      <span className="visually-hidden">{label}</span>
     </>
   );
 }
@@ -58,14 +47,14 @@ export function HourlyDetails({
   const isNow = (hour: number) => hour === currentHour;
   const nowClass = (hour: number) => (isNow(hour) ? 'hourly-now' : undefined);
 
-  // Instant scroll (no animation) so the current hour is the first column after the row icons.
+  // Instant scroll (no animation) so the current hour is the first visible column.
   useLayoutEffect(() => {
     const now = nowRef.current;
     const region = now?.closest<HTMLElement>('.hourly-scroll');
     if (!open || !now || !region) return;
-    const stickyWidth = region.querySelector('thead th')?.getBoundingClientRect().width ?? 0;
+    // Measured from the region's inner edge, so its border never offsets the column.
     region.scrollLeft +=
-      now.getBoundingClientRect().left - region.getBoundingClientRect().left - stickyWidth;
+      now.getBoundingClientRect().left - region.getBoundingClientRect().left - region.clientLeft;
   }, [open]);
 
   return (
@@ -131,9 +120,9 @@ export function HourlyDetails({
                     );
                   })}
                 </tr>
-                <tr>
+                <tr className="hourly-temperature">
                   <th scope="row">
-                    <RowIcon source={temperatureIcon} label="Temperatura" />
+                    <span className="visually-hidden">Temperatura</span>
                   </th>
                   {HOURS.map((hour) => (
                     <td key={hour} className={nowClass(hour)}>
@@ -143,7 +132,7 @@ export function HourlyDetails({
                 </tr>
                 <tr>
                   <th scope="row">
-                    <RowIcon source={rainVolumeIcon} label="Chuva na hora anterior" />
+                    <span className="visually-hidden">Chuva na hora anterior</span>
                   </th>
                   {HOURS.map((hour) => (
                     <td key={hour} className={nowClass(hour)}>

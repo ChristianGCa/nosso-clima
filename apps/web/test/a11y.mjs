@@ -342,13 +342,15 @@ try {
   assert.equal(
     await todayRegion.evaluate((element) => {
       const now = element.querySelector('thead .hourly-now');
-      const sticky = element.querySelector('thead th');
-      if (!now || !sticky) return false;
-      const offset = now.getBoundingClientRect().left - sticky.getBoundingClientRect().right;
+      if (!now) return false;
+      const offset =
+        now.getBoundingClientRect().left -
+        element.getBoundingClientRect().left -
+        element.clientLeft;
       return element.scrollLeft > 0 && Math.abs(offset) <= 1;
     }),
     true,
-    'opening today must scroll the current hour next to the row icons',
+    'opening today must scroll the current hour to the start of the region',
   );
   await scan(page, 'hourly today mobile');
   await field.focus();
