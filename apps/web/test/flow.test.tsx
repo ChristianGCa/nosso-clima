@@ -1,7 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/app';
-import { HOURLY_NOTICE_ENDS_AT, hourlyNoticeActive } from '../src/components/hourly-notice';
 import { LAST_LOCATION_STORAGE_KEY } from '../src/storage/last-location';
 import { forecastResponse, jsonResponse, locationResponse } from './fixtures';
 
@@ -217,69 +216,6 @@ describe('city-to-forecast flow', () => {
     await resolveUpdates();
     expect(screen.getByRole('heading', { name: 'Previsão de 7 dias' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /Ver por hora/ })).toBeNull();
-    expect(screen.queryByText('Novidade')).toBeNull();
-  });
-
-  async function showSaoPauloAndSantos() {
-    vi.spyOn(globalThis, 'fetch').mockImplementation(async (path) =>
-      String(path).includes('/locations')
-        ? jsonResponse({
-            ...locationResponse,
-            locations: [
-              locationResponse.locations[0],
-              { ...locationResponse.locations[0], id: 2, name: 'Santos' },
-            ],
-          })
-        : jsonResponse(forecastResponse),
-    );
-    render(<App />);
-    fireEvent.change(input(), { target: { value: 'São' } });
-    await advanceSearch();
-    fireEvent.click(screen.getByRole('option', { name: 'São Paulo, São Paulo, Brasil' }));
-    await resolveUpdates();
-  }
-
-  async function chooseSantos() {
-    fireEvent.change(input(), { target: { value: 'San' } });
-    await advanceSearch();
-    fireEvent.click(screen.getByRole('option', { name: 'Santos, São Paulo, Brasil' }));
-    await resolveUpdates();
-  }
-
-  it('announces hourly details until the end date and closes only in page memory', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(HOURLY_NOTICE_ENDS_AT - 1);
-    await showSaoPauloAndSantos();
-    const close = screen.getByRole('button', { name: 'Fechar aviso de novidade' });
-    expect(close.textContent).toBe('Fechar');
-    expect(screen.getByText('Novidade').closest('.feature-notice')?.textContent).toContain(
-      'Previsão por hora: toque em “Ver por hora” em qualquer dia',
-    );
-
-    fireEvent.click(close);
-    expect(screen.queryByText('Novidade')).toBeNull();
-    expect(document.activeElement).toBe(
-      screen.getByRole('button', { name: /^Ver por hora de Quinta-feira, 24\/09/ }),
-    );
-    expect(Object.keys(localStorage)).toEqual([LAST_LOCATION_STORAGE_KEY]);
-    expect(sessionStorage.length).toBe(0);
-
-    await chooseSantos();
-    expect(screen.getByRole('heading', { name: 'Santos, São Paulo, Brasil' })).toBeTruthy();
-    expect(screen.queryByText('Novidade')).toBeNull();
-  });
-
-  it('no longer announces hourly details after the end date', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(HOURLY_NOTICE_ENDS_AT);
-    await showSaoPauloAndSantos();
-    expect(screen.getAllByRole('button', { name: /^Ver por hora de/ })).toHaveLength(7);
-    expect(screen.queryByText('Novidade')).toBeNull();
-  });
-
-  it('ends the announcement at 23:59:59 on 2026-11-10 in Brasília', () => {
-    expect(hourlyNoticeActive(Date.parse('2026-11-10T23:59:59-03:00'))).toBe(true);
-    expect(hourlyNoticeActive(Date.parse('2026-11-11T00:00:00-03:00'))).toBe(false);
   });
 
   it('distinguishes no results, search failure and explicit search retry', async () => {

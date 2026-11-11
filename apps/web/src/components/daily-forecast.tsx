@@ -5,7 +5,6 @@ import rainChanceIcon from '../assets/icons/umbrella.svg';
 import { compactDayLabel, dayLabel, metric } from '../format/weather-format';
 import { ConditionIcon } from './condition-icon';
 import { HourlyDetails } from './hourly-forecast';
-import { HourlyNotice } from './hourly-notice';
 
 function MetricIcon({ source }: { source: string }) {
   return <img className="metric-icon" src={source} alt="" aria-hidden="true" />;
@@ -57,12 +56,9 @@ function useClosedCardHeight() {
 export function DailyForecast({
   daily,
   validAtLocal,
-  onDismissHourlyNotice,
 }: {
   daily: Forecast['daily'];
   validAtLocal: string;
-  /** Present while the hourly notice should show; it closes the notice. */
-  onDismissHourlyNotice?: () => void;
 }) {
   const stripRef = useClosedCardHeight();
   const [today, ...upcoming] = daily;
@@ -74,15 +70,6 @@ export function DailyForecast({
     <section className="daily-section" aria-labelledby="daily-title">
       <div className="daily-inner">
         <h2 id="daily-title">Previsão de 7 dias</h2>
-        {onDismissHourlyNotice && today.hourly && (
-          <HourlyNotice
-            onDismiss={() => {
-              // The close button disappears: move focus to the feature it announced.
-              stripRef.current?.querySelector<HTMLElement>('.hourly-toggle')?.focus();
-              onDismissHourlyNotice();
-            }}
-          />
-        )}
         <div className="daily-strip" ref={stripRef}>
           <article className="today-card">
             <h3 className="today-date">

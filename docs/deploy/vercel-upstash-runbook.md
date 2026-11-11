@@ -30,6 +30,7 @@ Usar Node 24 e npm 12.0.2, lockfile único da raiz, builds independentes e acess
 | Web | `API_ORIGIN` | Origem HTTPS da API pareada, usada na configuração de build do rewrite; não inserir token nem publicar seu valor no relato |
 | Web | `WEB_ORIGIN` | Opcional: origem exata para impedir rewrite ao próprio web; configuração usa `VERCEL_URL` quando disponível |
 | Web | `VITE_API_BASE_URL` | Ausente em Preview/Production; nenhuma variável secreta em `VITE_*` |
+| Web | `CONTROLLER_NAME`, `CONTACT_EMAIL` | Obrigatórias em Preview e Production: responsável e e-mail exibidos no aviso de privacidade. Públicas por natureza, entram no bundle; nunca usar para segredo. Sem elas, ou com valor inválido, o build na Vercel falha |
 | API Preview isolado | `UPSTREAM_TEST_BASE`, `UPSTREAM_TEST_TOKEN` | Somente ensaio concreto com eco; configuração parcial/inválida ou fora de Preview impede inicialização. Remover antes do release |
 
 Mapeamento da integração: `KV_REST_API_URL` corresponde ao endpoint REST e `KV_REST_API_TOKEN` ao token padrão. `KV_URL`/`REDIS_URL` usam protocolo Redis e não se tornam REST trocando o esquema. Colar valores no painel sem as aspas do exemplo `.env`; conferir nomes/escopos sem extrair valores. Não ligar a integração ao web.

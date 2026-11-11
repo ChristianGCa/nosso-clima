@@ -7,16 +7,9 @@ type Props = {
   state: ForecastState;
   onRetry: () => void;
   onOpenInformation: () => void;
-  /** Present while the hourly notice should show; it closes the notice. */
-  onDismissHourlyNotice?: () => void;
 };
 
-export function ForecastStatus({
-  state,
-  onRetry,
-  onOpenInformation,
-  onDismissHourlyNotice,
-}: Props) {
+export function ForecastStatus({ state, onRetry, onOpenInformation }: Props) {
   if (state.status === 'idle') {
     return (
       <section className="state-panel state-panel--idle">
@@ -88,7 +81,6 @@ export function ForecastStatus({
       <DailyForecast
         daily={state.forecast.daily}
         validAtLocal={state.forecast.current.validAtLocal}
-        {...(onDismissHourlyNotice ? { onDismissHourlyNotice } : {})}
       />
     </div>
   );

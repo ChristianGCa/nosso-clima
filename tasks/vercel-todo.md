@@ -1,6 +1,6 @@
 # Entrega Vercel + Upstash — estado e pendências
 
-**Atualizado em 2026-11-05. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
+**Atualizado em 2026-11-10. Fonte única do progresso.** Specs definem contratos e gates; `tasks/vercel-plan.md` define a sequência aprovada; `docs/deploy/vercel-upstash-runbook.md` contém procedimentos; `docs/history/preview-evidence-2026-10.md` guarda as coletas datadas (consultar só a seção necessária; seus “próximos passos” não são tarefas).
 
 ## Resumo
 
@@ -136,7 +136,7 @@ Pedido do proprietário: mostrar temperatura e chuva por hora nos sete dias, em 
   Revisão visual em 360 e 1280 px sem rolagem horizontal da página.
 - [x] Aviso temporário da novidade (2026-11-03, aprovado pelo proprietário na opção sem armazenamento; requisitos em `SPEC-weather-ui.md`, seção “Aviso temporário da novidade”). Fica acima dos cartões até 2026-11-10, 23h59 de Brasília, e “Fechar” vale só para a página aberta. Gates locais verdes: `npm run check` (579 API, 140 web), cobertura web 97,77/92,32/98,33/99,23, builds, `npm audit` sem vulnerabilidades, axe e contraste nos dez fundos com o aviso visível, E2E (seis), performance com o aviso (LCP ≈0,95 s e ≈1,05 s, CLS 0).
 - [x] No merge: o PR #13 entrou na `main` em 2026-11-03, então o prazo de 2026-11-10 já é uma semana após a publicação e `HOURLY_NOTICE_ENDS_AT` não mudou.
-- [ ] Após o prazo do aviso: remover `hourly-notice.tsx`, a ligação no `App`, os estilos e os testes, e marcar a seção do spec como encerrada.
+- [x] Após o prazo do aviso (2026-11-10, branch `fix/contato-e-avisos`): `hourly-notice.tsx`, a ligação no `App`, os estilos e os testes removidos; axe e performance deixaram de fixar o relógio; seção do spec marcada como encerrada.
 - [x] Antes do merge: `OPEN_METEO_FORECAST_CREDITS` = 1.600 em Preview e Production, alterado pelo proprietário em 2026-11-03 (por relato; valor no painel, fora do Git). Vale para os próximos deployments da API.
 - [x] PR #13 com CI verde (`verify` em `5daf1e2`) e merge em 2026-11-03. Smoke nos dois projetos por relato do proprietário em 2026-11-05: busca, previsão e previsão por hora funcionando em Production. `README.md` e `CAPABILITY-MAP.md` descrevem a previsão por hora.
 
@@ -156,6 +156,24 @@ Pedido do proprietário a partir de capturas de Production: previsão por hora m
 
   Após a conferência do proprietário. Revisão visual em 360, 400, 900 e 1440 px sem rolagem horizontal da página. Ambiente: Node 24.18.0, Chromium fixado pelo Playwright; Gitleaks fica para a CI.
 - [x] PR #14 com CI verde (`verify` em `83938db`) e merge em 2026-11-05, conduzidos pelo proprietário. Smoke do web por relato dele no mesmo dia: site todo funcional.
+
+## Aviso de previsão informativa e contato configurável — 2026-11-10
+
+Pedido do proprietário depois de uma revisão de exposição do repositório público. Requisitos em `SPEC-weather-ui.md`, seção “Aviso de previsão informativa e contato configurável”. Só o web e a documentação mudam; API, contrato, custo e cache não mudam.
+
+- [x] Implementação local (branch `fix/contato-e-avisos`): aviso de previsão informativa em “Sobre o projeto”; responsável e contato vindos de `CONTROLLER_NAME` e `CONTACT_EMAIL` (expostas por `define`, uma a uma); build na Vercel falha sem elas; seção “Publicar sua própria cópia” no README; variáveis no runbook e no `.env.example`.
+- [x] Gates locais verdes (2026-11-10):
+  - `npm run check`: 579 testes na API e 143 no web;
+  - cobertura web 97,8/92,95/98,3/99,24;
+  - `npm audit` sem vulnerabilidades;
+  - axe e contraste nos dez fundos, em mobile e desktop;
+  - E2E (seis testes);
+  - performance: LCP ≈0,96 s e ≈0,97 s, CLS 0;
+  - build com `VERCEL=1`: falha sem as variáveis e passa com elas; o bundle traz só o contato configurado, sem outras variáveis do ambiente.
+
+  Ambiente: Node 24.18.0, Chromium fixado pelo Playwright; Gitleaks fica para a CI.
+- [ ] Antes do merge: conferir `CONTROLLER_NAME` e `CONTACT_EMAIL` no projeto web, em Preview e Production (cadastradas pelo proprietário, por relato). Sem elas, o deploy do web falha e o anterior continua no ar.
+- [ ] Depois do merge: smoke do web e conferência do contato no diálogo “Privacidade e créditos”.
 
 ## Pendências de manutenção (não bloqueiam)
 
