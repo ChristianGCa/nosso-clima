@@ -68,8 +68,6 @@ async function measure(browser, origin, restored) {
   });
   try {
     const page = await context.newPage();
-    // Inside the hourly-notice window, so the restored city is measured with the notice.
-    await page.clock.setFixedTime(new Date('2026-11-05T12:00:00Z'));
     await page.addInitScript(
       (savedLocation) => {
         if (savedLocation) {

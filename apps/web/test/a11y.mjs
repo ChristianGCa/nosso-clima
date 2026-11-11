@@ -149,8 +149,6 @@ try {
     timezoneId: 'Pacific/Honolulu',
   });
   const page = await context.newPage();
-  // Inside the hourly-notice window (hourly-notice.tsx), so the notice is always scanned.
-  await page.clock.setFixedTime(new Date('2026-11-05T12:00:00Z'));
   const assetRequests = [];
   const apiRequests = [];
   page.on('request', (request) => {
@@ -291,11 +289,6 @@ try {
     1,
   );
   assert.equal(await page.getByRole('heading', { name: 'Quinta-feira, 24/09' }).count(), 1);
-  assert.equal(
-    await page.getByRole('button', { name: 'Fechar aviso de novidade' }).count(),
-    1,
-    'the hourly notice must show during its window',
-  );
   assert.equal(
     await page
       .locator('.today-metrics')

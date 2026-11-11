@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
+import type { SiteContact } from '../site-contact';
 
-type Props = { open: boolean; onClose: () => void };
+type Props = { open: boolean; onClose: () => void; contact: SiteContact | null };
 
-export function SiteInformationDialog({ open, onClose }: Props) {
+export function SiteInformationDialog({ open, onClose, contact }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -111,10 +112,14 @@ export function SiteInformationDialog({ open, onClose }: Props) {
               Respondemos em até 15 dias pelo contato abaixo. Em caso de incidente de segurança
               relevante, avisaremos a ANPD e as pessoas afetadas.
             </p>
-            <p>
-              Responsável pelo site e pelos dados: ChristianGCa. Contato:{' '}
-              <a href="mailto:christiangca.dev@gmail.com">christiangca.dev@gmail.com</a>.
-            </p>
+            {contact ? (
+              <p>
+                Responsável pelo site e pelos dados: {contact.name}. Contato:{' '}
+                <a href={`mailto:${contact.email}`}>{contact.email}</a>.
+              </p>
+            ) : (
+              <p>Responsável e contato não configurados nesta instalação.</p>
+            )}
           </section>
           <section id="sobre-o-projeto" aria-labelledby="sobre-o-projeto-titulo">
             <h3 id="sobre-o-projeto-titulo">Sobre o projeto</h3>
@@ -122,6 +127,11 @@ export function SiteInformationDialog({ open, onClose }: Props) {
               O NossoClima apresenta condições atuais e uma previsão de sete dias em linguagem
               simples. Os dados meteorológicos e as localidades são fornecidos pela Open-Meteo e
               adaptados para esta interface.
+            </p>
+            <p>
+              As previsões são estimativas automáticas e podem conter erros. Use-as apenas como
+              referência e não como única fonte para decisões de segurança. Em situações de risco,
+              siga os alertas da Defesa Civil e do INMET.
             </p>
             <p>
               <a href="https://github.com/ChristianGCa/nosso-clima">Repositório no GitHub</a>.

@@ -1,11 +1,11 @@
 import { useCallback, useState } from 'react';
 import { CitySearch } from './components/city-search';
 import { ForecastStatus } from './components/forecast-state';
-import { hourlyNoticeActive } from './components/hourly-notice';
 import { SiteInformationDialog } from './components/site-information';
 import logoEscuro from './assets/brand/logo-escuro.svg';
 import { useForecast } from './hooks/use-forecast';
 import { useWeatherBackground } from './hooks/use-weather-background';
+import { resolveSiteContact } from './site-contact';
 
 export function App() {
   const forecast = useForecast();
@@ -13,9 +13,8 @@ export function App() {
   const [informationOpen, setInformationOpen] = useState(false);
   const openInformation = useCallback(() => setInformationOpen(true), []);
   const closeInformation = useCallback(() => setInformationOpen(false), []);
-  // Page memory only: once closed, the notice stays closed for other cities until a reload.
-  const [hourlyNotice, setHourlyNotice] = useState(() => hourlyNoticeActive(Date.now()));
-  const dismissHourlyNotice = useCallback(() => setHourlyNotice(false), []);
+  // Validated at build time (vite.config.ts); unset outside Vercel means no contact is shown.
+  const contact = resolveSiteContact(import.meta.env, { required: false });
   return (
     <div
       className={`site-shell${background ? ' has-image' : ''}`}
@@ -34,7 +33,6 @@ export function App() {
           state={forecast.state}
           onRetry={forecast.retry}
           onOpenInformation={openInformation}
-          {...(hourlyNotice ? { onDismissHourlyNotice: dismissHourlyNotice } : {})}
         />
       </main>
       <footer className="site-footer">
@@ -74,7 +72,7 @@ export function App() {
           )}
         </div>
       </footer>
-      <SiteInformationDialog open={informationOpen} onClose={closeInformation} />
+      <SiteInformationDialog open={informationOpen} onClose={closeInformation} contact={contact} />
     </div>
   );
 }

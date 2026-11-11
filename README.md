@@ -75,6 +75,16 @@ Os testes de navegador usam o Chromium do Playwright, que pode ser instalado com
 
 Os arquivos `SPEC-*.md` na raiz descrevem em detalhe o comportamento de cada parte do projeto.
 
+## Publicar sua própria cópia
+
+O código é livre sob a licença MIT, mas o nome NossoClima, o logo e as imagens de fundo não fazem parte dela. Quem publicar uma cópia deve:
+
+- trocar o nome, o logo e as imagens de fundo;
+- definir `CONTROLLER_NAME` e `CONTACT_EMAIL` no projeto web com o próprio nome e e-mail. Esses valores aparecem no aviso de privacidade, e o build na Vercel falha sem eles;
+- revisar o aviso de privacidade (`apps/web/src/components/site-information.tsx`), porque regiões, fornecedores e retenção mudam conforme a instalação, e quem publica responde pelos dados dela.
+
+Uma cópia publicada não tem vínculo com o NossoClima nem com o autor deste repositório.
+
 ## Créditos e licenças
 
 - **Dados meteorológicos:** Open-Meteo, sob licença CC BY 4.0. Os dados são adaptados pelo NossoClima.

@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { App } from '../src/app';
 
 describe('neutral first screen', () => {
@@ -27,7 +27,13 @@ describe('neutral first screen', () => {
 });
 
 describe('site information dialog', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('opens from the prominent first-visit button with privacy, project and licence details', () => {
+    vi.stubEnv('CONTROLLER_NAME', 'Pessoa Exemplo');
+    vi.stubEnv('CONTACT_EMAIL', 'contato@example.com');
     render(<App />);
     fireEvent.click(screen.getByRole('button', { name: 'Como usamos seus dados' }));
 
@@ -55,15 +61,32 @@ describe('site information dialog', () => {
     expect(screen.getByRole('link', { name: 'Repositório no GitHub' }).getAttribute('href')).toBe(
       'https://github.com/ChristianGCa/nosso-clima',
     );
-    expect(
-      screen.getByRole('link', { name: 'christiangca.dev@gmail.com' }).getAttribute('href'),
-    ).toBe('mailto:christiangca.dev@gmail.com');
+    expect(dialog.textContent).toContain('Responsável pelo site e pelos dados: Pessoa Exemplo.');
+    expect(screen.getByRole('link', { name: 'contato@example.com' }).getAttribute('href')).toBe(
+      'mailto:contato@example.com',
+    );
+    expect(dialog.textContent).toContain(
+      'As previsões são estimativas automáticas e podem conter erros.',
+    );
+    expect(dialog.textContent).toContain('não como única fonte para decisões de segurança');
+    expect(dialog.textContent).toContain('siga os alertas da Defesa Civil e do INMET');
     expect(screen.getByRole('link', { name: 'Licença MIT dos ícones' }).getAttribute('href')).toBe(
       '/third-party-licenses.txt',
     );
     expect(screen.getByRole('link', { name: 'licença MIT' }).getAttribute('href')).toBe(
       '/code-license.txt',
     );
+  });
+
+  it('shows no contact when the installation does not configure one', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Privacidade e créditos' }));
+    const dialog = screen.getByRole('dialog', { name: 'Privacidade e informações' });
+    expect(dialog.textContent).toContain(
+      'Responsável e contato não configurados nesta instalação.',
+    );
+    expect(dialog.textContent).not.toContain('Responsável pelo site e pelos dados');
+    expect(dialog.querySelector('a[href^="mailto:"]')).toBeNull();
   });
 
   it('closes with the corner button and reopens from the discreet footer option', () => {
